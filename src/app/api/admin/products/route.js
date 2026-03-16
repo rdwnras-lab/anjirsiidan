@@ -7,7 +7,10 @@ function isAdmin(s) { return s?.user?.role === 'admin'; }
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data } = await supabaseAdmin.from('products').select('*, categories(name), product_variants(*), product_keys(id,is_used)').order('created_at', { ascending: false });
+  const { data } = await supabaseAdmin
+    .from('products')
+    .select('*, categories(name), product_variants(*), product_keys(id,is_used)')
+    .order('created_at', { ascending: false });
   return Response.json(data || []);
 }
 
@@ -17,7 +20,9 @@ export async function POST(req) {
   const { variants, formFields, ...product } = await req.json();
 
   const { data: prod, error } = await supabaseAdmin.from('products').insert({
-    ...product, form_fields: formFields || []
+    ...product,
+    form_fields: formFields || [],
+    is_best_seller: product.is_best_seller || false,
   }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 

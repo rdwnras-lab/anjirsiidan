@@ -1,135 +1,128 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import Button from '@/components/ui/Button';
+import Select from '@/components/ui/Select';
+import Badge from '@/components/ui/Badge';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 
 export default function KeysPage() {
-  const { id } = useParams();
-  const router = useRouter();
-  const [product, setProduct] = useState(null);
-  const [keys, setKeys]       = useState([]);
-  const [variantId, setVid]   = useState('');
-  const [bulk, setBulk]       = useState('');
-  const [saving, setSaving]   = useState(false);
-  const [filter, setFilter]   = useState('all');
-  const [loading, setLoading] = useState(true);
+  const { id }            = useParams();
+  const [product, setProd]  = useState(null);
+  const [keys, setKeys]     = useState([]);
+  const [variantId, setVid] = useState('');
+  const [bulk, setBulk]     = useState('');
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   const load = async () => {
-    try {
-      const [p, k] = await Promise.all([
-        fetch(`/api/admin/products/${id}`).then(r=>r.json()),
-        fetch(`/api/admin/keys?productId=${id}`).then(r=>r.json()),
-      ]);
-      setProduct(p);
-      setKeys(Array.isArray(k)?k:[]);
-      if(p?.product_variants?.[0]) setVid(p.product_variants[0].id);
-    } catch(e) { console.error(e); }
-    setLoading(false);
+    const [p, k] = await Promise.all([
+      fetch(`/api/admin/products/${id}`).then(r=>r.json()),
+      fetch(`/api/admin/keys?productId=${id}`).then(r=>r.json()),
+    ]);
+    setProd(p);
+    setKeys(k || []);
+    if (p?.product_variants?.[0]) setVid(p.product_variants[0].id);
   };
-  useEffect(()=>{ load(); },[id]);
+  useEffect(() => { load(); }, [id]);
 
   const addKeys = async () => {
+    if (!variantId || !bulk.trim()) return;
     const lines = bulk.split('\n').map(l=>l.trim()).filter(Boolean);
-    if(!variantId||!lines.length){alert('Pilih varian dan isi stok');return;}
     setSaving(true);
-    const res = await fetch('/api/admin/keys',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({productId:id,variantId,keys:lines})
+    await fetch('/api/admin/keys', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ productId: id, variantId, keys: lines })
     });
-    const data = await res.json().catch(()=>({}));
-    setSaving(false);
-    if(!res.ok){alert(data.error||'Gagal');return;}
-    alert(`${lines.length} key berhasil ditambahkan!`);
-    setBulk('');load();
+    setSaving(false); setBulk(''); load();
   };
 
-  const delKey = async kid => {
-    if(!confirm('Hapus key ini?'))return;
-    await fetch(`/api/admin/keys/${kid}`,{method:'DELETE'});
+  const deleteKey = async keyId => {
+    if (!confirm('Hapus key ini?')) return;
+    await fetch(`/api/admin/keys/${keyId}`, { method: 'DELETE' });
     load();
   };
 
-  if(loading) return <div style={{padding:32,color:'#6b7280'}}>Memuat...</div>;
-  if(!product) return <div style={{padding:32,color:'#ef4444'}}>Produk tidak ditemukan.</div>;
+  const filtered = keys.filter(k =>
+    filter === 'all' ? true : filter === 'available' ? !k.is_used : k.is_used
+  );
 
-  const variants = product.product_variants||[];
-  const filtered = keys.filter(k=>filter==='all'?true:filter==='available'?!k.is_used:k.is_used);
-  const avail = keys.filter(k=>!k.is_used).length;
-  const used  = keys.filter(k=>k.is_used).length;
+  if (!product) return <div className="p-6"><LoadingSpinner /></div>;
+
+  const variants = product.product_variants || [];
+  const availCount = keys.filter(k => !k.is_used).length;
+  const usedCount  = keys.filter(k => k.is_used).length;
 
   return (
-    <div style={{padding:32,maxWidth:800}}>
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:28}}>
-        <Link href="/admin/products" style={{background:'#2a2a3a',border:'none',color:'#9ca3af',borderRadius:8,padding:'8px 14px',fontSize:13,textDecoration:'none'}}>← Kembali</Link>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:'#f1f0ff'}}>{product.name}</h1>
-          <p style={{fontSize:13,color:'#52526e',marginTop:2}}>Kelola Stok Key</p>
-        </div>
+    <div className="p-6 max-w-3xl">
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/admin/products" className="text-sm text-muted hover:text-text">← Produk</Link>
+        <span className="text-muted">/</span>
+        <h1 className="text-xl font-extrabold">{product.name} — Stok Key</h1>
       </div>
 
       {/* Stats */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
-        {[{label:'Tersedia',val:avail,c:'#34d399'},{label:'Terpakai',val:used,c:'#6b7280'},{label:'Total',val:keys.length,c:'#a78bfa'}].map(s=>(
-          <div key={s.label} style={{background:'#16161e',border:'1px solid #2a2a3a',borderRadius:12,padding:'16px 20px',textAlign:'center'}}>
-            <div style={{fontSize:28,fontWeight:800,color:s.c}}>{s.val}</div>
-            <div style={{fontSize:12,color:'#6b7280',marginTop:2}}>{s.label}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-extrabold text-success">{availCount}</div>
+          <div className="text-xs text-muted">Tersedia</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-extrabold text-muted">{usedCount}</div>
+          <div className="text-xs text-muted">Terpakai</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="text-2xl font-extrabold">{keys.length}</div>
+          <div className="text-xs text-muted">Total</div>
+        </div>
       </div>
 
-      {/* Add keys */}
-      <div style={{background:'#16161e',border:'1px solid #2a2a3a',borderRadius:16,padding:24,marginBottom:24}}>
-        <h2 style={{fontSize:14,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:16}}>Tambah Stok</h2>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:13,color:'#9ca3af',display:'block',marginBottom:6}}>Varian</label>
-          <select value={variantId} onChange={e=>setVid(e.target.value)} style={{width:'100%',background:'#0f0f13',border:'1px solid #2a2a3a',color:'#f1f0ff',borderRadius:10,padding:'10px 14px',fontSize:14,outline:'none'}}>
-            {variants.map(v=><option key={v.id} value={v.id}>{v.name} (Rp{(v.price||0).toLocaleString('id-ID')})</option>)}
-          </select>
+      {/* Add keys form */}
+      <div className="bg-card border border-border rounded-2xl p-5 mb-6">
+        <h2 className="font-bold mb-4">Tambah Stok</h2>
+        <div className="space-y-3">
+          <Select label="Varian" value={variantId} onChange={e=>setVid(e.target.value)}
+            options={variants.map(v=>({ value:v.id, label:`${v.name} (Rp${v.price.toLocaleString()})` }))} />
+          <div>
+            <label className="text-sm text-dim block mb-1.5">Key / Kode (1 baris = 1 item)</label>
+            <textarea rows={6} value={bulk} onChange={e=>setBulk(e.target.value)}
+              placeholder={"username1:password1\nusername2:password2\nATCODE-XXXXX\n..."}
+              className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-muted outline-none focus:border-accent/50 font-mono resize-y" />
+            <p className="text-xs text-muted mt-1">{bulk.split('\n').filter(l=>l.trim()).length} item akan ditambahkan</p>
+          </div>
+          <Button onClick={addKeys} disabled={saving}>{saving ? 'Menyimpan...' : 'Tambah Key'}</Button>
         </div>
-        <div style={{marginBottom:14}}>
-          <label style={{fontSize:13,color:'#9ca3af',display:'block',marginBottom:6}}>Key / Kode (1 baris = 1 item)</label>
-          <textarea rows={7} value={bulk} onChange={e=>setBulk(e.target.value)}
-            placeholder={'user1@gmail.com:password1\nuser2@gmail.com:password2\nKODE-XXXX-XXXX\n...'} style={{width:'100%',background:'#0f0f13',border:'1px solid #2a2a3a',color:'#f1f0ff',borderRadius:10,padding:'12px 14px',fontSize:13,fontFamily:'monospace',resize:'vertical',outline:'none',boxSizing:'border-box'}}/>
-          <p style={{fontSize:12,color:'#52526e',marginTop:4}}>{bulk.split('\n').filter(l=>l.trim()).length} item akan ditambahkan</p>
-        </div>
-        <button onClick={addKeys} disabled={saving} style={{background:'#7c3aed',color:'#fff',border:'none',borderRadius:10,padding:'10px 24px',fontSize:14,fontWeight:600,cursor:saving?'not-allowed':'pointer',opacity:saving?.6:1}}>
-          {saving?'Menyimpan...':'Tambah Key'}
-        </button>
       </div>
 
       {/* Keys list */}
       <div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-          <h2 style={{fontSize:14,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.08em'}}>Daftar Key</h2>
-          <div style={{display:'flex',gap:6}}>
-            {['all','available','used'].map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} style={{fontSize:12,padding:'5px 12px',borderRadius:999,border:'1px solid',cursor:'pointer',
-                background:filter===f?'rgba(124,58,237,0.2)':'transparent',
-                borderColor:filter===f?'#7c3aed':'#2a2a3a',
-                color:filter===f?'#a78bfa':'#6b7280'}}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold">Daftar Key</h2>
+          <div className="flex gap-2">
+            {['all','available','used'].map(f => (
+              <button key={f} onClick={()=>setFilter(f)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filter===f ? 'bg-accent/20 text-accent-light border-accent/30' : 'border-border text-muted hover:text-text'}`}>
                 {f==='all'?'Semua':f==='available'?'Tersedia':'Terpakai'}
               </button>
             ))}
           </div>
         </div>
-        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-          {filtered.length===0&&<p style={{color:'#52526e',textAlign:'center',padding:24,fontSize:14}}>Tidak ada key.</p>}
-          {filtered.map(k=>(
-            <div key={k.id} style={{background:'#16161e',border:'1px solid #2a2a3a',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,opacity:k.is_used?.6:1}}>
-              <div style={{flex:1,minWidth:0}}>
-                <code style={{fontSize:12,color:k.is_used?'#6b7280':'#a78bfa',fontFamily:'monospace',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{k.key_content}</code>
-                <div style={{fontSize:11,color:'#52526e',marginTop:2}}>{variants.find(v=>v.id===k.variant_id)?.name||'—'}</div>
+        <div className="space-y-2">
+          {filtered.map(k => (
+            <div key={k.id} className={`bg-card border rounded-xl p-3 flex items-center justify-between gap-4 ${k.is_used ? 'border-border opacity-50' : 'border-border'}`}>
+              <div className="flex-1 min-w-0">
+                <pre className="text-xs text-dim font-mono truncate">{k.key_content}</pre>
+                <p className="text-xs text-muted mt-0.5">{variants.find(v=>v.id===k.variant_id)?.name}</p>
               </div>
-              <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-                <span style={{fontSize:11,padding:'2px 8px',borderRadius:999,fontWeight:600,
-                  background:k.is_used?'rgba(255,255,255,0.05)':'rgba(16,185,129,0.15)',
-                  color:k.is_used?'#6b7280':'#34d399'}}>
-                  {k.is_used?'Terpakai':'Tersedia'}
-                </span>
-                {!k.is_used&&<button onClick={()=>delKey(k.id)} style={{background:'rgba(239,68,68,0.1)',color:'#ef4444',border:'none',borderRadius:8,padding:'5px 10px',fontSize:12,cursor:'pointer'}}>Hapus</button>}
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge status={k.is_used ? 'completed' : 'pending'}>{k.is_used ? 'Terpakai' : 'Tersedia'}</Badge>
+                {!k.is_used && <button onClick={()=>deleteKey(k.id)} className="text-xs text-danger hover:text-red-400">Hapus</button>}
               </div>
             </div>
           ))}
+          {filtered.length === 0 && <p className="text-center text-muted text-sm py-8">Tidak ada key.</p>}
         </div>
       </div>
     </div>

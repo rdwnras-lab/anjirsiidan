@@ -1,13 +1,15 @@
-// Auth is handled by middleware.js - this is just the shell
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 
-export default function AdminLayout({ children }) {
+export default async function AdminLayout({ children }) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'admin') redirect('/admin/login');
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0f0f13' }}>
+    <div className="flex min-h-screen">
       <AdminSidebar />
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {children}
-      </div>
+      <main className="flex-1 bg-bg min-h-screen">{children}</main>
     </div>
   );
 }
