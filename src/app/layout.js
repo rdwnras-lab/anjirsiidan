@@ -1,4 +1,4 @@
-import './styles/globals.css';
+import '@/styles/globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import SessionWrapper from '@/components/SessionWrapper';
