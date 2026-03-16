@@ -35,7 +35,7 @@ export default function AdminSidebar() {
       </nav>
       <div className="border-t border-border pt-4 px-3 space-y-2">
         <Link href="/" className="text-xs text-muted hover:text-text block">← Ke Toko</Link>
-        <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="text-xs text-danger hover:text-red-400">Keluar</button>
+        <button onClick={() => signOut({ callbackUrl: '/login' })} className="text-xs text-danger hover:text-red-400">Keluar</button>
       </div>
     </aside>
   );
