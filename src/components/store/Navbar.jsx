@@ -64,6 +64,7 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen]   = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const storeName = process.env.NEXT_PUBLIC_STORE_NAME || 'VECHNOST';
+  const logoUrl   = process.env.NEXT_PUBLIC_LOGO_URL || '';
   const waNumber  = process.env.NEXT_PUBLIC_WHATSAPP || '6289521925299';
 
   // Close sidebar on ESC
@@ -217,9 +218,10 @@ export default function Navbar() {
 
           {/* Center: Brand Logo / GIF */}
           <Link href="/" className="flex-1 flex justify-center">
-            <span className="font-black text-lg tracking-[0.2em] text-gradient" style={{fontFamily:'Rajdhani, sans-serif', letterSpacing:'0.25em'}}>
-              {storeName}
-            </span>
+            {logoUrl
+              ? <img src={logoUrl} alt={storeName} style={{height:'36px', width:'auto', objectFit:'contain'}} />
+              : <span className="font-black text-lg text-gradient" style={{fontFamily:'Rajdhani, sans-serif', letterSpacing:'0.25em'}}>{storeName}</span>
+            }
           </Link>
 
           {/* Right: Search + optional avatar */}
