@@ -3,10 +3,12 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
+/* ─── ROOT CSS VARS (Store) ─── */
 :root {
   --font-plus: 'Inter', sans-serif;
-  --bg:            #030a16;
+  --bg:            #040d1f;
   --header-bg:     #050f1e;
   --sidebar-bg:    #040c1a;
   --card-bg:       #091828;
@@ -19,72 +21,56 @@
   --glow:          rgba(29,111,255,0.25);
 }
 
+/* ─── BASE ─── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+
+/* Store pages body */
 body {
-  background: var(--bg);
+  background: linear-gradient(160deg, #071428 0%, #040d1f 40%, #050f22 100%) fixed;
+  min-height: 100vh;
   color: #e8f4ff;
   font-family: var(--font-plus);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
+/* Admin pages body override via dark class */
+body.admin-body {
+  background: #f9fafb;
+  color: #101828;
+  font-family: 'Outfit', sans-serif;
+}
+.dark body.admin-body, body.dark.admin-body {
+  background: #111928;
+  color: #f9fafb;
+}
+
+/* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: #0e2445; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #1d6fff; }
 ::selection { background: rgba(29,111,255,0.3); }
 
+/* ─── STORE UTILITIES ─── */
 .text-gradient {
   background: linear-gradient(135deg, #e8f4ff 20%, #60a5fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
 .glow-blue  { box-shadow: 0 0 30px rgba(29,111,255,0.2); }
 .glow-card  { box-shadow: 0 4px 24px rgba(29,111,255,0.1); }
+.orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
 
-.orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(3px);
-  z-index: 50;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
+.sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .sidebar-overlay.open { opacity: 1; pointer-events: all; }
 
-.sidebar-drawer {
-  position: fixed;
-  left: 0; top: 0; bottom: 0;
-  width: 280px;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
-  z-index: 60;
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
+.sidebar-drawer { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: var(--sidebar-bg); border-right: 1px solid var(--border); z-index: 60; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; overflow-y: auto; }
 .sidebar-drawer.open { transform: translateX(0); }
 
-.search-bar {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
+.search-bar { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
 .search-bar.open { max-height: 80px; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -94,46 +80,55 @@ body {
 .product-card:active .product-card-img { filter: blur(3px); opacity: 0.7; }
 
 .banner-slide { flex-shrink: 0; width: 100%; scroll-snap-align: start; }
-.banner-container {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-}
+.banner-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
 .banner-container::-webkit-scrollbar { display: none; }
 
 .cat-chip { transition: all 0.2s; }
-.cat-chip-active { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
 
-.cs-float {
-  position: fixed;
-  bottom: 24px; right: 20px;
-  z-index: 100;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: #25d366;
-  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-  text-decoration: none;
-}
+.cs-float { position: fixed; bottom: 24px; right: 20px; z-index: 100; width: 56px; height: 56px; border-radius: 50%; background: #25d366; box-shadow: 0 4px 20px rgba(37,211,102,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; text-decoration: none; }
 .cs-float:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(37,211,102,0.5); }
 
 .profile-card { border: 1px solid #1d4ed8; border-radius: 16px; background: transparent; padding: 16px; }
 .stat-box { border: 1px solid #1d4ed8; border-radius: 12px; background: transparent; text-align: center; padding: 14px 8px; }
 
-.bs-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  transition: border-color 0.2s;
-  text-decoration: none;
-  color: inherit;
-}
+.bs-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 10px; transition: border-color 0.2s; text-decoration: none; color: inherit; }
 .bs-card:hover { border-color: #1d6fff; }
+
+/* ─── ADMIN TEMPLATE UTILITIES ─── */
+@layer utilities {
+  .menu-item {
+    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm;
+  }
+  .menu-item-active {
+    @apply bg-blue-50 text-blue-600 dark:bg-blue-600/10 dark:text-blue-400;
+  }
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+  .menu-item-icon-active {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+  .menu-item-icon-inactive {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
+  }
+  .menu-item-arrow-active {
+    @apply rotate-180 text-blue-600 dark:text-blue-400;
+  }
+  .menu-item-arrow-inactive {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium;
+  }
+  .menu-dropdown-item-active {
+    @apply bg-blue-50 text-blue-600 dark:bg-blue-600/10 dark:text-blue-400;
+  }
+  .menu-dropdown-item-inactive {
+    @apply text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+}
+
+/* ─── ADMIN DARK MODE BASE ─── */
+.dark .admin-page {
+  background: #111928;
+}

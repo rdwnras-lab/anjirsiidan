@@ -1,21 +1,24 @@
-import '@/styles/globals.css';
-import Providers from './providers';
+import './styles/globals.css';
+import { SidebarProvider } from '@/context/SidebarContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import SessionWrapper from '@/components/SessionWrapper';
 
 export const metadata = {
-  title: {
-    default: 'VECHNOST',
-    template: '%s | VECHNOST',
-  },
-  description: 'Top Up & Digital Products',
+  title: 'Vechnost Store',
+  description: 'Platform digital products',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <body>
-        <Providers>
-          {children}
-        </Providers>
+        <SessionWrapper>
+          <ThemeProvider>
+            <SidebarProvider>
+              {children}
+            </SidebarProvider>
+          </ThemeProvider>
+        </SessionWrapper>
       </body>
     </html>
   );

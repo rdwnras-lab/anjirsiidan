@@ -5,41 +5,53 @@ import { useRouter } from 'next/navigation';
 import { formatIDR, calculateFee } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 
+const tierDiscount = { platinum: 0.10, gold: 0.05, member: 0 };
+const tierInfo = {
+  platinum: { label: 'PLATINUM', color: '#e2e8f0', disc: '10% OFF' },
+  gold:     { label: 'GOLD',     color: '#fbbf24', disc: '5% OFF' },
+  member:   { label: 'MEMBER',   color: '#60a5fa', disc: 'Harga Normal' },
+};
+
+function getPricedVariants(variants, tier) {
+  const disc = tierDiscount[tier] || 0;
+  return variants.map(v => ({
+    ...v,
+    discountedPrice: Math.floor(v.price * (1 - disc)),
+  }));
+}
+
 export default function ProductDetailClient({ product, variants, stockByVariant }) {
-  const { data: session }   = useSession();
-  const router               = useRouter();
+  const { data: session }       = useSession();
+  const router                  = useRouter();
   const [selected, setSelected] = useState(variants[0]?.id || null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
+  const tier       = (session?.user?.tier || 'member').toLowerCase();
   const isAuto     = product.delivery_type === 'auto';
-  const selVariant = variants.find(v => v.id === selected);
+  const pricedVars = getPricedVariants(variants, tier);
+  const selVariant = pricedVars.find(v => v.id === selected);
   const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
-  const pricing    = selVariant ? calculateFee(selVariant.price) : null;
+  const pricing    = selVariant ? calculateFee(selVariant.discountedPrice) : null;
   const formFields = product.form_fields || [];
+  const tInfo      = tierInfo[tier] || tierInfo.member;
 
   const handleOrder = async () => {
     if (!selected) return setError('Pilih varian terlebih dahulu.');
     if (isAuto && !session) return signIn('discord');
     if (isAuto && stock === 0) return setError('Stok habis untuk varian ini.');
-
-    // Validate form fields
     for (const field of formFields) {
-      if (field.required && !formData[field.label]) {
-        return setError(`${field.label} wajib diisi.`);
-      }
+      if (field.required && !formData[field.label]) return setError(`${field.label} wajib diisi.`);
     }
-
     setLoading(true); setError('');
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId:   product.id,
-          variantId:   selected,
-          formData,
+          productId: product.id, variantId: selected, formData,
+          tierPrice: selVariant?.discountedPrice,
           customerName: !isAuto ? (formData.name || '') : null,
           customerWhatsapp: !isAuto ? (formData.whatsapp || '') : null,
         }),
@@ -55,120 +67,178 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <div className="grid md:grid-cols-2 gap-10">
-        {/* Left: Image */}
-        <div>
-          <div className="aspect-square bg-surface rounded-2xl border border-border overflow-hidden">
-            {product.thumbnail
-              ? <img src={product.thumbnail} alt={product.name} className="w-full h-full object-cover" />
-              : <div className="w-full h-full flex items-center justify-center text-6xl">{product.icon || '📦'}</div>
-            }
-          </div>
-          {/* Delivery type notice */}
-          <div className={`mt-4 rounded-xl p-3 text-sm border ${isAuto ? 'bg-accent/10 border-accent/20 text-accent-light' : 'bg-gold/10 border-gold/20 text-gold'}`}>
-            {isAuto
-              ? '⚡ Produk otomatis — dikirim via Discord DM + tampil di halaman pesanan setelah bayar. Wajib login Discord.'
-              : '👤 Produk manual — admin akan memproses pesanan kamu dalam 1×24 jam.'}
-          </div>
-        </div>
+    <div className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* Right: Info + Order */}
-        <div>
-          {product.categories && (
-            <p className="text-xs text-accent-light font-semibold mb-2">{product.categories.name}</p>
-          )}
-          <h1 className="text-2xl font-extrabold mb-2">{product.name}</h1>
-          {product.description && <p className="text-dim text-sm leading-relaxed mb-6">{product.description}</p>}
-
-          {/* Variants */}
-          <div className="mb-6">
-            <p className="text-sm font-semibold mb-3">Pilih Varian</p>
-            <div className="grid grid-cols-2 gap-2">
-              {variants.map(v => {
-                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
-                const noStock = isAuto && vStock === 0;
-                const { total } = calculateFee(v.price);
-                return (
-                  <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
-                    className={`border rounded-xl p-3 text-left transition-all ${
-                      selected === v.id
-                        ? 'border-accent bg-accent/10'
-                        : noStock
-                          ? 'border-border opacity-40 cursor-not-allowed'
-                          : 'border-border hover:border-accent/40'
-                    }`}>
-                    <div className="text-sm font-semibold text-text">{v.name}</div>
-                    <div className="text-accent-light font-bold text-sm mt-0.5">{formatIDR(total)}</div>
-                    {isAuto && (
-                      <div className={`text-xs mt-1 ${noStock ? 'text-danger' : 'text-success'}`}>
-                        {noStock ? 'Stok habis' : `${vStock > 99 ? '99+' : vStock} tersedia`}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Price breakdown */}
-          {pricing && (
-            <div className="bg-card border border-border rounded-xl p-4 mb-5 text-sm">
-              <div className="flex justify-between text-dim mb-1"><span>Harga</span><span>{formatIDR(pricing.base)}</span></div>
-              <div className="flex justify-between text-dim mb-2"><span>Biaya QRIS</span><span>+{formatIDR(pricing.fee)}</span></div>
-              <div className="flex justify-between font-bold text-text border-t border-border pt-2"><span>Total Bayar</span><span className="text-accent-light">{formatIDR(pricing.total)}</span></div>
-            </div>
-          )}
-
-          {/* Custom form fields */}
-          {formFields.length > 0 && (
-            <div className="space-y-3 mb-5">
-              {formFields.map(field => (
-                <div key={field.label}>
-                  <label className="text-sm text-dim block mb-1">{field.label}{field.required && <span className="text-danger ml-1">*</span>}</label>
-                  <input
-                    className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-sm text-text placeholder-muted outline-none focus:border-accent/50 transition-all"
-                    placeholder={field.placeholder || field.label}
-                    value={formData[field.label] || ''}
-                    onChange={e => setFormData(f => ({...f, [field.label]: e.target.value}))}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Manual: name + whatsapp */}
-          {!isAuto && (
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-sm text-dim block mb-1">Nama <span className="text-danger">*</span></label>
-                <input className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-sm text-text placeholder-muted outline-none focus:border-accent/50 transition-all"
-                  placeholder="Nama kamu" value={formData.name || ''} onChange={e => setFormData(f => ({...f, name: e.target.value}))} />
-              </div>
-              <div>
-                <label className="text-sm text-dim block mb-1">WhatsApp <span className="text-danger">*</span></label>
-                <input className="w-full bg-card border border-border rounded-xl px-3.5 py-2.5 text-sm text-text placeholder-muted outline-none focus:border-accent/50 transition-all"
-                  placeholder="08xxxxxxxxxx" value={formData.whatsapp || ''} onChange={e => setFormData(f => ({...f, whatsapp: e.target.value}))} />
-              </div>
-            </div>
-          )}
-
-          {error && <p className="text-sm text-danger mb-3">{error}</p>}
-
-          {isAuto && !session && (
-            <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-sm text-accent-light mb-4">
-              Produk otomatis memerlukan login Discord untuk pengiriman. Klik tombol di bawah.
-            </div>
-          )}
-
-          <Button
-            size="lg" className="w-full justify-center"
-            onClick={handleOrder} disabled={loading || (isAuto && stock === 0)}
-          >
-            {loading ? 'Memproses...' : isAuto && !session ? '🔐 Login Discord & Pesan' : 'Pesan Sekarang'}
-          </Button>
-        </div>
+      {/* Product image */}
+      <div className="aspect-video rounded-2xl overflow-hidden mb-5" style={{border:'1px solid #0e2445', background:'#091828'}}>
+        {product.thumbnail
+          ? <img src={product.thumbnail} alt={product.name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-6xl">📦</div>
+        }
       </div>
+
+      {/* Category + title */}
+      {product.categories && <p className="text-xs font-bold mb-1" style={{color:'#60a5fa'}}>{product.categories.name}</p>}
+      <h1 className="text-xl font-black text-white mb-2">{product.name}</h1>
+      {product.description && <p className="text-sm mb-4" style={{color:'#7bafd4'}}>{product.description}</p>}
+
+      {/* Tier price info */}
+      <div className="rounded-xl p-3 mb-5 flex items-center gap-3" style={{background:'rgba(29,111,255,0.06)', border:'1px solid #0e2445'}}>
+        <div className="flex-1">
+          <p className="text-xs font-bold text-white">Harga Kamu ({tInfo.label})</p>
+          <p className="text-xs mt-0.5" style={{color:'#3d5a7a'}}>
+            {tier === 'member' ? 'Login & belanja lebih banyak untuk unlock diskon!' : `Kamu mendapat diskon ${tInfo.disc} sebagai ${tInfo.label}`}
+          </p>
+        </div>
+        <span className="text-xs font-black px-2.5 py-1 rounded-full border" style={{color: tInfo.color, borderColor: tInfo.color}}>
+          {tInfo.disc}
+        </span>
+      </div>
+
+      {/* Tier comparison table */}
+      {selVariant && (
+        <div className="rounded-xl mb-5 overflow-hidden" style={{border:'1px solid #0e2445'}}>
+          <div className="px-4 py-2.5" style={{background:'#091828', borderBottom:'1px solid #0e2445'}}>
+            <p className="text-xs font-bold text-white">Perbandingan Harga per Tier</p>
+          </div>
+          <div className="divide-y" style={{borderColor:'#0e2445'}}>
+            {Object.entries(tierDiscount).map(([t, disc]) => {
+              const discPrice = Math.floor(selVariant.price * (1 - disc));
+              const { total } = calculateFee(discPrice);
+              const isMe = t === tier;
+              return (
+                <div key={t} className="flex items-center justify-between px-4 py-2.5"
+                  style={{background: isMe ? 'rgba(29,111,255,0.08)' : 'transparent'}}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full border"
+                      style={{color: tierInfo[t].color, borderColor: tierInfo[t].color, opacity: isMe ? 1 : 0.5}}>
+                      {tierInfo[t].label}
+                    </span>
+                    {isMe && <span className="text-xs font-bold" style={{color:'#1d6fff'}}>← Kamu</span>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold" style={{color: isMe ? '#60a5fa' : '#3d5a7a'}}>{formatIDR(total)}</p>
+                    {disc > 0 && <p className="text-xs" style={{color:'#10b981'}}>-{disc*100}%</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Variants */}
+      <p className="text-sm font-bold text-white mb-3">Pilih Varian</p>
+      <div className="grid grid-cols-2 gap-2 mb-5">
+        {pricedVars.map(v => {
+          const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
+          const noStock = isAuto && vStock === 0;
+          const { total } = calculateFee(v.discountedPrice);
+          return (
+            <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
+              className="rounded-xl p-3 text-left transition-all border"
+              style={{
+                borderColor: selected === v.id ? '#1d6fff' : noStock ? '#0e2445' : '#0e2445',
+                background: selected === v.id ? 'rgba(29,111,255,0.12)' : noStock ? 'rgba(0,0,0,0.2)' : '#091828',
+                opacity: noStock ? 0.45 : 1,
+                cursor: noStock ? 'not-allowed' : 'pointer',
+              }}>
+              <p className="text-sm font-bold text-white">{v.name}</p>
+              {tierDiscount[tier] > 0 && (
+                <p className="text-xs line-through mt-0.5" style={{color:'#3d5a7a'}}>{formatIDR(calculateFee(v.price).total)}</p>
+              )}
+              <p className="font-black text-sm mt-0.5" style={{color:'#60a5fa'}}>{formatIDR(total)}</p>
+              {isAuto && (
+                <p className="text-xs mt-1" style={{color: noStock ? '#ef4444' : '#10b981'}}>
+                  {noStock ? 'Stok habis' : `${vStock > 99 ? '99+' : vStock} tersedia`}
+                </p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Price summary */}
+      {pricing && (
+        <div className="rounded-xl p-4 mb-5" style={{background:'#091828', border:'1px solid #0e2445'}}>
+          {tierDiscount[tier] > 0 && (
+            <div className="flex justify-between text-xs mb-1" style={{color:'#3d5a7a'}}>
+              <span>Harga Normal</span>
+              <span className="line-through">{formatIDR(selVariant?.price || 0)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
+            <span>Harga {tInfo.label}</span>
+            <span>{formatIDR(selVariant?.discountedPrice || 0)}</span>
+          </div>
+          <div className="flex justify-between text-xs mb-2" style={{color:'#7bafd4'}}>
+            <span>Biaya QRIS</span><span>+{formatIDR(pricing.fee)}</span>
+          </div>
+          <div className="flex justify-between font-black text-sm pt-2" style={{borderTop:'1px solid #0e2445', color:'#e8f4ff'}}>
+            <span>Total Bayar</span>
+            <span style={{color:'#60a5fa'}}>{formatIDR(pricing.total)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Custom form fields */}
+      {formFields.length > 0 && (
+        <div className="space-y-3 mb-5">
+          {formFields.map(field => (
+            <div key={field.label}>
+              <label className="text-sm font-bold text-white block mb-1.5">
+                {field.label}{field.required && <span className="text-red-400 ml-1">*</span>}
+              </label>
+              <input
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+                style={{background:'#091828', border:'1px solid #0e2445', color:'#e8f4ff'}}
+                placeholder={field.placeholder || field.label}
+                value={formData[field.label] || ''}
+                onChange={e => setFormData(f => ({...f, [field.label]: e.target.value}))}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Manual: name + whatsapp */}
+      {!isAuto && (
+        <div className="space-y-3 mb-5">
+          <div>
+            <label className="text-sm font-bold text-white block mb-1.5">Nama <span className="text-red-400">*</span></label>
+            <input className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+              style={{background:'#091828', border:'1px solid #0e2445', color:'#e8f4ff'}}
+              placeholder="Nama kamu" value={formData.name || ''} onChange={e => setFormData(f => ({...f, name: e.target.value}))} />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-white block mb-1.5">WhatsApp <span className="text-red-400">*</span></label>
+            <input className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all"
+              style={{background:'#091828', border:'1px solid #0e2445', color:'#e8f4ff'}}
+              placeholder="08xxxxxxxxxx" value={formData.whatsapp || ''} onChange={e => setFormData(f => ({...f, whatsapp: e.target.value}))} />
+          </div>
+        </div>
+      )}
+
+      {/* Delivery notice */}
+      <div className="rounded-xl p-3 mb-5 text-xs" style={{background: isAuto ? 'rgba(29,111,255,0.07)' : 'rgba(245,158,11,0.07)', border:`1px solid ${isAuto ? '#1d4ed8' : 'rgba(245,158,11,0.3)'}`}}>
+        <span style={{color: isAuto ? '#60a5fa' : '#fbbf24'}}>
+          {isAuto ? '⚡ Otomatis — dikirim via Discord DM setelah bayar. Wajib login Discord.' : '👤 Manual — admin proses dalam 1×24 jam.'}
+        </span>
+      </div>
+
+      {!session && isAuto && (
+        <div className="rounded-xl p-3 mb-4 text-xs text-center" style={{background:'rgba(29,111,255,0.07)', border:'1px solid #1d4ed8', color:'#60a5fa'}}>
+          Login Discord untuk unlock harga GOLD/PLATINUM dan proses otomatis
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+
+      <button onClick={handleOrder} disabled={loading || (isAuto && stock === 0)}
+        className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-40"
+        style={{background: loading || (isAuto && stock === 0) ? '#0e2445' : '#1d6fff'}}>
+        {loading ? 'Memproses...' : isAuto && !session ? '🔐 Login Discord & Pesan' : 'Pesan Sekarang'}
+      </button>
     </div>
   );
 }

@@ -38,6 +38,21 @@ export const authOptions = {
         token.role  = 'admin';
         token.email = user.email;
       }
+      // Refresh user data from DB on every token refresh
+      if (token.discordId) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const sb = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_KEY
+          );
+          const { data: u } = await sb.from('users').select('tier, balance').eq('id', token.discordId).single();
+          if (u) {
+            token.tier    = u.tier    || 'member';
+            token.balance = u.balance || 0;
+          }
+        } catch {}
+      }
       return token;
     },
     async session({ session, token }) {
@@ -45,12 +60,13 @@ export const authOptions = {
       session.user.discordName = token.discordName;
       session.user.avatar      = token.avatar;
       session.user.role        = token.role || 'customer';
+      session.user.tier        = token.tier || 'member';
+      session.user.balance     = token.balance || 0;
       return session;
     },
   },
   events: {
     async signIn({ user, account, profile }) {
-      // Save/update Discord user to DB after successful login
       if (account?.provider === 'discord' && profile?.id) {
         try {
           const { createClient } = await import('@supabase/supabase-js');

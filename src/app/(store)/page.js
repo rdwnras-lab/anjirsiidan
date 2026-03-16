@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { supabaseAdmin } from '@/lib/supabase';
 import ProductCard from '@/components/store/ProductCard';
 import Link from 'next/link';
@@ -25,19 +28,12 @@ async function getHomeData() {
 export default async function HomePage() {
   const { cats, prods, banners } = await getHomeData();
   const bestSellers = prods.filter(p => p.is_best_seller).slice(0, 6);
-  const fallbackBS  = prods.slice(0, 4);
-  const showBS      = bestSellers.length > 0 ? bestSellers : fallbackBS;
+  const showBS = bestSellers.length > 0 ? bestSellers : prods.slice(0, 4);
 
   return (
     <div className="relative min-h-screen">
-      {/* Ambient orbs */}
-      <div className="orb w-[500px] h-[500px] top-[-150px] left-[-200px]" style={{background:'rgba(29,111,255,0.05)'}} />
-      <div className="orb w-[400px] h-[400px] bottom-[200px] right-[-150px]" style={{background:'rgba(29,111,255,0.03)'}} />
-
-      {/* ── BANNER SLIDER ── */}
       <BannerSlider banners={banners} />
 
-      {/* ── BEST SELLER SECTION ── */}
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
@@ -52,9 +48,7 @@ export default async function HomePage() {
                 <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{border:'1px solid #1d4ed8'}}>
                   {p.thumbnail
                     ? <img src={p.thumbnail} alt={p.name} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-2xl" style={{background:'rgba(29,111,255,0.1)'}}>
-                        {p.categories?.icon || '📦'}
-                      </div>
+                    : <div className="w-full h-full flex items-center justify-center text-xl" style={{background:'rgba(29,111,255,0.1)'}}>📦</div>
                   }
                 </div>
                 <div className="min-w-0 flex-1">
@@ -69,14 +63,12 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── CATEGORY FILTER ── */}
       {cats.length > 0 && (
         <section className="px-4 pt-4 pb-2">
           <CategoryFilter cats={cats} />
         </section>
       )}
 
-      {/* ── PRODUCT GRID by Category ── */}
       <section className="px-4 pb-24">
         {cats.map(cat => {
           const catProds = prods.filter(p => p.category_id === cat.id);
@@ -84,7 +76,6 @@ export default async function HomePage() {
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
               <div className="flex items-center gap-2 mb-4 pt-2">
-                <span className="text-xl">{cat.icon}</span>
                 <div>
                   <h2 className="font-bold text-base text-white">{cat.name}</h2>
                   {cat.description && <p className="text-xs" style={{color:'var(--accent-light)', opacity:0.6}}>{cat.description}</p>}

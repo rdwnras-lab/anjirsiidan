@@ -1,14 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
-import Badge from '@/components/ui/Badge';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 
 export default function KeysPage() {
-  const { id }            = useParams();
+  const { id } = useParams();
   const [product, setProd]  = useState(null);
   const [keys, setKeys]     = useState([]);
   const [variantId, setVid] = useState('');
@@ -22,7 +18,7 @@ export default function KeysPage() {
       fetch(`/api/admin/keys?productId=${id}`).then(r=>r.json()),
     ]);
     setProd(p);
-    setKeys(k || []);
+    setKeys(k||[]);
     if (p?.product_variants?.[0]) setVid(p.product_variants[0].id);
   };
   useEffect(() => { load(); }, [id]);
@@ -31,98 +27,100 @@ export default function KeysPage() {
     if (!variantId || !bulk.trim()) return;
     const lines = bulk.split('\n').map(l=>l.trim()).filter(Boolean);
     setSaving(true);
-    await fetch('/api/admin/keys', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ productId: id, variantId, keys: lines })
-    });
+    await fetch('/api/admin/keys', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ productId: id, variantId, keys: lines }) });
     setSaving(false); setBulk(''); load();
   };
 
   const deleteKey = async keyId => {
     if (!confirm('Hapus key ini?')) return;
-    await fetch(`/api/admin/keys/${keyId}`, { method: 'DELETE' });
+    await fetch(`/api/admin/keys/${keyId}`, { method:'DELETE' });
     load();
   };
 
-  const filtered = keys.filter(k =>
-    filter === 'all' ? true : filter === 'available' ? !k.is_used : k.is_used
-  );
+  const filtered = keys.filter(k => filter==='all' ? true : filter==='available' ? !k.is_used : k.is_used);
 
-  if (!product) return <div className="p-6"><LoadingSpinner /></div>;
-
-  const variants = product.product_variants || [];
-  const availCount = keys.filter(k => !k.is_used).length;
-  const usedCount  = keys.filter(k => k.is_used).length;
+  const inputCls = "w-full rounded-xl px-3.5 py-2.5 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all";
 
   return (
-    <div className="p-6 max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/products" className="text-sm text-muted hover:text-text">← Produk</Link>
-        <span className="text-muted">/</span>
-        <h1 className="text-xl font-extrabold">{product.name} — Stok Key</h1>
+    <div className="max-w-2xl space-y-5">
+      <div className="flex items-center gap-3">
+        <Link href="/admin/products" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Stok Keys</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{product?.name || '...'}</p>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <div className="text-2xl font-extrabold text-success">{availCount}</div>
-          <div className="text-xs text-muted">Tersedia</div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <div className="text-2xl font-extrabold text-muted">{usedCount}</div>
-          <div className="text-xs text-muted">Terpakai</div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <div className="text-2xl font-extrabold">{keys.length}</div>
-          <div className="text-xs text-muted">Total</div>
-        </div>
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Total', count: keys.length, color: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+          { label: 'Tersedia', count: keys.filter(k=>!k.is_used).length, color: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800' },
+          { label: 'Terpakai', count: keys.filter(k=>k.is_used).length,  color: 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700' },
+        ].map(s => (
+          <div key={s.label} className={`rounded-xl p-4 text-center border ${s.color}`}>
+            <p className="text-2xl font-bold">{s.count}</p>
+            <p className="text-xs font-medium mt-0.5">{s.label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Add keys form */}
-      <div className="bg-card border border-border rounded-2xl p-5 mb-6">
-        <h2 className="font-bold mb-4">Tambah Stok</h2>
-        <div className="space-y-3">
-          <Select label="Varian" value={variantId} onChange={e=>setVid(e.target.value)}
-            options={variants.map(v=>({ value:v.id, label:`${v.name} (Rp${v.price.toLocaleString()})` }))} />
-          <div>
-            <label className="text-sm text-dim block mb-1.5">Key / Kode (1 baris = 1 item)</label>
-            <textarea rows={6} value={bulk} onChange={e=>setBulk(e.target.value)}
-              placeholder={"username1:password1\nusername2:password2\nATCODE-XXXXX\n..."}
-              className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-muted outline-none focus:border-accent/50 font-mono resize-y" />
-            <p className="text-xs text-muted mt-1">{bulk.split('\n').filter(l=>l.trim()).length} item akan ditambahkan</p>
-          </div>
-          <Button onClick={addKeys} disabled={saving}>{saving ? 'Menyimpan...' : 'Tambah Key'}</Button>
+      {/* Add keys */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-5 space-y-4">
+        <h2 className="font-semibold text-gray-800 dark:text-white">Tambah Keys</h2>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Pilih Varian</label>
+          <select className={inputCls} value={variantId} onChange={e=>setVid(e.target.value)}>
+            {product?.product_variants?.map(v => <option key={v.id} value={v.id}>{v.name} — Rp{v.price?.toLocaleString('id-ID')}</option>)}
+          </select>
         </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Keys (1 per baris)</label>
+          <textarea className={inputCls} rows={6} value={bulk} onChange={e=>setBulk(e.target.value)} placeholder={"KEY001\nKEY002\nKEY003"} />
+          <p className="text-xs text-gray-400 mt-1">{bulk.split('\n').filter(l=>l.trim()).length} keys</p>
+        </div>
+        <button onClick={addKeys} disabled={saving || !variantId || !bulk.trim()}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {saving ? 'Menyimpan...' : `+ Tambah ${bulk.split('\n').filter(l=>l.trim()).length || 0} Keys`}
+        </button>
       </div>
 
       {/* Keys list */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold">Daftar Key</h2>
-          <div className="flex gap-2">
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="font-semibold text-gray-800 dark:text-white">Daftar Keys</h2>
+          <div className="flex gap-1">
             {['all','available','used'].map(f => (
               <button key={f} onClick={()=>setFilter(f)}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${filter===f ? 'bg-accent/20 text-accent-light border-accent/30' : 'border-border text-muted hover:text-text'}`}>
+                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${filter===f ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                 {f==='all'?'Semua':f==='available'?'Tersedia':'Terpakai'}
               </button>
             ))}
           </div>
         </div>
-        <div className="space-y-2">
-          {filtered.map(k => (
-            <div key={k.id} className={`bg-card border rounded-xl p-3 flex items-center justify-between gap-4 ${k.is_used ? 'border-border opacity-50' : 'border-border'}`}>
-              <div className="flex-1 min-w-0">
-                <pre className="text-xs text-dim font-mono truncate">{k.key_content}</pre>
-                <p className="text-xs text-muted mt-0.5">{variants.find(v=>v.id===k.variant_id)?.name}</p>
+        <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-96 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <div className="py-10 text-center text-gray-400 dark:text-gray-600 text-sm">Tidak ada keys</div>
+          ) : filtered.map(k => (
+            <div key={k.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate">{k.key_content}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{k.variant_name || ''}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge status={k.is_used ? 'completed' : 'pending'}>{k.is_used ? 'Terpakai' : 'Tersedia'}</Badge>
-                {!k.is_used && <button onClick={()=>deleteKey(k.id)} className="text-xs text-danger hover:text-red-400">Hapus</button>}
+              <div className="flex items-center gap-2 ml-3 shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${k.is_used ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}>
+                  {k.is_used ? 'Terpakai' : 'Tersedia'}
+                </span>
+                {!k.is_used && (
+                  <button onClick={()=>deleteKey(k.id)} className="text-xs px-2 py-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    Hapus
+                  </button>
+                )}
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <p className="text-center text-muted text-sm py-8">Tidak ada key.</p>}
         </div>
       </div>
     </div>
