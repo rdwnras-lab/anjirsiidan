@@ -1,11 +1,12 @@
-import Navbar from '@/components/store/Navbar';
-import Footer from '@/components/store/Footer';
+import StoreNavbar from '@/components/store/Navbar';
+import StoreFooter from '@/components/store/Footer';
+
 export default function StoreLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#0a0a12'}}>
+      <StoreNavbar />
+      <main style={{flex:1}}>{children}</main>
+      <StoreFooter />
     </div>
   );
 }
