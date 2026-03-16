@@ -6,7 +6,7 @@
 
 :root {
   --font-plus: 'Inter', sans-serif;
-  --bg:            #030a16;
+  --bg:            #040d1f;
   --header-bg:     #050f1e;
   --sidebar-bg:    #040c1a;
   --card-bg:       #091828;
@@ -22,7 +22,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
+  background: linear-gradient(160deg, #071428 0%, #040d1f 40%, #050f22 100%) fixed;
+  min-height: 100vh;
   color: #e8f4ff;
   font-family: var(--font-plus);
   -webkit-font-smoothing: antialiased;
