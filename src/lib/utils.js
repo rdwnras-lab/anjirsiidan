@@ -11,9 +11,9 @@ export function generateOrderId() {
   return `VCH-${d}-${r}`;
 }
 
-// Pakasir QRIS fee ~0.7%
+// Pakasir fee: 0.7% dibulatkan ke atas, minimum Rp 500
 export function calculateFee(amount) {
-  const fee = Math.ceil(amount * 0.007);
+  const fee = Math.max(500, Math.ceil(amount * 0.007));
   return { base: amount, fee, total: amount + fee };
 }
 
