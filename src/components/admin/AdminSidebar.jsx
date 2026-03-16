@@ -18,6 +18,7 @@ export default function AdminSidebar() {
   const storeName = process.env.NEXT_PUBLIC_STORE_NAME || 'VECHNOST';
 
   return (
+<<<<<<< HEAD
     <>
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-12"
@@ -29,6 +30,29 @@ export default function AdminSidebar() {
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           }
         </button>
+=======
+    <aside className="w-56 min-h-screen bg-surface border-r border-border flex flex-col py-5 px-3 shrink-0">
+      <div className="px-3 mb-6">
+        <p className="font-extrabold text-lg text-gradient">{storeName}</p>
+        <p className="text-xs text-muted">Admin Panel</p>
+      </div>
+      <nav className="flex-1 space-y-1">
+        {nav.map(n => {
+          const active = n.href === '/admin' ? path === '/admin' : path.startsWith(n.href);
+          return (
+            <Link key={n.href} href={n.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                active ? 'bg-accent/15 text-text border-l-2 border-accent' : 'text-muted hover:text-text hover:bg-white/5 border-l-2 border-transparent'
+              }`}>
+              <span>{n.icon}</span>{n.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-border pt-4 px-3 space-y-2">
+        <Link href="/" className="text-xs text-muted hover:text-text block">← Ke Toko</Link>
+        <button onClick={() => signOut({ callbackUrl: '/login' })} className="text-xs text-danger hover:text-red-400">Keluar</button>
+>>>>>>> a3a7d63792529c0b9cfdcc4a247156dad8e387e7
       </div>
 
       {/* Mobile overlay */}
