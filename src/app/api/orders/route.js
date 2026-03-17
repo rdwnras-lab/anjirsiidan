@@ -7,9 +7,8 @@ import { createQrisPayment } from '@/lib/pakasir';
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const body    = await req.json();
-  const { productId, variantId, formData, customerName, customerWhatsapp } = body;
+  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice } = body;
 
-  // Get product + variant
   const { data: product } = await supabaseAdmin.from('products')
     .select('*, product_variants(*)').eq('id', productId).single();
   if (!product) return Response.json({ error: 'Product not found' }, { status: 404 });
@@ -19,11 +18,9 @@ export async function POST(req) {
 
   const isAuto = product.delivery_type === 'auto';
 
-  // Auto products require Discord login
   if (isAuto && !session?.user?.discordId)
     return Response.json({ error: 'Login Discord diperlukan untuk produk otomatis.' }, { status: 401 });
 
-  // Check stock for auto products
   if (isAuto) {
     const { count } = await supabaseAdmin.from('product_keys')
       .select('*', { count: 'exact', head: true })
@@ -32,38 +29,53 @@ export async function POST(req) {
       return Response.json({ error: 'Stok habis untuk varian ini.' }, { status: 400 });
   }
 
-  const orderId  = generateOrderId();
-  const { base: baseAmt, fee, total } = calculateFee(variant.price);
+  const orderId = generateOrderId();
+  // Use tier price if provided, else base price
+  const basePrice = tierPrice || variant.price;
 
-  // Create QRIS payment via Pakasir
-  let qrString = null, expiredAt = null;
-  try {
-    const payment = await createQrisPayment({ orderId, amount: total });
-    qrString  = payment.payment_number;
-    expiredAt = payment.expired_at;
-  } catch (e) {
-    console.error('[PAKASIR]', e.message);
-    return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
+  let baseAmt, fee, total, qrString = null, expiredAt = null;
+
+  if (isAuto) {
+    // Auto: apply QRIS fee, create Pakasir payment
+    const calc = calculateFee(basePrice);
+    baseAmt = calc.base;
+    fee     = calc.fee;
+    total   = calc.total;
+    try {
+      const payment = await createQrisPayment({ orderId, amount: total });
+      qrString  = payment.payment_number;
+      expiredAt = payment.expired_at;
+    } catch (e) {
+      console.error('[PAKASIR]', e.message);
+      return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
+    }
+  } else {
+    // Manual: NO fee, use static QR image (set via env NEXT_PUBLIC_MANUAL_QR_URL)
+    baseAmt = basePrice;
+    fee     = 0;
+    total   = basePrice;
+    // qrString null = will show static image in checkout
   }
 
-  // Save order to DB
   const { error: dbErr } = await supabaseAdmin.from('orders').insert({
-    id:               orderId,
-    user_id:          session?.user?.discordId ? (await supabaseAdmin.from('users').select('id').eq('discord_id', session.user.discordId).single())?.data?.id : null,
-    discord_id:       session?.user?.discordId || null,
-    product_id:       productId,
-    variant_id:       variantId,
-    product_name:     product.name,
-    variant_name:     variant.name,
-    delivery_type:    product.delivery_type,
-    customer_name:    customerName || session?.user?.name || null,
+    id:                orderId,
+    user_id:           session?.user?.discordId || null,
+    discord_id:        session?.user?.discordId || null,
+    product_id:        productId,
+    variant_id:        variantId,
+    product_name:      product.name,
+    variant_name:      variant.name,
+    user_name:         session?.user?.name || customerName || null,
+    user_avatar:       session?.user?.avatar || null,
+    delivery_type:     product.delivery_type,
+    customer_name:     customerName || session?.user?.name || null,
     customer_whatsapp: customerWhatsapp || null,
-    form_data:        formData || {},
-    base_amount:      baseAmt,
-    fee_amount:       fee,
-    total_amount:     total,
-    status:           'pending',
-    payment_qr:       qrString,
+    form_data:         formData || {},
+    base_amount:       baseAmt,
+    fee_amount:        fee,
+    total_amount:      total,
+    status:            'pending',
+    payment_qr:        qrString,
     payment_expired_at: expiredAt,
   });
 
