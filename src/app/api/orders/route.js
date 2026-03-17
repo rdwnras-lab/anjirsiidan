@@ -48,17 +48,19 @@ export async function POST(req) {
       return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
     }
   } else {
-    // Manual: tidak ada fee QRIS
     baseAmt = basePrice;
     fee     = 0;
     total   = basePrice;
   }
 
-  // Ambil UUID user dari tabel users (bukan discord snowflake)
+  // Ambil UUID user dari tabel users via discord_id
   let userUUID = null;
   if (session?.user?.discordId) {
     const { data: u } = await supabaseAdmin
-      .from('users').select('id').eq('id', session.user.discordId).single();
+      .from('users')
+      .select('id')
+      .eq('discord_id', session.user.discordId)
+      .single();
     userUUID = u?.id || null;
   }
 
