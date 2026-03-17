@@ -20,67 +20,36 @@ export default async function OrdersPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.discordId) redirect('/login');
 
+  // Transaksi user ini
   const { data: orders } = await supabaseAdmin
     .from('orders')
     .select('id, status, total_amount, created_at, product_name, variant_name')
-    .eq('user_id', session.user.discordId)
+    .eq('discord_id', session.user.discordId)
     .order('created_at', { ascending: false })
     .limit(50);
 
-  // Realtime 10 transaksi terbaru dari semua user (tanpa data sensitif)
+  // 10 transaksi sukses terbaru semua user (realtime, tanpa data sensitif)
   const { data: recentAll } = await supabaseAdmin
     .from('orders')
-    .select('id, product_name, total_amount, status, created_at')
+    .select('id, product_name, total_amount, created_at')
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(10);
 
-  const stats = {
-    total:   orders?.length || 0,
-    pending: orders?.filter(o => o.status === 'pending').length || 0,
-    proses:  orders?.filter(o => ['paid','processing'].includes(o.status)).length || 0,
-    sukses:  orders?.filter(o => o.status === 'completed').length || 0,
-    gagal:   orders?.filter(o => ['failed','cancelled'].includes(o.status)).length || 0,
-  };
-
   return (
     <div className="px-4 pb-24 pt-4 max-w-xl mx-auto">
-
-      {/* Header */}
       <h1 className="font-black text-xl text-white mb-1 tracking-wide">TRANSACTION</h1>
       <p className="text-xs mb-5" style={{color:'#7bafd4'}}>Lacak dan kelola transaksimu</p>
 
-      {/* Search by invoice */}
+      {/* Cek transaksi by invoice */}
       <TransactionSearch />
 
-      {/* Stats user */}
-      <div className="rounded-2xl p-4 mb-5 mt-4" style={{border:'1px solid #1d4ed8', background:'transparent'}}>
-        <p className="font-bold text-xs text-white mb-3 tracking-wider">STATISTIK TRANSAKSI</p>
-        <div className="rounded-xl p-3 mb-3 text-center" style={{border:'1px solid #1d4ed8'}}>
-          <p className="text-3xl font-black text-white">{stats.total}</p>
-          <p className="text-xs mt-0.5" style={{color:'#7bafd4'}}>Total Transaksi</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label:'Pending',  val: stats.pending, color:'#f59e0b' },
-            { label:'Proses',   val: stats.proses,  color:'#60a5fa' },
-            { label:'Sukses',   val: stats.sukses,  color:'#10b981' },
-            { label:'Gagal',    val: stats.gagal,   color:'#ef4444' },
-          ].map(s => (
-            <div key={s.label} className="rounded-xl py-3 text-center" style={{border:'1px solid #1d4ed8'}}>
-              <p className="text-2xl font-black" style={{color: s.color}}>{s.val}</p>
-              <p className="text-xs mt-0.5" style={{color:'#7bafd4'}}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Realtime recent transactions (semua user, anonymized) */}
+      {/* Realtime 10 transaksi sukses (semua user, anonymized) */}
       {recentAll && recentAll.length > 0 && (
-        <div className="rounded-2xl overflow-hidden mb-5" style={{border:'1px solid #0e2445', background:'#091828'}}>
+        <div className="rounded-2xl overflow-hidden mt-4 mb-5" style={{border:'1px solid #0e2445', background:'#091828'}}>
           <div className="px-4 py-3 border-b" style={{borderColor:'#0e2445'}}>
             <p className="font-bold text-sm text-white">⚡ Transaksi Real-Time</p>
-            <p className="text-xs mt-0.5" style={{color:'#7bafd4'}}>10 transaksi sukses terakhir</p>
+            <p className="text-xs mt-0.5" style={{color:'#7bafd4'}}>10 transaksi sukses terakhir yang baru masuk</p>
           </div>
           <div className="divide-y" style={{borderColor:'#0e2445'}}>
             {recentAll.map(o => (
@@ -91,7 +60,7 @@ export default async function OrdersPage() {
                 </div>
                 <div className="text-right ml-3 flex-shrink-0">
                   <p className="text-xs font-bold" style={{color:'#10b981'}}>{formatIDR(o.total_amount)}</p>
-                  <span className="text-xs" style={{color:'#10b981'}}>✓ Sukses</span>
+                  <p className="text-xs" style={{color:'#10b981'}}>✓ Sukses</p>
                 </div>
               </div>
             ))}
@@ -99,13 +68,15 @@ export default async function OrdersPage() {
         </div>
       )}
 
-      {/* Riwayat transaksi user */}
+      {/* Riwayat transaksi milik user ini */}
       <p className="font-bold text-sm text-white mb-3 tracking-wider">RIWAYAT TRANSAKSI</p>
       {(!orders || orders.length === 0) ? (
         <div className="text-center py-12 rounded-2xl" style={{border:'1px solid #0e2445', background:'#091828'}}>
           <p className="text-3xl mb-2">📋</p>
           <p className="text-sm" style={{color:'#7bafd4'}}>Belum ada transaksi</p>
-          <Link href="/" className="text-sm font-bold mt-2 inline-block" style={{color:'#1d6fff'}}>Belanja sekarang →</Link>
+          <Link href="/" className="text-sm font-bold mt-2 inline-block" style={{color:'#1d6fff'}}>
+            Belanja sekarang →
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -117,7 +88,9 @@ export default async function OrdersPage() {
                 style={{border:'1px solid #0e2445', background:'#091828', textDecoration:'none', color:'inherit'}}>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-xs text-white truncate">{o.product_name}</p>
-                  {o.variant_name && <p className="text-xs mt-0.5 truncate" style={{color:'#7bafd4'}}>{o.variant_name}</p>}
+                  {o.variant_name && (
+                    <p className="text-xs mt-0.5 truncate" style={{color:'#7bafd4'}}>{o.variant_name}</p>
+                  )}
                   <p className="text-xs mt-1 font-mono" style={{color:'#3d5a7a'}}>{o.id}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
