@@ -226,10 +226,3 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
     </div>
   );
 }
-```
-
----
-
-**⚠️ Tambahkan di Vercel Environment Variables:**
-```
-NEXT_PUBLIC_MANUAL_QR_URL = https://i.ibb.co.com/JR78g396/vechqr.png
