@@ -28,12 +28,13 @@ async function getHomeData() {
 export default async function HomePage() {
   const { cats, prods, banners } = await getHomeData();
   const bestSellers = prods.filter(p => p.is_best_seller).slice(0, 6);
-  const showBS = bestSellers.length > 0 ? bestSellers : prods.slice(0, 4);
+  const showBS      = bestSellers.length > 0 ? bestSellers : prods.slice(0, 4);
 
   return (
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
+      {/* Best Seller */}
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
@@ -63,31 +64,43 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Category filter chips */}
       {cats.length > 0 && (
         <section className="px-4 pt-4 pb-2">
           <CategoryFilter cats={cats} />
         </section>
       )}
 
+      {/* Products — dikelompokkan per kategori, TIDAK dicampur */}
       <section className="px-4 pb-24">
         {cats.map(cat => {
+          // Filter ketat: hanya produk milik kategori ini
           const catProds = prods.filter(p => p.category_id === cat.id);
-          if (!catProds.length) return null;
+          if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
               <div className="flex items-center gap-2 mb-4 pt-2">
                 <div>
-                  <h2 className="font-bold text-base text-white">{cat.name}</h2>
-                  {cat.description && <p className="text-xs" style={{color:'var(--accent-light)', opacity:0.6}}>{cat.description}</p>}
+                  <h2 className="font-bold text-base text-white uppercase">{cat.name}</h2>
+                  {cat.description && (
+                    <p className="text-xs uppercase" style={{color:'var(--accent-light)', opacity:0.6}}>
+                      {cat.description}
+                    </p>
+                  )}
                 </div>
               </div>
+              {/* Grid 3 kolom — HANYA produk kategori ini */}
               <div className="grid grid-cols-3 gap-2">
                 {catProds.map(p => {
                   const stock = p.delivery_type === 'auto'
                     ? p.product_keys?.filter(k => !k.is_used).length
                     : undefined;
                   return (
-                    <ProductCard key={p.id} product={{...p, category: p.categories}} stockCount={stock} />
+                    <ProductCard
+                      key={p.id}
+                      product={{...p, category: p.categories}}
+                      stockCount={stock}
+                    />
                   );
                 })}
               </div>
