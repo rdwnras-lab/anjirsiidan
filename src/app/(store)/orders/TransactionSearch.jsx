@@ -12,19 +12,23 @@ export default function TransactionSearch() {
     e.preventDefault();
     if (!invoice.trim()) return;
     setLoading(true); setError('');
-    const res  = await fetch(`/api/orders/search?id=${encodeURIComponent(invoice.trim())}`);
-    const data = await res.json();
-    setLoading(false);
-    if (data.id) {
-      router.push(`/orders/${data.id}`);
-    } else {
-      setError('Invoice tidak ditemukan. Pastikan ID pesanan benar.');
+    try {
+      const res  = await fetch(`/api/orders/check?id=${encodeURIComponent(invoice.trim())}`);
+      const data = await res.json();
+      if (data.id) {
+        router.push(`/orders/${data.id}`);
+      } else {
+        setError('Invoice tidak ditemukan. Pastikan ID pesanan benar.');
+      }
+    } catch {
+      setError('Gagal menghubungi server. Coba lagi.');
     }
+    setLoading(false);
   };
 
   return (
     <div className="rounded-2xl p-4" style={{border:'1px solid #0e2445', background:'#091828'}}>
-      <p className="font-bold text-sm text-white mb-3 tracking-wider">CEK TRANSAKSI</p>
+      <p className="font-bold text-sm text-white mb-1 tracking-wider">CEK TRANSAKSI</p>
       <p className="text-xs mb-3" style={{color:'#7bafd4'}}>Masukkan nomor invoice untuk cek status pesanan</p>
       <form onSubmit={handleSearch} className="flex gap-2">
         <input
