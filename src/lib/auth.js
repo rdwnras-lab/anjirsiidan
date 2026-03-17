@@ -38,7 +38,7 @@ export const authOptions = {
         token.role  = 'admin';
         token.email = user.email;
       }
-      // Refresh user data from DB on every token refresh
+      // Refresh data user dari DB setiap token refresh
       if (token.discordId) {
         try {
           const { createClient } = await import('@supabase/supabase-js');
@@ -46,22 +46,46 @@ export const authOptions = {
             process.env.NEXT_PUBLIC_SUPABASE_URL,
             process.env.SUPABASE_SERVICE_KEY
           );
-          const { data: u } = await sb.from('users').select('tier, balance').eq('id', token.discordId).single();
+          // Cari user berdasarkan discord_id
+          const { data: u } = await sb
+            .from('users')
+            .select('id, tier, balance')
+            .eq('discord_id', token.discordId)
+            .single();
           if (u) {
-            token.tier    = u.tier    || 'member';
-            token.balance = u.balance || 0;
+            token.userUUID = u.id;
+            token.tier     = u.tier    || 'member';
+            token.balance  = u.balance || 0;
+          }
+          // Hitung stats transaksi
+          const { data: orders } = await sb
+            .from('orders')
+            .select('status')
+            .eq('discord_id', token.discordId);
+          if (orders) {
+            token.totalOrders   = orders.length;
+            token.pendingOrders = orders.filter(o => o.status === 'pending').length;
+            token.processOrders = orders.filter(o => ['paid','processing'].includes(o.status)).length;
+            token.successOrders = orders.filter(o => o.status === 'completed').length;
+            token.failedOrders  = orders.filter(o => ['failed','cancelled'].includes(o.status)).length;
           }
         } catch {}
       }
       return token;
     },
     async session({ session, token }) {
-      session.user.discordId   = token.discordId;
-      session.user.discordName = token.discordName;
-      session.user.avatar      = token.avatar;
-      session.user.role        = token.role || 'customer';
-      session.user.tier        = token.tier || 'member';
-      session.user.balance     = token.balance || 0;
+      session.user.discordId    = token.discordId;
+      session.user.discordName  = token.discordName;
+      session.user.avatar       = token.avatar;
+      session.user.role         = token.role || 'customer';
+      session.user.tier         = token.tier || 'member';
+      session.user.balance      = token.balance || 0;
+      session.user.userUUID     = token.userUUID;
+      session.user.totalOrders  = token.totalOrders || 0;
+      session.user.pendingOrders = token.pendingOrders || 0;
+      session.user.processOrders = token.processOrders || 0;
+      session.user.successOrders = token.successOrders || 0;
+      session.user.failedOrders  = token.failedOrders || 0;
       return session;
     },
   },
@@ -74,12 +98,13 @@ export const authOptions = {
             process.env.NEXT_PUBLIC_SUPABASE_URL,
             process.env.SUPABASE_SERVICE_KEY
           );
+          // Upsert berdasarkan discord_id (bukan id UUID)
           await sb.from('users').upsert({
-            id:         profile.id,
+            discord_id: profile.id,
             username:   profile.username,
             avatar:     profile.avatar,
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
+          }, { onConflict: 'discord_id' });
         } catch (e) {
           console.error('[AUTH] save user:', e.message);
         }
