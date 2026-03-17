@@ -29,14 +29,12 @@ export async function POST(req) {
       return Response.json({ error: 'Stok habis untuk varian ini.' }, { status: 400 });
   }
 
-  const orderId = generateOrderId();
-  // Use tier price if provided, else base price
+  const orderId   = generateOrderId();
   const basePrice = tierPrice || variant.price;
 
   let baseAmt, fee, total, qrString = null, expiredAt = null;
 
   if (isAuto) {
-    // Auto: apply QRIS fee, create Pakasir payment
     const calc = calculateFee(basePrice);
     baseAmt = calc.base;
     fee     = calc.fee;
@@ -50,23 +48,28 @@ export async function POST(req) {
       return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
     }
   } else {
-    // Manual: NO fee, use static QR image (set via env NEXT_PUBLIC_MANUAL_QR_URL)
+    // Manual: tidak ada fee QRIS
     baseAmt = basePrice;
     fee     = 0;
     total   = basePrice;
-    // qrString null = will show static image in checkout
+  }
+
+  // Ambil UUID user dari tabel users (bukan discord snowflake)
+  let userUUID = null;
+  if (session?.user?.discordId) {
+    const { data: u } = await supabaseAdmin
+      .from('users').select('id').eq('id', session.user.discordId).single();
+    userUUID = u?.id || null;
   }
 
   const { error: dbErr } = await supabaseAdmin.from('orders').insert({
     id:                orderId,
-    user_id:           session?.user?.discordId || null,
+    user_id:           userUUID,
     discord_id:        session?.user?.discordId || null,
     product_id:        productId,
     variant_id:        variantId,
     product_name:      product.name,
     variant_name:      variant.name,
-    user_name:         session?.user?.name || customerName || null,
-    user_avatar:       session?.user?.avatar || null,
     delivery_type:     product.delivery_type,
     customer_name:     customerName || session?.user?.name || null,
     customer_whatsapp: customerWhatsapp || null,
