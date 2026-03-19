@@ -143,33 +143,41 @@ export default function Navbar() {
       </aside>
 
       {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b" style={{background:'var(--header-bg)', borderColor:'var(--border)'}}>
+      <header className="sticky top-0 z-40" style={{background:'var(--header-bg)', borderBottom:'2px solid rgba(245,158,11,0.2)'}}>
         <div className="px-4 h-14 flex items-center justify-between gap-3">
           <button onClick={() => setSidebarOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white hover:border-accent/40 transition-colors flex-shrink-0"
-            style={{borderColor:'var(--border)'}}>
+            className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white transition-colors flex-shrink-0"
+            style={{borderColor:'rgba(255,255,255,0.1)'}}>
             <IconMenu />
           </button>
 
           {/* Logo center */}
           <Link href="/" className="flex-1 flex justify-center">
             {logoUrl
-              ? <img src={logoUrl} alt={storeName} style={{height:'36px', width:'auto', objectFit:'contain'}} />
+              ? <img src={logoUrl} alt={storeName} style={{height:'38px', width:'auto', objectFit:'contain'}} />
               : <span className="font-black text-lg text-gradient" style={{fontFamily:'Rajdhani, sans-serif', letterSpacing:'0.25em'}}>{storeName}</span>
             }
           </Link>
 
-          <button onClick={() => setSearchOpen(o => !o)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white hover:border-accent/40 transition-colors flex-shrink-0"
-            style={{borderColor:'var(--border)'}}>
-            {searchOpen ? <IconX /> : <IconSearch />}
-          </button>
+          {/* Right: search + flag */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSearchOpen(o => !o)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white transition-colors flex-shrink-0"
+              style={{borderColor:'rgba(255,255,255,0.1)'}}>
+              {searchOpen ? <IconX /> : <IconSearch />}
+            </button>
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-xl border transition-colors flex-shrink-0"
+              style={{borderColor:'rgba(255,255,255,0.1)'}}>
+              <span style={{fontSize:'18px', lineHeight:1}}>🇺🇸</span>
+            </button>
+          </div>
         </div>
 
         {/* Search bar */}
         <div className={`search-bar ${searchOpen ? 'open' : ''}`}>
           <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 bg-surface border rounded-xl px-3 py-2.5" style={{borderColor:'var(--border)'}}>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)'}}>
               <IconSearch />
               <input
                 type="text"
@@ -184,8 +192,8 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* BLUE DIVIDER */}
-      <div className="h-px w-full" style={{background:'linear-gradient(90deg, transparent, #1d4ed8 30%, #1d4ed8 70%, transparent)'}} />
+      {/* ORANGE DIVIDER */}
+      <div className="h-px w-full" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.5) 30%, rgba(245,158,11,0.5) 70%, transparent)'}} />
 
       {/* FLOATING WA BUTTON */}
       <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noreferrer" className="cs-float" aria-label="Hubungi CS">
