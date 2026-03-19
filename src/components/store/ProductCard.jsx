@@ -4,12 +4,13 @@ import { useState } from 'react';
 
 export default function ProductCard({ product }) {
   const [held, setHeld] = useState(false);
+  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || '';
 
   return (
     <Link
       href={`/products/${product.slug}`}
       className="block"
-      style={{textDecoration:'none', color:'inherit'}}
+      style={{ textDecoration: 'none', color: 'inherit' }}
       onMouseDown={() => setHeld(true)}
       onMouseUp={() => setHeld(false)}
       onMouseLeave={() => setHeld(false)}
@@ -19,45 +20,70 @@ export default function ProductCard({ product }) {
       <div
         className="relative rounded-2xl overflow-hidden transition-all duration-200"
         style={{
-          border: held ? '2px solid #1d6fff' : '2px solid #1d4ed8',
-          background: 'var(--card-bg)',
-          boxShadow: held ? '0 0 16px rgba(29,111,255,0.4)' : 'none',
+          border: held ? '2px solid #f59e0b' : '2px solid rgba(255,255,255,0.08)',
+          background: '#0a1628',
+          boxShadow: held ? '0 0 18px rgba(245,158,11,0.3)' : 'none',
+          aspectRatio: '1/1',
         }}
       >
-        {/* Image only — aspect square */}
-        <div className="aspect-square relative overflow-hidden bg-surface">
-          {product.thumbnail
-            ? <img
-                src={product.thumbnail}
-                alt={product.name}
-                className="w-full h-full object-cover transition-all duration-300"
-                style={{filter: held ? 'blur(2px) brightness(0.5)' : 'none'}}
-              />
-            : <div
-                className="w-full h-full flex items-center justify-center text-4xl transition-all duration-300"
-                style={{
-                  background:'linear-gradient(135deg, rgba(29,111,255,0.1), rgba(13,59,138,0.2))',
-                  filter: held ? 'blur(2px) brightness(0.5)' : 'none',
-                }}>
-                {product.icon || '📦'}
-              </div>
-          }
+        <div className="w-full h-full relative overflow-hidden">
+          {product.thumbnail ? (
+            <img
+              src={product.thumbnail}
+              alt={product.name}
+              className="w-full h-full object-cover transition-all duration-300"
+              style={{ filter: held ? 'blur(3px) brightness(0.35)' : 'none' }}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center text-4xl transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(29,111,255,0.15), rgba(13,59,138,0.25))',
+                filter: held ? 'blur(3px) brightness(0.35)' : 'none',
+              }}
+            >
+              {product.icon || '📦'}
+            </div>
+          )}
 
-          {/* Hold overlay: nama produk + kategori */}
+          {/* Blur overlay */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center transition-opacity duration-200"
-            style={{opacity: held ? 1 : 0, background:'rgba(0,0,0,0.3)'}}>
-            <p className="font-black text-white text-xs leading-tight line-clamp-3 drop-shadow-lg">
-              {product.name}
-            </p>
-            {product.category?.name && (
-              <p className="text-xs mt-1 font-semibold" style={{color:'#60a5fa'}}>
-                {product.category.name}
-              </p>
+            className="absolute inset-0 transition-opacity duration-200 pointer-events-none"
+            style={{ opacity: held ? 1 : 0 }}
+          >
+            {/* Logo — top right */}
+            {logoUrl && (
+              <div className="absolute top-2 right-2">
+                <img
+                  src={logoUrl}
+                  alt="logo"
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    objectFit: 'contain',
+                    borderRadius: '6px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                  }}
+                />
+              </div>
             )}
+
+            {/* Product name — bottom left */}
+            <div
+              className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-8"
+              style={{
+                background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%)',
+              }}
+            >
+              <p
+                className="font-black text-white leading-tight line-clamp-2 drop-shadow-lg"
+                style={{ fontSize: '0.68rem' }}
+              >
+                {product.name}
+              </p>
+            </div>
           </div>
         </div>
-        {/* NO bottom card — image only */}
       </div>
     </Link>
   );
