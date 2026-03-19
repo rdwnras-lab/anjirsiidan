@@ -65,7 +65,7 @@ export default async function HomePage() {
           if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {catProds.map(p => (
                   <ProductCard
                     key={p.id}
@@ -91,44 +91,32 @@ export default async function HomePage() {
 function PopularCard({ product }) {
   return (
     <Link
-      href={`/products/${product.slug}`}
-      className="flex items-center gap-3 rounded-2xl p-3 relative overflow-hidden transition-all duration-200"
+      href={'/products/' + product.slug}
+      className='flex items-center gap-3 rounded-2xl relative overflow-hidden transition-all duration-200'
       style={{
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        textDecoration: 'none',
-        color: 'inherit',
-        minHeight: '88px',
+        background:'rgba(255,255,255,0.07)',
+        border:'1px solid rgba(255,255,255,0.1)',
+        textDecoration:'none', color:'inherit',
+        minHeight:'96px', padding:'12px',
       }}
     >
-      {/* Diagonal stripe decoration */}
-      <div aria-hidden="true" style={{
-        position:'absolute', right:'-8px', top:'50%',
-        transform:'translateY(-50%) rotate(15deg)',
-        width:'55px', height:'150%',
-        background:'rgba(255,255,255,0.045)', pointerEvents:'none',
-      }} />
-      <div aria-hidden="true" style={{
-        position:'absolute', right:'22px', top:'50%',
-        transform:'translateY(-50%) rotate(15deg)',
-        width:'28px', height:'150%',
-        background:'rgba(255,255,255,0.03)', pointerEvents:'none',
-      }} />
+      {/* Diagonal stripes right side */}
+      <div aria-hidden='true' style={{ position:'absolute', right:'-10px', top:'50%',
+        transform:'translateY(-50%) rotate(15deg)', width:'60px', height:'160%',
+        background:'rgba(255,255,255,0.045)', pointerEvents:'none' }} />
+      <div aria-hidden='true' style={{ position:'absolute', right:'24px', top:'50%',
+        transform:'translateY(-50%) rotate(15deg)', width:'30px', height:'160%',
+        background:'rgba(255,255,255,0.03)', pointerEvents:'none' }} />
 
-      {/* Icon 72px */}
-      <div
-        className="flex-shrink-0 rounded-2xl overflow-hidden"
-        style={{
-          width:'72px', height:'72px',
-          border:'2px solid rgba(245,158,11,0.65)',
-          background:'rgba(255,255,255,0.05)',
-          position:'relative', zIndex:1,
-        }}
-      >
+      {/* Icon 90px */}
+      <div className='flex-shrink-0 rounded-2xl overflow-hidden'
+        style={{ width:'90px', height:'90px',
+          border:'2px solid rgba(29,111,255,0.55)',
+          background:'rgba(255,255,255,0.05)', position:'relative', zIndex:1 }}>
         {product.thumbnail ? (
-          <img src={product.thumbnail} alt={product.name} className="w-full h-full object-cover" />
+          <img src={product.thumbnail} alt={product.name} className='w-full h-full object-cover' />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl"
+          <div className='w-full h-full flex items-center justify-center text-3xl'
             style={{ background:'rgba(29,111,255,0.15)' }}>
             {product.categories?.icon || '📦'}
           </div>
@@ -136,11 +124,11 @@ function PopularCard({ product }) {
       </div>
 
       {/* Text */}
-      <div className="flex-1 min-w-0" style={{ position:'relative', zIndex:1 }}>
-        <p className="font-black text-sm text-white leading-tight line-clamp-2">
+      <div className='flex-1 min-w-0' style={{ position:'relative', zIndex:1 }}>
+        <p className='font-black text-base text-white leading-tight line-clamp-2'>
           {product.name}
         </p>
-        <p className="text-xs mt-1 font-semibold line-clamp-1" style={{ color:'#93c5fd' }}>
+        <p className='text-sm mt-1 font-semibold line-clamp-1' style={{ color:'#93c5fd' }}>
           {product.publisher || product.categories?.name || ''}
         </p>
       </div>
