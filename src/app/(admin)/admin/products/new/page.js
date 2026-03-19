@@ -20,7 +20,7 @@ export default function NewProductPage() {
   const addVariant    = () => setVariants(v => [...v, { name:'', price:'' }]);
   const removeVariant = i => setVariants(v => v.filter((_,j)=>j!==i));
   const setVariant    = (i,k,v) => setVariants(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
-  const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', required:true }]);
+  const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', example:'', guide:'', required:true }]);
   const removeField   = i => setFormFields(f => f.filter((_,j)=>j!==i));
   const setField      = (i,k,v) => setFormFields(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
 
@@ -113,10 +113,17 @@ export default function NewProductPage() {
           </div>
           <div className="space-y-2">
             {variants.map((v,i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input value={v.name} onChange={e=>setVariant(i,'name',e.target.value)} placeholder="50 Diamond" className={`flex-1 ${inputCls}`} />
-                <input value={v.price} onChange={e=>setVariant(i,'price',e.target.value)} placeholder="15000" type="number" className={`w-32 ${inputCls}`} />
-                {variants.length > 1 && <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>}
+              <div key={i} className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                <div className="flex gap-2 items-center">
+                  <input value={f.label} onChange={e=>setField(i,'label',e.target.value)} placeholder="Label (mis: Game ID)" className={`flex-1 ${inputCls}`} />
+                  <input value={f.placeholder} onChange={e=>setField(i,'placeholder',e.target.value)} placeholder="Placeholder" className={`flex-1 ${inputCls}`} />
+                  <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    <input type="checkbox" checked={f.required} onChange={e=>setField(i,'required',e.target.checked)} className="w-3.5 h-3.5" /> Wajib
+                  </label>
+                  <button onClick={()=>removeField(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>
+                </div>
+                <input value={f.example||''} onChange={e=>setField(i,'example',e.target.value)} placeholder="Contoh nilai (mis: 927375)" className={inputCls} />
+                <textarea value={f.guide||''} onChange={e=>setField(i,'guide',e.target.value)} rows={2} placeholder="Panduan menemukan nilai ini..." className={inputCls} />
               </div>
             ))}
           </div>
