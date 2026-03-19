@@ -20,7 +20,7 @@ export default function NewProductPage() {
   const addVariant    = () => setVariants(v => [...v, { name:'', price:'' }]);
   const removeVariant = i => setVariants(v => v.filter((_,j)=>j!==i));
   const setVariant    = (i,k,val) => setVariants(prev => prev.map((x,j)=>j===i?{...x,[k]:val}:x));
-  const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', example:'', guide:'', required:true }]);
+  const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', guide:'', required:true }]);
   const removeField   = i => setFormFields(f => f.filter((_,j)=>j!==i));
   const setField      = (i,k,val) => setFormFields(prev => prev.map((x,j)=>j===i?{...x,[k]:val}:x));
 
@@ -50,7 +50,6 @@ export default function NewProductPage() {
       </div>
 
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-5">
-        {/* Basic Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Nama Produk *</label>
@@ -99,7 +98,7 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        {/* Variants */}
+        {/* Variants — 50/50 split */}
         <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -113,20 +112,20 @@ export default function NewProductPage() {
           <div className="space-y-2">
             {variants.map((v,i) => (
               <div key={i} className="flex gap-2 items-center">
-                <input value={v.name} onChange={e=>setVariant(i,'name',e.target.value)} placeholder="50 Diamond" className={`flex-1 ${inputCls}`} />
-                <input value={v.price} onChange={e=>setVariant(i,'price',e.target.value)} placeholder="15000" type="number" className={`w-32 ${inputCls}`} />
-                {variants.length > 1 && <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>}
+                <input value={v.name} onChange={e=>setVariant(i,'name',e.target.value)} placeholder="Nama varian (mis: 50 Diamond)" className={`flex-1 ${inputCls}`} />
+                <input value={v.price} onChange={e=>setVariant(i,'price',e.target.value)} placeholder="Harga (Rp)" type="number" className={`flex-1 ${inputCls}`} />
+                {variants.length > 1 && <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-xl">×</button>}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Form fields for checkout */}
+        {/* Form Checkout Kustom — only label + placeholder + guide */}
         <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-semibold text-gray-800 dark:text-white">Form Checkout Kustom</p>
-              <p className="text-xs text-gray-400 mt-0.5">Field yang diisi pembeli saat checkout (Game ID, Server, dll)</p>
+              <p className="text-xs text-gray-400 mt-0.5">Field yang diisi pembeli saat checkout (Game ID, Username, dll)</p>
             </div>
             <button onClick={addField} className="text-xs px-3 py-1.5 rounded-lg font-medium text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 transition-colors">
               + Tambah Field
@@ -136,15 +135,20 @@ export default function NewProductPage() {
             {formFields.map((f,i) => (
               <div key={i} className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
                 <div className="flex gap-2 items-center">
-                  <input value={f.label} onChange={e=>setField(i,'label',e.target.value)} placeholder="Label (mis: Game ID)" className={`flex-1 ${inputCls}`} />
-                  <input value={f.placeholder} onChange={e=>setField(i,'placeholder',e.target.value)} placeholder="Placeholder" className={`flex-1 ${inputCls}`} />
+                  <input value={f.label} onChange={e=>setField(i,'label',e.target.value)} placeholder="Label (mis: USERNAME)" className={`flex-1 ${inputCls}`} />
+                  <input value={f.placeholder} onChange={e=>setField(i,'placeholder',e.target.value)} placeholder="Placeholder (mis: roblox123)" className={`flex-1 ${inputCls}`} />
                   <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     <input type="checkbox" checked={f.required} onChange={e=>setField(i,'required',e.target.checked)} className="w-3.5 h-3.5" /> Wajib
                   </label>
-                  <button onClick={()=>removeField(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>
+                  <button onClick={()=>removeField(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-xl">×</button>
                 </div>
-                <input value={f.example||''} onChange={e=>setField(i,'example',e.target.value)} placeholder="Contoh nilai (mis: 927375)" className={inputCls} />
-                <textarea value={f.guide||''} onChange={e=>setField(i,'guide',e.target.value)} rows={2} placeholder="Panduan menemukan nilai ini..." className={inputCls} />
+                {/* Guide only — no example field */}
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 mt-2.5" style={{color:'#3b82f6'}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </div>
+                  <textarea value={f.guide||''} onChange={e=>setField(i,'guide',e.target.value)} rows={2} placeholder="Panduan cara menemukan nilai ini (opsional)..." className={`flex-1 ${inputCls}`} />
+                </div>
               </div>
             ))}
           </div>
