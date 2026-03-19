@@ -28,7 +28,7 @@ const IconStar = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="#fb
 function StepBadge({ n }) {
   return (
     <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-base"
-      style={{ background: '#f59e0b' }}>
+      style={{ background: '#1d6fff' }}>
       {n}
     </div>
   );
@@ -145,7 +145,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           </div>
           <div className="pb-1">
             <h1 className="text-xl font-black text-white leading-tight">{product.name}</h1>
-            <p className="text-sm font-bold mt-0.5" style={{ color: '#f59e0b' }}>
+            <p className="text-sm font-bold mt-0.5" style={{ color: '#60a5fa' }}>
               {product.publisher || product.categories?.name || ''}
             </p>
           </div>
@@ -233,8 +233,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
                   className="rounded-xl p-3 text-left border transition-all"
                   style={{
-                    borderColor: selected === v.id ? '#f59e0b' : 'rgba(255,255,255,0.08)',
-                    background: selected === v.id ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
+                    borderColor: selected === v.id ? '#1d6fff' : 'rgba(255,255,255,0.08)',
+                    background: selected === v.id ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.03)',
                     opacity: noStock ? 0.4 : 1,
                     cursor: noStock ? 'not-allowed' : 'pointer',
                   }}>
@@ -244,7 +244,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                       {formatIDR(isAuto ? calculateFee(v.price).total : v.price)}
                     </p>
                   )}
-                  <p className="font-black text-sm mt-0.5" style={{ color: '#f59e0b' }}>{formatIDR(showPrice)}</p>
+                  <p className="font-black text-sm mt-0.5" style={{ color: '#60a5fa' }}>{formatIDR(showPrice)}</p>
                   {isAuto && (
                     <p className="text-xs mt-1" style={{ color: noStock ? '#ef4444' : '#10b981' }}>
                       {noStock ? 'Stok habis' : `${vStock > 99 ? '99+' : vStock} tersedia`}
@@ -276,7 +276,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               )}
               <div className="flex justify-between font-black text-sm pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', color: '#f1f5f9' }}>
                 <span>Total Bayar</span>
-                <span style={{ color: '#f59e0b' }}>{formatIDR(pricing.total)}</span>
+                <span style={{ color: '#60a5fa' }}>{formatIDR(pricing.total)}</span>
               </div>
             </div>
           )}
@@ -296,7 +296,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <div className="rounded-xl p-4 mb-2 relative overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', opacity: 0.6, cursor: 'not-allowed' }}>
                 <div className="absolute top-0 right-0 px-3 py-1 font-black text-xs text-white"
-                  style={{ background: '#f59e0b', borderRadius: '0 12px 0 12px' }}>BEST</div>
+                  style={{ background: '#1d6fff', borderRadius: '0 12px 0 12px' }}>BEST</div>
                 <div className="flex items-center gap-3">
                   <IconWallet />
                   <div>
@@ -310,8 +310,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <button
                 className="w-full rounded-xl p-4 text-left transition-all"
                 style={{
-                  background: payMethod === 'qris' ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
-                  border: payMethod === 'qris' ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.07)',
+                  background: payMethod === 'qris' ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: payMethod === 'qris' ? '1px solid #1d6fff' : '1px solid rgba(255,255,255,0.07)',
                 }}
                 onClick={() => setPayMethod('qris')}
               >
@@ -326,7 +326,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <div className="rounded-xl p-4 relative overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', opacity: 0.6, cursor: 'not-allowed' }}>
                 <div className="absolute top-0 right-0 px-3 py-1 font-black text-xs text-white"
-                  style={{ background: '#f59e0b', borderRadius: '0 12px 0 12px' }}>BEST</div>
+                  style={{ background: '#1d6fff', borderRadius: '0 12px 0 12px' }}>BEST</div>
                 <div className="flex items-center gap-3">
                   <IconWallet />
                   <div>
@@ -352,13 +352,13 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <button
                   className="w-full text-left rounded-xl p-3 mt-1 transition-all"
                   style={{
-                    background: payMethod === 'manual_qr' ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.06)',
-                    border: payMethod === 'manual_qr' ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
+                    background: payMethod === 'manual_qr' ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.06)',
+                    border: payMethod === 'manual_qr' ? '1px solid #1d6fff' : '1px solid rgba(255,255,255,0.08)',
                   }}
                   onClick={() => setPayMethod('manual_qr')}
                 >
                   <p className="font-semibold text-white text-sm">DuitNow QR (Manual)</p>
-                  <p className="text-xs italic mt-0.5" style={{ color: '#f59e0b' }}>Proses 1 - 10 Menit</p>
+                  <p className="text-xs italic mt-0.5" style={{ color: '#60a5fa' }}>Proses 1 - 10 Menit</p>
                 </button>
               </PaymentSection>
 
@@ -391,7 +391,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               />
               <button
                 className="px-5 py-3 rounded-xl font-bold text-white text-sm"
-                style={{ background: '#f59e0b' }}
+                style={{ background: '#1d6fff' }}
               >
                 Use
               </button>
@@ -456,7 +456,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           onClick={handleOrder}
           disabled={loading || (isAuto && stock === 0)}
           className="w-full py-4 rounded-2xl font-black text-base text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: loading || (isAuto && stock === 0) ? '#1e3a5f' : '#f59e0b' }}
+          style={{ background: loading || (isAuto && stock === 0) ? '#0e2445' : '#1d6fff' }}
         >
           🛒 {loading ? 'Memproses...' : isAuto && !session ? '🔐 Login Discord & Pesan' : 'Order Now!'}
         </button>
@@ -464,7 +464,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
         {/* ─── Reviews ─── */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#f59e0b' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#1d6fff' }}>
               <IconStar />
             </div>
             <span className="font-bold text-white text-base">Reviews</span>
