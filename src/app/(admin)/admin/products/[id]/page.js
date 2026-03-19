@@ -11,7 +11,7 @@ export default function EditProductPage() {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [form, setForm]       = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', delivery_type:'auto', is_active:true, is_best_seller:false });
+  const [form, setForm]       = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
   const [variants, setVariants] = useState([{ name:'', price:'' }]);
   const [formFields, setFormFields] = useState([]);
 
@@ -24,7 +24,7 @@ export default function EditProductPage() {
       if (p) {
         setForm({
           name: p.name||'', slug: p.slug||'', category_id: p.category_id||'',
-          description: p.description||'', thumbnail: p.thumbnail||'',
+          description: p.description||'', thumbnail: p.thumbnail||'', publisher: p.publisher||'',
           delivery_type: p.delivery_type||'auto',
           is_active: p.is_active??true, is_best_seller: p.is_best_seller??false,
         });
@@ -127,6 +127,11 @@ export default function EditProductPage() {
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">URL Thumbnail</label>
             <input className={inputCls} value={form.thumbnail} onChange={setF('thumbnail')} placeholder="https://..." />
             {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-20 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />}
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Publisher / Developer</label>
+            <input className={inputCls} value={form.publisher} onChange={setF('publisher')} placeholder="Contoh: Garena, Tencent, Moonton, HoyoVerse" />
+            <p className="text-xs text-gray-400 mt-1">Ditampilkan di bawah nama produk pada halaman utama & detail</p>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Tipe Pengiriman</label>
