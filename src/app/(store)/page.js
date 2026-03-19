@@ -43,7 +43,7 @@ export default async function HomePage() {
               Some of the most popular products right now.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {showBS.map(p => (
               <PopularCard key={p.id} product={p} />
             ))}
@@ -65,7 +65,7 @@ export default async function HomePage() {
           if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {catProds.map(p => (
                   <ProductCard
                     key={p.id}
