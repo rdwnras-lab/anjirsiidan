@@ -9,8 +9,9 @@ export async function GET(req) {
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get('productId');
-  const { data } = await supabaseAdmin.from('product_keys').select('*')
-    .eq('product_id', productId).order('created_at', { ascending: false });
+  const { data } = await supabaseAdmin.from('product_keys')
+    .select('*, product_variants(id, name, price)')
+    .eq('product_id', productId).order('variant_id').order('created_at', { ascending: false });
   return Response.json(data || []);
 }
 
