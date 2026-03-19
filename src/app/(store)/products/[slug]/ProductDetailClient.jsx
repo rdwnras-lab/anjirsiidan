@@ -227,7 +227,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                       placeholder={field.placeholder || field.label}
                       value={formData[field.label] || ''}
                       onChange={e => setFormData(f => ({ ...f, [field.label]: e.target.value }))} />
-                    {field.example && <p className='text-xs mt-1' style={{ color:'#64748b' }}>Contoh: {field.example}</p>}
                   </div>
                 ))}
               </div>
