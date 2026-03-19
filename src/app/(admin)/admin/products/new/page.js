@@ -19,10 +19,10 @@ export default function NewProductPage() {
 
   const addVariant    = () => setVariants(v => [...v, { name:'', price:'' }]);
   const removeVariant = i => setVariants(v => v.filter((_,j)=>j!==i));
-  const setVariant    = (i,k,v) => setVariants(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const setVariant    = (i,k,val) => setVariants(prev => prev.map((x,j)=>j===i?{...x,[k]:val}:x));
   const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', example:'', guide:'', required:true }]);
   const removeField   = i => setFormFields(f => f.filter((_,j)=>j!==i));
-  const setField      = (i,k,v) => setFormFields(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const setField      = (i,k,val) => setFormFields(prev => prev.map((x,j)=>j===i?{...x,[k]:val}:x));
 
   const save = async () => {
     if (!form.name || !form.category_id) return setError('Nama dan kategori wajib diisi.');
@@ -78,14 +78,13 @@ export default function NewProductPage() {
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Publisher / Developer</label>
-            <input className={inputCls} value={form.publisher} onChange={setF('publisher')} placeholder="Contoh: Garena, Tencent, Moonton, HoyoVerse" />
-            <p className="text-xs text-gray-400 mt-1">Ditampilkan di bawah nama produk pada halaman utama & detail</p>
+            <input className={inputCls} value={form.publisher} onChange={setF('publisher')} placeholder="Contoh: Garena, Tencent, Moonton" />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Tipe Pengiriman</label>
             <select className={inputCls} value={form.delivery_type} onChange={e=>setForm(f=>({...f,delivery_type:e.target.value}))}>
-              <option value="auto">⚡ Otomatis (key via Discord)</option>
-              <option value="manual">👤 Manual (admin proses)</option>
+              <option value="auto">Otomatis (key via Discord)</option>
+              <option value="manual">Manual (admin proses)</option>
             </select>
           </div>
           <div className="flex flex-col gap-3 justify-end pb-1">
@@ -95,7 +94,7 @@ export default function NewProductPage() {
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.is_best_seller} onChange={setFB('is_best_seller')} className="w-4 h-4 rounded accent-blue-600" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">🔥 Best Seller</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Best Seller</span>
             </label>
           </div>
         </div>
@@ -104,8 +103,8 @@ export default function NewProductPage() {
         <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-white">Varian & Harga *</p>
-              <p className="text-xs text-gray-400 mt-0.5">Harga dalam Rupiah, biaya QRIS dihitung otomatis</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-white">Varian &amp; Harga *</p>
+              <p className="text-xs text-gray-400 mt-0.5">Harga dalam Rupiah</p>
             </div>
             <button onClick={addVariant} className="text-xs px-3 py-1.5 rounded-lg font-medium text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 transition-colors">
               + Tambah Varian
@@ -113,6 +112,28 @@ export default function NewProductPage() {
           </div>
           <div className="space-y-2">
             {variants.map((v,i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input value={v.name} onChange={e=>setVariant(i,'name',e.target.value)} placeholder="50 Diamond" className={`flex-1 ${inputCls}`} />
+                <input value={v.price} onChange={e=>setVariant(i,'price',e.target.value)} placeholder="15000" type="number" className={`w-32 ${inputCls}`} />
+                {variants.length > 1 && <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form fields for checkout */}
+        <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-white">Form Checkout Kustom</p>
+              <p className="text-xs text-gray-400 mt-0.5">Field yang diisi pembeli saat checkout (Game ID, Server, dll)</p>
+            </div>
+            <button onClick={addField} className="text-xs px-3 py-1.5 rounded-lg font-medium text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 transition-colors">
+              + Tambah Field
+            </button>
+          </div>
+          <div className="space-y-3">
+            {formFields.map((f,i) => (
               <div key={i} className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
                 <div className="flex gap-2 items-center">
                   <input value={f.label} onChange={e=>setField(i,'label',e.target.value)} placeholder="Label (mis: Game ID)" className={`flex-1 ${inputCls}`} />
@@ -124,31 +145,6 @@ export default function NewProductPage() {
                 </div>
                 <input value={f.example||''} onChange={e=>setField(i,'example',e.target.value)} placeholder="Contoh nilai (mis: 927375)" className={inputCls} />
                 <textarea value={f.guide||''} onChange={e=>setField(i,'guide',e.target.value)} rows={2} placeholder="Panduan menemukan nilai ini..." className={inputCls} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Custom form fields */}
-        <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-white">Form Checkout Kustom</p>
-              <p className="text-xs text-gray-400 mt-0.5">Field yang diisi pembeli saat checkout (Game ID, Server, dll)</p>
-            </div>
-            <button onClick={addField} className="text-xs px-3 py-1.5 rounded-lg font-medium text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800 transition-colors">
-              + Tambah Field
-            </button>
-          </div>
-          <div className="space-y-2">
-            {formFields.map((f,i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input value={f.label} onChange={e=>setField(i,'label',e.target.value)} placeholder="Label (Game ID)" className={`flex-1 ${inputCls}`} />
-                <input value={f.placeholder} onChange={e=>setField(i,'placeholder',e.target.value)} placeholder="Placeholder" className={`flex-1 ${inputCls}`} />
-                <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  <input type="checkbox" checked={f.required} onChange={e=>setField(i,'required',e.target.checked)} className="w-3.5 h-3.5" /> Wajib
-                </label>
-                <button onClick={()=>removeField(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>
               </div>
             ))}
           </div>
