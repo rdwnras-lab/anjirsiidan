@@ -38,7 +38,7 @@ export default async function HomePage() {
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
-            <h2 className="font-black text-xl text-white tracking-wide">🔥POPULAR!</h2>
+            <h2 className="font-black text-xl text-white tracking-wide">🔥 BEST SELLER!</h2>
             <p className="text-sm mt-0.5" style={{ color: '#93c5fd' }}>
               Some of the most popular products right now.
             </p>
