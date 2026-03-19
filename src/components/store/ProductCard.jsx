@@ -20,9 +20,9 @@ export default function ProductCard({ product }) {
       <div
         className="relative rounded-2xl overflow-hidden transition-all duration-200"
         style={{
-          border: held ? '2px solid #f59e0b' : '2px solid rgba(255,255,255,0.08)',
+          border: held ? '2px solid #1d6fff' : '2px solid rgba(29,111,255,0.2)',
           background: '#0a1628',
-          boxShadow: held ? '0 0 18px rgba(245,158,11,0.3)' : 'none',
+          boxShadow: held ? '0 0 16px rgba(29,111,255,0.4)' : 'none',
           aspectRatio: '1/1',
         }}
       >
