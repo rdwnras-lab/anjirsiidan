@@ -163,57 +163,82 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       )}
       <div className='max-w-2xl mx-auto pb-36'>
 
-        {/* ── BANNER ── */}
-        <div className='relative' style={{ height:'220px' }}>
-          {/* Background banner — from banner_image field, NOT thumbnail */}
-          <div className='absolute inset-0 overflow-hidden' style={{ background:'linear-gradient(135deg,#0d1b30,#1a1040)' }}>
+        {/* ── BANNER: full-width bg + overlapping card + 3D icon ── */}
+        <div className='relative' style={{ marginBottom:'0' }}>
+
+          {/* Background — banner_image from admin (NOT thumbnail) */}
+          <div style={{ height:'220px', overflow:'hidden', position:'relative', background:'linear-gradient(135deg,#0d1b30,#1a1040)' }}>
             {(product.banner_image || product.thumbnail) && (
               <img src={product.banner_image || product.thumbnail} alt=''
-                className='w-full h-full object-cover'
-                style={{ filter:'brightness(0.5)', transform:'scale(1.04)' }} />
+                style={{ width:'100%', height:'100%', objectFit:'cover', filter:'brightness(0.6)', transform:'scale(1.04)', display:'block' }} />
             )}
-            {/* Diagonal stripe overlay */}
-            <div className='absolute inset-0' style={{ background:'linear-gradient(135deg, rgba(29,111,255,0.08) 0%, transparent 60%)' }} />
-            <div className='absolute inset-0' style={{ background:'linear-gradient(to top, #0d1b30 0%, transparent 55%)' }} />
           </div>
 
-          {/* Product icon — 3D perspective tilted card */}
-          <div className='absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-4'>
-            {/* Tilted card container */}
-            <div style={{
-              perspective: '600px',
-              flexShrink: 0,
-            }}>
-              <div style={{
-                width:'88px', height:'88px',
-                transform:'rotateY(-15deg) rotateX(5deg)',
-                transformStyle:'preserve-3d',
-                borderRadius:'18px',
-                overflow:'hidden',
-                boxShadow:'-6px 6px 20px rgba(0,0,0,0.6), 2px -2px 8px rgba(29,111,255,0.3)',
-                border:'2px solid rgba(255,255,255,0.15)',
-              }}>
-                {product.thumbnail
-                  ? <img src={product.thumbnail} alt={product.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2rem', background:'rgba(29,111,255,0.2)' }}>📦</div>
-                }
+          {/* Info card — overlaps background, icon sticks out above */}
+          <div style={{
+            position:'relative',
+            marginTop:'-60px',
+            background:'linear-gradient(135deg, #1a2a6c 0%, #1d3080 50%, #162060 100%)',
+            borderRadius:'0',
+            paddingTop:'16px', paddingBottom:'12px',
+            paddingLeft:'16px', paddingRight:'16px',
+            overflow:'visible',
+            boxShadow:'0 -4px 20px rgba(0,0,0,0.4)',
+          }}>
+            {/* Diagonal shimmer stripe decoration */}
+            <div aria-hidden='true' style={{
+              position:'absolute', top:0, right:'-10px', bottom:0, width:'70px',
+              background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
+              transform:'skewX(-15deg)', pointerEvents:'none',
+            }} />
+            <div aria-hidden='true' style={{
+              position:'absolute', top:0, right:'40px', bottom:0, width:'30px',
+              background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
+              transform:'skewX(-15deg)', pointerEvents:'none',
+            }} />
+
+            <div style={{ display:'flex', alignItems:'flex-start', gap:'14px' }}>
+              {/* 3D Product icon — top half sticks above card */}
+              <div style={{ flexShrink:0, marginTop:'-60px', perspective:'700px' }}>
+                <div style={{
+                  width:'120px', height:'120px',
+                  borderRadius:'20px',
+                  overflow:'hidden',
+                  transform:'rotateY(10deg) rotateX(-3deg)',
+                  transformStyle:'preserve-3d',
+                  boxShadow:'4px 8px 24px rgba(0,0,0,0.7), -2px -2px 10px rgba(29,111,255,0.2)',
+                  border:'2.5px solid rgba(255,255,255,0.18)',
+                  background:'#0a1628',
+                }}>
+                  {product.thumbnail
+                    ? <img src={product.thumbnail} alt={product.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                    : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2.5rem', background:'rgba(29,111,255,0.15)' }}>📦</div>
+                  }
+                </div>
+              </div>
+
+              {/* Right: name + publisher + chips */}
+              <div style={{ flex:1, paddingTop:'4px' }}>
+                <h1 className='font-black text-white leading-tight' style={{ fontSize:'1.15rem' }}>{product.name}</h1>
+                <p className='font-semibold mt-0.5' style={{ color:'#93c5fd', fontSize:'0.85rem' }}>
+                  {product.publisher || product.categories?.name || ''}
+                </p>
+
+                {/* Feature chips */}
+                <div style={{ display:'flex', flexWrap:'wrap', gap:'10px', marginTop:'10px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#fbbf24', fontSize:'0.72rem', fontWeight:600 }}>
+                    <IBolt /> Fast Process
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#60a5fa', fontSize:'0.72rem', fontWeight:600 }}>
+                    <IHS /> 24/7 Support
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#34d399', fontSize:'0.72rem', fontWeight:600 }}>
+                    <IGlobe /> Global Network
+                  </div>
+                </div>
               </div>
             </div>
-            {/* Name + publisher */}
-            <div className='pb-1 flex-1'>
-              <h1 className='text-xl font-black text-white leading-tight drop-shadow-lg'>{product.name}</h1>
-              <p className='text-sm font-bold mt-0.5 drop-shadow' style={{ color:'#f59e0b' }}>
-                {product.publisher || product.categories?.name || ''}
-              </p>
-            </div>
           </div>
-        </div>
-
-        {/* ── Feature chips ── */}
-        <div className='flex items-center gap-5 px-4 py-3' style={{ background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
-          <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#fbbf24' }}><IBolt /> Fast Process</div>
-          <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#60a5fa' }}><IHS /> 24/7 Chat Support</div>
-          <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#34d399' }}><IGlobe /> Global Network</div>
         </div>
 
         <div className='px-4 mt-4 space-y-4'>
@@ -403,12 +428,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>**Nomor ini akan dihubungi jika terjadi masalah**</p>
           </StepRow>
 
-          {!session && isAuto && (
-            <div className='rounded-xl p-3 text-xs text-center'
-              style={{ background:'rgba(29,111,255,0.07)', border:'1px solid #1d4ed8', color:'#60a5fa' }}>
-              Login Discord untuk harga GOLD/PLATINUM + proses otomatis
-            </div>
-          )}
+
         </div>
       </div>
 
