@@ -129,7 +129,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
   const handleOrder = async () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
-    if (isAuto && !session) return signIn('discord');
+    if (isAuto && !session) return setError('Login Discord diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
     if (isAuto && stock === 0) return setError('Stok habis.');
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
@@ -254,21 +254,24 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                       cursor: noStock ? 'not-allowed' : 'pointer',
                     }}>
                     {/* Top: name */}
-                    <div className='px-3 pt-3 pb-2'>
+                    <div className='px-3 pt-3 pb-1'>
                       <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
                     </div>
-                    {/* Divider */}
-                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    {/* Middle: price */}
-                    <div className='px-3 py-2'>
+                    {/* Price */}
+                    <div className='px-3 pb-2'>
                       <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(showPrc)}</p>
                     </div>
-                    {/* Bottom: INSTAN badge */}
-                    <div className='px-3 pb-3 flex justify-end'>
-                      <div className='inline-flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5'
-                        style={{ background:'#fff', minWidth:'70px' }}>
-                        <p style={{ fontSize:'0.55rem', color:'#6b7280', fontWeight:400, lineHeight:1.2 }}>Pengiriman</p>
-                        <p style={{ fontSize:'0.65rem', color:'#111827', fontWeight:800, letterSpacing:'0.02em', lineHeight:1.2 }}>INSTAN</p>
+                    {/* Divider — BELOW price */}
+                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
+                    {/* Bottom: INSTAN badge — smaller + bolt icon */}
+                    <div className='px-3 py-2 flex justify-end'>
+                      <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
+                        style={{ background:'#fff' }}>
+                        <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
+                        <div>
+                          <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
+                          <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -408,7 +411,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               className='w-full py-4 rounded-2xl font-black text-base text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2'
               style={{ background: loading ? '#0e2445' : '#1d6fff' }}>
               <IBag />
-              {loading ? 'Memproses...' : isAuto && !session ? 'Login Discord' : 'Pesan Sekarang!'}
+              {loading ? 'Memproses...' : 'Pesan Sekarang!'}
             </button>
             <div className='absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none'>
               <IHSLg />
