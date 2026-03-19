@@ -30,11 +30,11 @@ return (
 <BannerSlider banners={banners} />
 
 ```
-  {/* ── POPULAR SECTION ── */}
+  {/* POPULAR SECTION */}
   {showBS.length > 0 && (
     <section className="px-4 pt-6 pb-4">
       <div className="mb-4">
-        <h2 className="font-black text-xl text-white tracking-wide">🔥POPULAR!</h2>
+        <h2 className="font-black text-xl text-white tracking-wide">POPULAR!</h2>
         <p className="text-sm mt-0.5" style={{ color: '#94a3b8' }}>
           Some of the most popular products right now.
         </p>
@@ -75,7 +75,7 @@ return (
     {prods.length === 0 && (
       <div className="text-center py-20">
         <p className="text-4xl mb-3">🏪</p>
-        <p className="font-semibold text-dim">Belum ada produk</p>
+        <p className="font-semibold" style={{ color: '#475569' }}>Belum ada produk</p>
       </div>
     )}
   </section>
@@ -85,7 +85,6 @@ return (
 );
 }
 
-/* Popular card: 2-col list item (icon left, name + publisher right) */
 function PopularCard({ product }) {
 return (
 <Link
@@ -98,21 +97,12 @@ textDecoration: ‘none’,
 color: ‘inherit’,
 }}
 >
-{/* Icon */}
 <div
 className=“flex-shrink-0 rounded-xl overflow-hidden”
-style={{
-width: ‘56px’,
-height: ‘56px’,
-border: ‘2px solid rgba(245,158,11,0.5)’,
-}}
+style={{ width: ‘56px’, height: ‘56px’, border: ‘2px solid rgba(245,158,11,0.5)’ }}
 >
 {product.thumbnail ? (
-<img
-src={product.thumbnail}
-alt={product.name}
-className="w-full h-full object-cover"
-/>
+<img src={product.thumbnail} alt={product.name} className="w-full h-full object-cover" />
 ) : (
 <div
 className=“w-full h-full flex items-center justify-center text-2xl”
@@ -122,19 +112,14 @@ style={{ background: ‘rgba(29,111,255,0.12)’ }}
 </div>
 )}
 </div>
-
-```
-  {/* Text */}
-  <div className="flex-1 min-w-0">
-    <p className="font-bold text-sm text-white leading-tight line-clamp-1">
-      {product.name}
-    </p>
-    <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#f59e0b' }}>
-      {product.publisher || product.categories?.name || ''}
-    </p>
-  </div>
+<div className="flex-1 min-w-0">
+<p className="font-bold text-sm text-white leading-tight line-clamp-1">
+{product.name}
+</p>
+<p className=“text-xs mt-0.5 line-clamp-1” style={{ color: ‘#f59e0b’ }}>
+{product.publisher || product.categories?.name || ‘’}
+</p>
+</div>
 </Link>
-```
-
 );
 }
