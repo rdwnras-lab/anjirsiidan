@@ -143,7 +143,7 @@ export default function Navbar() {
       </aside>
 
       {/* HEADER */}
-      <header className="sticky top-0 z-40" style={{background:'var(--header-bg)', borderBottom:'2px solid rgba(245,158,11,0.2)'}}>
+      <header className="sticky top-0 z-40" style={{background:'var(--header-bg)', borderBottom:'1px solid rgba(29,111,255,0.3)'}}>
         <div className="px-4 h-14 flex items-center justify-between gap-3">
           <button onClick={() => setSidebarOpen(true)}
             className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white transition-colors flex-shrink-0"
@@ -158,19 +158,14 @@ export default function Navbar() {
               : <span className="font-black text-lg text-gradient" style={{fontFamily:'Rajdhani, sans-serif', letterSpacing:'0.25em'}}>{storeName}</span>
             }
           </Link>
-
-          {/* Right: search + flag */}
+          {/* Right: search */}
           <div className="flex items-center gap-2">
             <button onClick={() => setSearchOpen(o => !o)}
               className="w-9 h-9 flex items-center justify-center rounded-xl border text-dim hover:text-white transition-colors flex-shrink-0"
               style={{borderColor:'rgba(255,255,255,0.1)'}}>
               {searchOpen ? <IconX /> : <IconSearch />}
             </button>
-            <button
-              className="w-9 h-9 flex items-center justify-center rounded-xl border transition-colors flex-shrink-0"
-              style={{borderColor:'rgba(255,255,255,0.1)'}}>
-              <span style={{fontSize:'18px', lineHeight:1}}>🇺🇸</span>
-            </button>
+            
           </div>
         </div>
 
@@ -193,7 +188,7 @@ export default function Navbar() {
       </header>
 
       {/* ORANGE DIVIDER */}
-      <div className="h-px w-full" style={{background:'linear-gradient(90deg, transparent, rgba(245,158,11,0.5) 30%, rgba(245,158,11,0.5) 70%, transparent)'}} />
+      <div className="h-px w-full" style={{background:'linear-gradient(90deg, transparent, rgba(29,111,255,0.6) 30%, rgba(29,111,255,0.6) 70%, transparent)'}} />
 
       {/* FLOATING WA BUTTON */}
       <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noreferrer" className="cs-float" aria-label="Hubungi CS">
