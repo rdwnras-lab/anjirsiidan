@@ -24,9 +24,13 @@ export async function PATCH(req, { params }) {
   if (body.variant_sync) {
     const variants = body.variant_sync;
     delete body.variant_sync;
-    await supabaseAdmin.from('product_variants').delete().eq('product_id', params.id);
+    // Delete product_keys first to avoid FK constraint blocking variant delete
+    await supabaseAdmin.from('product_keys').delete().eq('product_id', params.id);
+    // Now safe to delete and re-insert variants
+    const { error: delErr } = await supabaseAdmin.from('product_variants').delete().eq('product_id', params.id);
+    if (delErr) return Response.json({ error: 'Gagal menghapus varian lama: ' + delErr.message }, { status: 500 });
     if (variants.length) {
-      await supabaseAdmin.from('product_variants').insert(
+      const { error: insErr } = await supabaseAdmin.from('product_variants').insert(
         variants.map((v, i) => ({
           product_id: params.id,
           name: v.name,
@@ -34,6 +38,7 @@ export async function PATCH(req, { params }) {
           sort_order: i,
         }))
       );
+      if (insErr) return Response.json({ error: 'Gagal menyimpan varian: ' + insErr.message }, { status: 500 });
     }
   }
 
