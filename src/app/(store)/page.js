@@ -11,7 +11,7 @@ async function getHomeData() {
   const [catsRes, prodsRes, bannersRes] = await Promise.all([
     supabaseAdmin.from('categories').select('*').eq('is_active', true).order('sort_order'),
     supabaseAdmin.from('products').select(`
-      id, name, slug, thumbnail, delivery_type, category_id, is_best_seller,
+      id, name, slug, thumbnail, delivery_type, category_id, is_best_seller, publisher,
       categories(name, icon),
       product_variants(id, price),
       product_keys(id, is_used)
@@ -27,25 +27,25 @@ async function getHomeData() {
 
 export default async function HomePage() {
   const { cats, prods, banners } = await getHomeData();
-  const bestSellers = prods.filter(p => p.is_best_seller).slice(0, 6);
-  const showBS      = bestSellers.length > 0 ? bestSellers : prods.slice(0, 4);
+  const bestSellers = prods.filter(p => p.is_best_seller).slice(0, 9);
+  const showBS      = bestSellers.length > 0 ? bestSellers : prods.slice(0, 6);
 
   return (
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
-      {/* ── BEST SELLER — layout seperti foto: image besar kiri, teks kanan ── */}
+      {/* ── POPULAR SECTION ── */}
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
-            <h2 className="font-black text-xl text-white tracking-wide">🔥 BEST SELLER</h2>
-            <p className="text-sm mt-1" style={{color:'var(--accent-light)', opacity:0.7}}>
-              beberapa product populer saat ini
+            <h2 className="font-black text-xl text-white tracking-wide">🔥POPULAR!</h2>
+            <p className="text-sm mt-0.5" style={{ color: '#94a3b8' }}>
+              Some of the most popular products right now.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             {showBS.map(p => (
-              <BestSellerCard key={p.id} product={p} />
+              <PopularCard key={p.id} product={p} />
             ))}
           </div>
         </section>
@@ -58,19 +58,18 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Products per category — TANPA header nama/deskripsi kategori */}
+      {/* Products per category */}
       <section className="px-4 pb-24">
         {cats.map(cat => {
           const catProds = prods.filter(p => p.category_id === cat.id);
           if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              {/* Grid 3 kolom — NO header category */}
               <div className="grid grid-cols-3 gap-2">
                 {catProds.map(p => (
                   <ProductCard
                     key={p.id}
-                    product={{...p, category: p.categories}}
+                    product={{ ...p, category: p.categories }}
                   />
                 ))}
               </div>
@@ -88,28 +87,51 @@ export default async function HomePage() {
   );
 }
 
-// Best Seller card: image besar + teks, border biru saat ditekan
-function BestSellerCard({ product }) {
+/* Popular card: 2-col list item (icon left, name + publisher right) */
+function PopularCard({ product }) {
   return (
-    <Link href={`/products/${product.slug}`}
-      className="group block rounded-2xl overflow-hidden transition-all duration-200"
-      style={{background:'var(--card-bg)', border:'1px solid #0e2445', textDecoration:'none', color:'inherit'}}>
-      {/* Image besar di atas */}
-      <div className="aspect-video relative overflow-hidden" style={{background:'#050f1e'}}>
-        {product.thumbnail
-          ? <img src={product.thumbnail} alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          : <div className="w-full h-full flex items-center justify-center text-4xl"
-              style={{background:'rgba(29,111,255,0.08)'}}>📦</div>
-        }
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          style={{background:'rgba(29,111,255,0.15)', border:'2px solid #1d6fff', borderRadius:'16px'}} />
+    <Link
+      href={`/products/${product.slug}`}
+      className="flex items-center gap-3 rounded-2xl p-3 transition-all duration-200"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        textDecoration: 'none',
+        color: 'inherit',
+      }}
+    >
+      {/* Icon */}
+      <div
+        className="flex-shrink-0 rounded-xl overflow-hidden"
+        style={{
+          width: '56px',
+          height: '56px',
+          border: '2px solid rgba(245,158,11,0.5)',
+        }}
+      >
+        {product.thumbnail ? (
+          <img
+            src={product.thumbnail}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-2xl"
+            style={{ background: 'rgba(29,111,255,0.12)' }}
+          >
+            {product.categories?.icon || '📦'}
+          </div>
+        )}
       </div>
-      {/* Teks di bawah */}
-      <div className="p-2.5">
-        <p className="font-bold text-xs text-white leading-tight line-clamp-2">{product.name}</p>
-        <p className="text-xs mt-0.5" style={{color:'#60a5fa', opacity:0.7}}>
-          {product.categories?.name || 'Product'}
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-sm text-white leading-tight line-clamp-1">
+          {product.name}
+        </p>
+        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#f59e0b' }}>
+          {product.publisher || product.categories?.name || ''}
         </p>
       </div>
     </Link>
