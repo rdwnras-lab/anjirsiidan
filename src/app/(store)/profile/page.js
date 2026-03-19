@@ -7,18 +7,17 @@ import { formatIDR, timeAgo } from '@/lib/utils';
 import Link from 'next/link';
 
 const statusColor = {
-  pending: '#f59e0b', paid: '#60a5fa',
-  processing: '#a78bfa', completed: '#10b981',
-  failed: '#ef4444', cancelled: '#6b7280',
+  pending:'#f59e0b', paid:'#60a5fa', processing:'#a78bfa',
+  completed:'#10b981', failed:'#ef4444', cancelled:'#6b7280',
 };
 const statusLabel = {
   pending:'Menunggu', paid:'Dibayar', processing:'Diproses',
   completed:'Selesai', failed:'Gagal', cancelled:'Batal',
 };
 const tierInfo = {
-  platinum: { color:'#e2e8f0', bg:'rgba(226,232,240,0.08)', border:'rgba(226,232,240,0.25)', label:'PLATINUM', next:null, nextMin:null },
-  gold:     { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',  border:'rgba(251,191,36,0.25)',  label:'GOLD',     next:'PLATINUM', nextMin:5000000 },
-  member:   { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',  border:'rgba(96,165,250,0.25)',  label:'MEMBER',   next:'GOLD',     nextMin:1000000 },
+  platinum: { color:'#e2e8f0', bg:'rgba(226,232,240,0.08)', border:'rgba(226,232,240,0.25)', label:'PLATINUM', next:null, nextMin:null, nextCount:null },
+  gold:     { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',  border:'rgba(251,191,36,0.25)',  label:'GOLD',     next:'PLATINUM', nextMin:5000000,  nextCount:50 },
+  member:   { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',  border:'rgba(96,165,250,0.25)',  label:'MEMBER',   next:'GOLD',     nextMin:1000000,  nextCount:10 },
 };
 
 export default async function ProfilePage() {
@@ -27,32 +26,27 @@ export default async function ProfilePage() {
 
   const discordId = session.user.discordId;
 
-  // Ambil data user via discord_id
   const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('id, tier, balance, total_spent')
-    .eq('discord_id', discordId)
-    .single();
+    .from('users').select('id, tier, balance, total_spent')
+    .eq('discord_id', discordId).single();
 
-  // Ambil orders via discord_id
   const { data: orders } = await supabaseAdmin
-    .from('orders')
-    .select('id, status, total_amount, created_at, product_name, variant_name')
+    .from('orders').select('id, status, total_amount, created_at, product_name, variant_name')
     .eq('discord_id', discordId)
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .order('created_at', { ascending: false }).limit(20);
 
   const orderList  = orders || [];
   const tier       = (user?.tier || session.user.tier || 'member').toLowerCase();
   const tInfo      = tierInfo[tier] || tierInfo.member;
   const totalSpent = user?.total_spent
-    || orderList.filter(o => o.status === 'completed').reduce((s, o) => s + o.total_amount, 0);
+    || orderList.filter(o => o.status === 'completed').reduce((s,o) => s + o.total_amount, 0);
+  const totalDone  = orderList.filter(o => o.status === 'completed').length;
 
   const stats = {
     total:   orderList.length,
     pending: orderList.filter(o => o.status === 'pending').length,
     proses:  orderList.filter(o => ['paid','processing'].includes(o.status)).length,
-    sukses:  orderList.filter(o => o.status === 'completed').length,
+    sukses:  totalDone,
     gagal:   orderList.filter(o => ['failed','cancelled'].includes(o.status)).length,
   };
 
@@ -60,9 +54,11 @@ export default async function ProfilePage() {
     ? `https://cdn.discordapp.com/avatars/${discordId}/${session.user.avatar}.png?size=128`
     : null;
 
-  const progress = tInfo.next && tInfo.nextMin
-    ? Math.min(100, Math.round((totalSpent / tInfo.nextMin) * 100))
-    : 100;
+  // Progress: gabungan Rp dan jumlah transaksi (ambil yang lebih tinggi)
+  const progressRp    = tInfo.next && tInfo.nextMin   ? Math.min(100, Math.round((totalSpent / tInfo.nextMin) * 100)) : 100;
+  const progressCount = tInfo.next && tInfo.nextCount ? Math.min(100, Math.round((totalDone  / tInfo.nextCount) * 100)) : 100;
+  // Progress bar fill = rata-rata keduanya
+  const progressFill  = tInfo.next ? Math.round((progressRp + progressCount) / 2) : 100;
 
   return (
     <div className="px-4 pb-24 pt-4 max-w-xl mx-auto">
@@ -70,7 +66,8 @@ export default async function ProfilePage() {
       {/* Profile card */}
       <div className="rounded-2xl p-4 mb-4" style={{border:`1px solid ${tInfo.border}`, background:tInfo.bg}}>
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0" style={{border:`2px solid ${tInfo.color}`}}>
+          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
+            style={{border:`2px solid ${tInfo.color}`}}>
             {avatarUrl
               ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
               : <div className="w-full h-full flex items-center justify-center font-black text-2xl"
@@ -95,23 +92,46 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Progress ke tier berikutnya */}
+        {/* Progress ke tier berikutnya — Rp + transaksi */}
         {tInfo.next && (
-          <div className="mb-4">
-            <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
-              <span>Progress ke {tInfo.next}</span>
-              <span>{formatIDR(totalSpent)} / {formatIDR(tInfo.nextMin)}</span>
+          <div className="mb-4 rounded-xl p-3" style={{background:'rgba(0,0,0,0.2)', border:`1px solid ${tInfo.border}`}}>
+            <p className="text-xs font-bold text-white mb-2">
+              Progress ke <span style={{color:tInfo.color}}>{tInfo.next}</span>
+            </p>
+
+            {/* Progress Rp */}
+            <div className="mb-2">
+              <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
+                <span>Total Belanja</span>
+                <span>{formatIDR(totalSpent)} / {formatIDR(tInfo.nextMin)}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{background:'#0e2445'}}>
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{width:`${progressRp}%`, background:`linear-gradient(90deg, ${tInfo.color}, #1d6fff)`}} />
+              </div>
             </div>
-            <div className="h-2 rounded-full overflow-hidden" style={{background:'#0e2445'}}>
-              <div className="h-full rounded-full transition-all"
-                style={{width:`${progress}%`, background:tInfo.color}} />
+
+            {/* Progress transaksi */}
+            <div>
+              <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
+                <span>Jumlah Transaksi Sukses</span>
+                <span>{totalDone} / {tInfo.nextCount}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{background:'#0e2445'}}>
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{width:`${progressCount}%`, background:`linear-gradient(90deg, ${tInfo.color}, #10b981)`}} />
+              </div>
             </div>
+
+            <p className="text-xs mt-2 text-center" style={{color:'#3d5a7a'}}>
+              Penuhi salah satu syarat untuk naik ke {tInfo.next}
+            </p>
           </div>
         )}
 
         <div className="border-t mb-4" style={{borderColor:tInfo.border}} />
 
-        {/* Stats transaksi */}
+        {/* Stats */}
         <p className="font-bold text-xs text-white mb-3 tracking-wider">TOTAL TRANSAKSI</p>
         <div className="rounded-xl mb-3 py-3 text-center" style={{border:`1px solid ${tInfo.border}`}}>
           <p className="text-3xl font-black text-white">{stats.total}</p>
@@ -124,7 +144,8 @@ export default async function ProfilePage() {
             { label:'Sukses',  val:stats.sukses,  color:'#10b981' },
             { label:'Gagal',   val:stats.gagal,   color:'#ef4444' },
           ].map(s => (
-            <div key={s.label} className="rounded-xl py-3 text-center" style={{border:`1px solid ${tInfo.border}`}}>
+            <div key={s.label} className="rounded-xl py-3 text-center"
+              style={{border:`1px solid ${tInfo.border}`}}>
               <p className="text-2xl font-black" style={{color:s.color}}>{s.val}</p>
               <p className="text-xs mt-0.5" style={{color:'#7bafd4'}}>{s.label}</p>
             </div>
@@ -135,7 +156,8 @@ export default async function ProfilePage() {
       {/* Riwayat transaksi */}
       <p className="font-black text-base text-white mb-3 tracking-wide">RIWAYAT TRANSAKSI</p>
       {orderList.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl" style={{border:'1px solid #0e2445', background:'#091828'}}>
+        <div className="text-center py-12 rounded-2xl"
+          style={{border:'1px solid #0e2445', background:'#091828'}}>
           <p className="text-3xl mb-2">📋</p>
           <p className="text-sm" style={{color:'#7bafd4'}}>Belum ada transaksi</p>
           <Link href="/" className="text-sm font-bold mt-2 inline-block" style={{color:'#1d6fff'}}>
@@ -146,7 +168,7 @@ export default async function ProfilePage() {
         <div className="flex flex-col gap-2">
           {orderList.map(o => (
             <Link key={o.id} href={`/orders/${o.id}`}
-              className="rounded-xl p-3 flex items-center justify-between gap-3 transition-all"
+              className="rounded-xl p-3 flex items-center justify-between gap-3"
               style={{border:'1px solid #0e2445', background:'#091828', textDecoration:'none', color:'inherit'}}>
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-xs text-white truncate">{o.product_name || 'Produk'}</p>
