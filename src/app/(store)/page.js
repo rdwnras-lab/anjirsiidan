@@ -11,7 +11,7 @@ async function getHomeData() {
   const [catsRes, prodsRes, bannersRes] = await Promise.all([
     supabaseAdmin.from('categories').select('*').eq('is_active', true).order('sort_order'),
     supabaseAdmin.from('products').select(`
-      id, name, slug, description, thumbnail, delivery_type, category_id, is_best_seller,
+      id, name, slug, thumbnail, delivery_type, category_id, is_best_seller,
       categories(name, icon),
       product_variants(id, price),
       product_keys(id, is_used)
@@ -34,7 +34,7 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
-      {/* Best Seller */}
+      {/* ── BEST SELLER — layout seperti foto: image besar kiri, teks kanan ── */}
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
@@ -45,64 +45,34 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             {showBS.map(p => (
-              <Link key={p.id} href={`/products/${p.slug}`} className="bs-card">
-                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{border:'1px solid #1d4ed8'}}>
-                  {p.thumbnail
-                    ? <img src={p.thumbnail} alt={p.name} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-xl" style={{background:'rgba(29,111,255,0.1)'}}>📦</div>
-                  }
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-xs text-white line-clamp-2 leading-tight">{p.name}</p>
-                  <p className="text-xs mt-0.5" style={{color:'var(--accent-light)', opacity:0.7}}>
-                    {p.categories?.name || 'Product'}
-                  </p>
-                </div>
-              </Link>
+              <BestSellerCard key={p.id} product={p} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Category filter chips */}
+      {/* Category chips */}
       {cats.length > 0 && (
         <section className="px-4 pt-4 pb-2">
           <CategoryFilter cats={cats} />
         </section>
       )}
 
-      {/* Products — dikelompokkan per kategori, TIDAK dicampur */}
+      {/* Products per category — TANPA header nama/deskripsi kategori */}
       <section className="px-4 pb-24">
         {cats.map(cat => {
-          // Filter ketat: hanya produk milik kategori ini
           const catProds = prods.filter(p => p.category_id === cat.id);
           if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              <div className="flex items-center gap-2 mb-4 pt-2">
-                <div>
-                  <h2 className="font-bold text-base text-white uppercase">{cat.name}</h2>
-                  {cat.description && (
-                    <p className="text-xs uppercase" style={{color:'var(--accent-light)', opacity:0.6}}>
-                      {cat.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {/* Grid 3 kolom — HANYA produk kategori ini */}
+              {/* Grid 3 kolom — NO header category */}
               <div className="grid grid-cols-3 gap-2">
-                {catProds.map(p => {
-                  const stock = p.delivery_type === 'auto'
-                    ? p.product_keys?.filter(k => !k.is_used).length
-                    : undefined;
-                  return (
-                    <ProductCard
-                      key={p.id}
-                      product={{...p, category: p.categories}}
-                      stockCount={stock}
-                    />
-                  );
-                })}
+                {catProds.map(p => (
+                  <ProductCard
+                    key={p.id}
+                    product={{...p, category: p.categories}}
+                  />
+                ))}
               </div>
             </div>
           );
@@ -115,5 +85,33 @@ export default async function HomePage() {
         )}
       </section>
     </div>
+  );
+}
+
+// Best Seller card: image besar + teks, border biru saat ditekan
+function BestSellerCard({ product }) {
+  return (
+    <Link href={`/products/${product.slug}`}
+      className="group block rounded-2xl overflow-hidden transition-all duration-200"
+      style={{background:'var(--card-bg)', border:'1px solid #0e2445', textDecoration:'none', color:'inherit'}}>
+      {/* Image besar di atas */}
+      <div className="aspect-video relative overflow-hidden" style={{background:'#050f1e'}}>
+        {product.thumbnail
+          ? <img src={product.thumbnail} alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          : <div className="w-full h-full flex items-center justify-center text-4xl"
+              style={{background:'rgba(29,111,255,0.08)'}}>📦</div>
+        }
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          style={{background:'rgba(29,111,255,0.15)', border:'2px solid #1d6fff', borderRadius:'16px'}} />
+      </div>
+      {/* Teks di bawah */}
+      <div className="p-2.5">
+        <p className="font-bold text-xs text-white leading-tight line-clamp-2">{product.name}</p>
+        <p className="text-xs mt-0.5" style={{color:'#60a5fa', opacity:0.7}}>
+          {product.categories?.name || 'Product'}
+        </p>
+      </div>
+    </Link>
   );
 }
