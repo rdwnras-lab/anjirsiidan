@@ -152,6 +152,15 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   return (
     <>
       {guideModal && <GuideModal title={guideModal.title} text={guideModal.text} onClose={() => setGuideModal(null)} />}
+      {/* Floating error toast — top right */}
+      {error && (
+        <div className='fixed top-16 right-4 z-50 flex items-start gap-2 px-4 py-3 rounded-2xl shadow-xl max-w-xs'
+          style={{ background:'#1a1a2e', border:'1.5px solid #ef4444', color:'#fca5a5', fontSize:'0.8rem', lineHeight:1.4 }}
+          onClick={() => setError('')}>
+          <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#ef4444' strokeWidth='2.5' strokeLinecap='round' style={{flexShrink:0,marginTop:'1px'}}><circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/></svg>
+          <span>{error}</span>
+        </div>
+      )}
       <div className='max-w-2xl mx-auto pb-36'>
 
         {/* ── BANNER ── */}
@@ -203,14 +212,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           {/* ── STEP 1: Data Akun (kondisional) ── */}
           {step1 && (
             <StepRow n={step1} title='Masukkan Data Akun'>
-              {formFields.some(f => f.guide) && (
-                <div className='flex justify-end mb-3'>
-                  <button className='flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full'
-                    style={{ background:'rgba(29,111,255,0.15)', color:'#93c5fd', border:'1px solid rgba(29,111,255,0.3)' }}
-                    onClick={() => { const f=formFields.find(x=>x.guide); if(f) setGuideModal({ title:'Panduan '+f.label, text:f.guide }); }}>
-                    <IInfo /> Panduan</button>
-                </div>
-              )}
               <div className={formFields.length >= 2 ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {formFields.map(field => (
                   <div key={field.label}>
@@ -277,14 +278,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 );
               })}
             </div>
-            {/* price summary */}
-            {pricing && (
-              <div className='mt-3 rounded-xl p-3 flex justify-between items-center'
-                style={{ background:'rgba(29,111,255,0.08)', border:'1px solid rgba(29,111,255,0.2)' }}>
-                <span className='text-xs' style={{ color:'#93c5fd' }}>{selVariant?.name}</span>
-                <span className='font-black text-sm text-white'>{formatIDR(pricing.total)}</span>
-              </div>
-            )}
           </StepRow>
 
           {/* ── STEP 3: Pilih Pembayaran ── */}
@@ -382,7 +375,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               Login Discord untuk harga GOLD/PLATINUM + proses otomatis
             </div>
           )}
-          {error && <p className='text-sm text-red-400 mt-1'>{error}</p>}
         </div>
       </div>
 
@@ -390,19 +382,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       <div className='fixed bottom-0 left-0 right-0 z-40 px-4 pb-5 pt-3'
         style={{ background:'linear-gradient(to top, rgba(10,22,48,0.98) 60%, transparent 100%)' }}>
         <div className='max-w-2xl mx-auto'>
-          {!selected && (
-            <div className='mb-2 px-4 py-2.5 rounded-xl text-center text-sm'
-              style={{ border:'1.5px dashed rgba(255,255,255,0.2)', color:'rgba(255,255,255,0.45)' }}>
-              Belum ada item produk yang dipilih.
-            </div>
-          )}
-          {selected && pricing && (
-            <div className='mb-2 px-4 py-2 rounded-xl flex justify-between items-center'
-              style={{ background:'rgba(29,111,255,0.1)', border:'1px solid rgba(29,111,255,0.25)' }}>
-              <span className='text-xs text-white'>{selVariant?.name}</span>
-              <span className='font-black text-sm' style={{ color:'#60a5fa' }}>{formatIDR(pricing.total)}</span>
-            </div>
-          )}
           <div className='relative'>
             <button
               onClick={handleOrder}
