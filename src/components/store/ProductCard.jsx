@@ -1,76 +1,83 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 export default function ProductCard({ product }) {
   const [held, setHeld] = useState(false);
-  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || '';
+  const holdTimer  = useRef(null);
+  const didHold    = useRef(false);
+  const logoUrl    = process.env.NEXT_PUBLIC_LOGO_URL || '';
+
+  const onDown = useCallback(() => {
+    didHold.current = false;
+    holdTimer.current = setTimeout(() => {
+      didHold.current = true;
+      setHeld(true);
+    }, 300);
+  }, []);
+
+  const onUp = useCallback(() => {
+    clearTimeout(holdTimer.current);
+    setHeld(false);
+  }, []);
 
   return (
     <Link
-      href={`/products/${product.slug}`}
-      className="block"
-      style={{ textDecoration: 'none', color: 'inherit' }}
-      onMouseDown={() => setHeld(true)}
-      onMouseUp={() => setHeld(false)}
-      onMouseLeave={() => setHeld(false)}
-      onTouchStart={() => setHeld(true)}
-      onTouchEnd={() => setHeld(false)}
+      href={'/products/' + product.slug}
+      className='block select-none'
+      style={{ textDecoration:'none', color:'inherit', WebkitTapHighlightColor:'transparent' }}
+      onClick={e => { if (didHold.current) e.preventDefault(); }}
+      onMouseDown={onDown} onMouseUp={onUp} onMouseLeave={onUp}
+      onTouchStart={onDown} onTouchEnd={onUp} onTouchCancel={onUp}
     >
-      <div
-        className="relative rounded-2xl overflow-hidden transition-all duration-200"
+      <div className='relative rounded-2xl overflow-hidden transition-all duration-200'
         style={{
-          border: held ? '2px solid #1d6fff' : '2px solid rgba(29,111,255,0.15)',
+          border: held ? '2px solid #1d6fff' : '2px solid rgba(29,111,255,0.18)',
           background: '#0a1628',
-          boxShadow: held ? '0 0 16px rgba(29,111,255,0.4)' : 'none',
-          aspectRatio: '1/1',
-          transform: held ? 'scale(0.97)' : 'scale(1)',
+          boxShadow: held ? '0 0 18px rgba(29,111,255,0.45)' : 'none',
+          aspectRatio: '3/4',
+          transform: held ? 'scale(0.96)' : 'scale(1)',
         }}
       >
-        {/* Full artwork */}
+        {/* Artwork */}
         {product.thumbnail ? (
-          <img
-            src={product.thumbnail}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
-            style={{ filter: held ? 'brightness(0.55)' : 'none' }}
+          <img src={product.thumbnail} alt={product.name}
+            className='absolute inset-0 w-full h-full object-cover transition-all duration-300'
+            style={{ filter: held ? 'blur(4px) brightness(0.3)' : 'none' }}
           />
         ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center text-4xl"
-            style={{ background: 'linear-gradient(135deg, rgba(29,111,255,0.15), rgba(13,59,138,0.25))' }}
-          >
-            {product.icon || '📦'}
+          <div className='absolute inset-0 flex items-center justify-center text-4xl transition-all duration-300'
+            style={{ background:'linear-gradient(135deg,rgba(29,111,255,0.15),rgba(13,59,138,0.25))',
+                     filter: held ? 'blur(4px) brightness(0.3)' : 'none' }}>
+            📦
           </div>
         )}
 
-        {/* Always-visible gradient + name at bottom */}
-        <div
-          className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-6"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%)' }}
-        >
-          <p
-            className="font-black text-white leading-tight line-clamp-2 drop-shadow-lg"
-            style={{ fontSize: '0.7rem', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
-          >
-            {product.name}
-          </p>
+        {/* Hold overlay — only visible on hold */}
+        <div className='absolute inset-0 pointer-events-none flex flex-col justify-between p-2'
+          style={{ opacity: held ? 1 : 0, transition:'opacity 0.2s' }}>
+          {/* Logo top-right */}
+          {logoUrl && (
+            <div className='flex justify-end'>
+              <img src={logoUrl} alt='logo'
+                style={{ width:'28px', height:'28px', objectFit:'contain',
+                  borderRadius:'7px', boxShadow:'0 2px 10px rgba(0,0,0,0.7)' }} />
+            </div>
+          )}
+          {/* Name + publisher — bottom */}
+          <div className='rounded-xl px-2 py-1.5' style={{ background:'rgba(0,0,0,0.65)' }}>
+            <p className='font-black text-white leading-tight line-clamp-2 drop-shadow-lg'
+              style={{ fontSize:'0.72rem' }}>
+              {product.name}
+            </p>
+            {(product.publisher || product.category?.name) && (
+              <p style={{ fontSize:'0.62rem', color:'#93c5fd', marginTop:'2px' }}
+                className='line-clamp-1'>
+                {product.publisher || product.category?.name}
+              </p>
+            )}
+          </div>
         </div>
-
-        {/* Logo top-right on hold */}
-        {logoUrl && (
-          <div
-            className="absolute top-2 right-2 transition-opacity duration-200"
-            style={{ opacity: held ? 1 : 0 }}
-          >
-            <img
-              src={logoUrl}
-              alt="logo"
-              style={{ width:'26px', height:'26px', objectFit:'contain',
-                borderRadius:'6px', boxShadow:'0 2px 8px rgba(0,0,0,0.6)' }}
-            />
-          </div>
-        )}
       </div>
     </Link>
   );
