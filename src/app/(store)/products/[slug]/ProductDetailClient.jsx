@@ -66,12 +66,14 @@ function GuideModal({ title, text, onClose }) {
 }
 
 /* ─── Collapsible payment option ─── */
-function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, children }) {
+function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, children, noSelect }) {
   const [open, setOpen] = useState(false);
-  const sel = payMethod === value;
+  const sel = noSelect
+    ? (payMethod === value + '_auto' || payMethod === value + '_manual')
+    : payMethod === value;
   const handleClick = () => {
     if (disabled) return;
-    setPayMethod(value);
+    if (!noSelect) setPayMethod(value);
     setOpen(o => !o);
   };
   return (
@@ -80,7 +82,7 @@ function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, chi
       opacity: disabled ? 0.38 : 1,
     }}>
       <button className='w-full flex items-center justify-between px-4 py-3.5 text-left'
-        style={{ background: sel ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)', cursor: disabled ? 'not-allowed' : 'pointer' }}
+        style={{ background: sel ? 'rgba(29,111,255,0.08)' : 'rgba(255,255,255,0.04)', cursor: disabled ? 'not-allowed' : 'pointer' }}
         onClick={handleClick}>
         <div>
           <p className='font-semibold text-white text-sm'>{label}</p>
@@ -138,7 +140,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
         method:'POST', headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ productId:product.id, variantId:selected, formData,
           tierPrice:discPrc, customerName:!isAuto?(session?.user?.name||''):null,
-          customerWhatsapp:!isAuto?waNumber:null, paymentMethod:payMethod }),
+          customerWhatsapp:!isAuto?waNumber:null, paymentMethod: payMethod === 'qris_auto' || payMethod === 'qris_manual' ? 'qris' : payMethod }),
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Gagal membuat pesanan');
@@ -243,32 +245,30 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 const isAct   = selected === v.id;
                 return (
                   <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
-                    className='rounded-2xl text-left relative transition-all overflow-hidden flex items-stretch'
+                    className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
                     style={{
                       borderWidth:'2px', borderStyle:'solid',
                       borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
                       background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
                       opacity: noStock ? 0.45 : 1,
                       cursor: noStock ? 'not-allowed' : 'pointer',
-                      minHeight:'80px',
                     }}>
-                    {/* Left: name + price */}
-                    <div className='flex-1 flex flex-col justify-between p-3 pr-2'>
+                    {/* Top: name */}
+                    <div className='px-3 pt-3 pb-2'>
                       <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
-                      <div>
-                        <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'6px 0' }} />
-                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.75)' }}>{formatIDR(showPrc)}</p>
-                      </div>
                     </div>
                     {/* Divider */}
-                    <div style={{ width:'1px', background:'rgba(255,255,255,0.1)', alignSelf:'stretch' }} />
-                    {/* Right: INSTAN badge */}
-                    <div className='flex items-center justify-center p-2'>
-                      <div className='flex flex-col items-center justify-center rounded-xl px-2 py-2'
-                        style={{ background:'#fff', minWidth:'52px' }}>
-                        <IBolt />
-                        <p style={{ fontSize:'0.6rem', color:'#6b7280', marginTop:'2px', fontWeight:400 }}>Pengiriman</p>
-                        <p style={{ fontSize:'0.65rem', color:'#111827', fontWeight:800, letterSpacing:'0.02em' }}>INSTAN</p>
+                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
+                    {/* Middle: price */}
+                    <div className='px-3 py-2'>
+                      <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(showPrc)}</p>
+                    </div>
+                    {/* Bottom: INSTAN badge */}
+                    <div className='px-3 pb-3 flex justify-end'>
+                      <div className='inline-flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5'
+                        style={{ background:'#fff', minWidth:'70px' }}>
+                        <p style={{ fontSize:'0.55rem', color:'#6b7280', fontWeight:400, lineHeight:1.2 }}>Pengiriman</p>
+                        <p style={{ fontSize:'0.65rem', color:'#111827', fontWeight:800, letterSpacing:'0.02em', lineHeight:1.2 }}>INSTAN</p>
                       </div>
                     </div>
                   </button>
@@ -300,26 +300,46 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 </div>
               </div>
 
-              {/* QRIS — enabled for auto, disabled for manual */}
+              {/* QRIS dropdown */}
               <PayOpt label='QRIS'
-                subtitle='Scan QR — semua e-wallet &amp; m-banking'
+                subtitle='Pilih metode QRIS'
                 value='qris' payMethod={payMethod} setPayMethod={setPayMethod}
-                disabled={!isAuto}>
-                <div className='flex items-center gap-3 mt-1 p-3 rounded-xl'
-                  style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)' }}>
-                  {/* QRIS logo text-based */}
-                  <div className='flex items-center justify-center rounded-lg px-3 py-2 font-black text-base tracking-widest'
-                    style={{ background:'#fff', color:'#111', letterSpacing:'0.15em', fontFamily:'monospace' }}>
-                    QRIS
-                  </div>
-                  <div>
-                    <p className='text-sm font-semibold text-white'>QRIS</p>
-                    <p className='text-xs' style={{ color:'#64748b' }}>GoPay, OVO, Dana, ShopeePay, m-banking</p>
-                  </div>
+                disabled={false} noSelect={true}>
+                <div className='grid grid-cols-2 gap-2 mt-1'>
+                  {/* QRIS OTOMATIS — hanya aktif jika isAuto */}
+                  <button
+                    onClick={() => isAuto && setPayMethod('qris_auto')}
+                    className='flex flex-col items-start p-3 rounded-xl transition-all'
+                    style={{
+                      background: payMethod==='qris_auto' ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
+                      border: payMethod==='qris_auto' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
+                      opacity: !isAuto ? 0.38 : 1,
+                      cursor: !isAuto ? 'not-allowed' : 'pointer',
+                    }}>
+                    <div className='rounded-md px-2 py-1 mb-2 font-black text-xs tracking-widest'
+                      style={{ background:'#fff', color:'#111', fontFamily:'monospace' }}>QRIS</div>
+                    <p className='font-bold text-white text-xs'>QRIS</p>
+                    <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>OTOMATIS</p>
+                  </button>
+                  {/* QRIS MANUAL — hanya aktif jika !isAuto */}
+                  <button
+                    onClick={() => !isAuto && setPayMethod('qris_manual')}
+                    className='flex flex-col items-start p-3 rounded-xl transition-all'
+                    style={{
+                      background: payMethod==='qris_manual' ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
+                      border: payMethod==='qris_manual' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
+                      opacity: isAuto ? 0.38 : 1,
+                      cursor: isAuto ? 'not-allowed' : 'pointer',
+                    }}>
+                    <div className='rounded-md px-2 py-1 mb-2 font-black text-xs tracking-widest'
+                      style={{ background:'#fff', color:'#111', fontFamily:'monospace' }}>QRIS</div>
+                    <p className='font-bold text-white text-xs'>QRIS</p>
+                    <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>MANUAL</p>
+                  </button>
                 </div>
               </PayOpt>
 
-              {/* E-Wallet — enabled for manual, disabled for auto */}
+              {/* E-Wallet — hanya aktif jika manual */}
               <PayOpt label='E-Wallet'
                 subtitle='GoPay, OVO, DANA, ShopeePay'
                 value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod}
@@ -327,7 +347,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
               </PayOpt>
 
-              {/* Bank Transfer — enabled for manual */}
+              {/* Bank Transfer — hanya aktif jika manual */}
               <PayOpt label='Bank Transfer'
                 subtitle='Transfer ke rekening bank'
                 value='bank' payMethod={payMethod} setPayMethod={setPayMethod}
