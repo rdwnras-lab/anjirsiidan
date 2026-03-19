@@ -65,7 +65,7 @@ export default async function HomePage() {
           if (catProds.length === 0) return null;
           return (
             <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {catProds.map(p => (
                   <ProductCard
                     key={p.id}
