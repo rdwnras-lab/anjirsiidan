@@ -35,7 +35,7 @@ export default function ProductCard({ product }) {
           border: held ? '2px solid #1d6fff' : '2px solid rgba(29,111,255,0.18)',
           background: '#0a1628',
           boxShadow: held ? '0 0 18px rgba(29,111,255,0.45)' : 'none',
-          aspectRatio: '1/1',
+          aspectRatio: '2/3',
           transform: held ? 'scale(0.96)' : 'scale(1)',
         }}
       >
