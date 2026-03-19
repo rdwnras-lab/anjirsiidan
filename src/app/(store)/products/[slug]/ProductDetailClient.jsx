@@ -1,36 +1,59 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { formatIDR, calculateFee } from '@/lib/utils';
 
-const tierDiscount = { platinum: 0.10, gold: 0.05, member: 0 };
+const tierDiscount = { platinum:0.10, gold:0.05, member:0 };
 const tierInfo = {
-  platinum: { label:'PLATINUM', color:'#e2e8f0', disc:'10% OFF' },
-  gold:     { label:'GOLD',     color:'#fbbf24', disc:'5% OFF' },
-  member:   { label:'MEMBER',   color:'#60a5fa', disc:'Harga Normal' },
+  platinum:{ label:'PLATINUM', color:'#e2e8f0', disc:'10% OFF' },
+  gold:    { label:'GOLD',     color:'#fbbf24', disc:'5% OFF' },
+  member:  { label:'MEMBER',   color:'#60a5fa', disc:'Harga Normal' },
 };
 
-const IBolt = () => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>;
-const IHeadset = () => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
-const IHeadsetLg = () => <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' style={{opacity:0.7}}><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
-const IGlobe = () => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>;
-const IDoc = () => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>;
-const IChevron = ({ open }) => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' style={{ transform: open?'rotate(180deg)':'rotate(0)', transition:'transform 0.2s' }}><polyline points='6 9 12 15 18 9'/></svg>;
-const IInfo = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='12' y1='16' x2='12' y2='12'/><line x1='12' y1='8' x2='12.01' y2='8'/></svg>;
-const IWallet = () => <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><rect x='2' y='5' width='20' height='14' rx='2'/><line x1='2' y1='10' x2='22' y2='10'/></svg>;
-const IBag = () => <svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'><path d='M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/><line x1='3' y1='6' x2='21' y2='6'/><path d='M16 10a4 4 0 0 1-8 0'/></svg>;
-const IX = () => <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>;
+/* ── Icons ── */
+const IBolt   = () => <svg width='12' height='12' viewBox='0 0 24 24' fill='currentColor'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>;
+const IHS     = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
+const IHSLg   = () => <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' style={{opacity:0.75}}><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
+const IGlobe  = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>;
+const IDoc    = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>;
+const IChev   = ({open}) => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' style={{transform:open?'rotate(180deg)':'rotate(0)',transition:'transform 0.2s'}}><polyline points='6 9 12 15 18 9'/></svg>;
+const IInfo   = () => <svg width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='12' y1='16' x2='12' y2='12'/><line x1='12' y1='8' x2='12.01' y2='8'/></svg>;
+const IWallet = () => <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><rect x='2' y='5' width='20' height='14' rx='2'/><line x1='2' y1='10' x2='22' y2='10'/></svg>;
+const IBag    = () => <svg width='19' height='19' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'><path d='M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/><line x1='3' y1='6' x2='21' y2='6'/><path d='M16 10a4 4 0 0 1-8 0'/></svg>;
+const IX      = () => <svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>;
 
-function StepBadge({ n }) {
-  return <div className='flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-base' style={{ background:'#1d6fff' }}>{n}</div>;
+/* ─── Step section header: [num badge] | divider | title ─── */
+function StepRow({ n, title, children }) {
+  return (
+    <div className='rounded-2xl overflow-hidden' style={{ border:'1px solid rgba(255,255,255,0.09)', background:'rgba(255,255,255,0.04)' }}>
+      {/* header strip */}
+      <div className='flex items-stretch' style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        {/* number badge */}
+        <div className='flex items-center justify-center font-black text-white text-base'
+          style={{ minWidth:'52px', background:'#1d6fff', borderRadius:'0' }}>
+          {n}
+        </div>
+        {/* divider line */}
+        <div style={{ width:'3px', background:'rgba(29,111,255,0.35)' }} />
+        {/* title */}
+        <div className='flex items-center px-4 py-3.5'>
+          <span className='font-bold text-white text-base'>{title}</span>
+        </div>
+      </div>
+      {/* content */}
+      <div className='p-4'>{children}</div>
+    </div>
+  );
 }
 
+/* ─── Guide bottom sheet ─── */
 function GuideModal({ title, text, onClose }) {
   return (
     <>
       <div className='fixed inset-0 z-50 bg-black/60' onClick={onClose} />
-      <div className='fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 py-6' style={{ background:'#111827', border:'1px solid rgba(255,255,255,0.1)' }}>
+      <div className='fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl px-5 py-6'
+        style={{ background:'#111827', border:'1px solid rgba(255,255,255,0.1)' }}>
         <div className='w-10 h-1 rounded-full mx-auto mb-5' style={{ background:'rgba(255,255,255,0.25)' }} />
         <div className='flex items-center justify-between mb-4'>
           <h3 className='font-black text-white text-base'>{title}</h3>
@@ -42,23 +65,54 @@ function GuideModal({ title, text, onClose }) {
   );
 }
 
+/* ─── Collapsible payment option ─── */
+function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, children }) {
+  const [open, setOpen] = useState(false);
+  const sel = payMethod === value;
+  const handleClick = () => {
+    if (disabled) return;
+    setPayMethod(value);
+    setOpen(o => !o);
+  };
+  return (
+    <div className='rounded-xl overflow-hidden' style={{
+      border: sel ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.09)',
+      opacity: disabled ? 0.38 : 1,
+    }}>
+      <button className='w-full flex items-center justify-between px-4 py-3.5 text-left'
+        style={{ background: sel ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)', cursor: disabled ? 'not-allowed' : 'pointer' }}
+        onClick={handleClick}>
+        <div>
+          <p className='font-semibold text-white text-sm'>{label}</p>
+          {subtitle && <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>{subtitle}</p>}
+        </div>
+        {!disabled && <IChev open={open} />}
+      </button>
+      {open && children && (
+        <div className='px-4 pb-4 pt-2' style={{ background:'rgba(0,0,0,0.2)', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main component ─── */
 export default function ProductDetailClient({ product, variants, stockByVariant }) {
   const { data: session } = useSession();
   const router = useRouter();
-  const [selected, setSelected] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [waNumber, setWaNumber] = useState('');
-  const [promoCode, setPromoCode] = useState('');
-  const [payMethod, setPayMethod] = useState('qris');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [descOpen, setDescOpen] = useState(false);
-  const [guideModal, setGuideModal] = useState(null);
+  const [selected,  setSelected]  = useState(null);
+  const [formData,  setFormData]  = useState({});
+  const [waNumber,  setWaNumber]  = useState('');
+  const [payMethod, setPayMethod] = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState('');
+  const [descOpen,  setDescOpen]  = useState(false);
+  const [guideModal,setGuideModal]= useState(null);
 
-  const tier   = (session?.user?.tier || 'member').toLowerCase();
-  const isAuto = product.delivery_type === 'auto';
-  const disc   = tierDiscount[tier] || 0;
-  const tInfo  = tierInfo[tier] || tierInfo.member;
+  const tier    = (session?.user?.tier || 'member').toLowerCase();
+  const isAuto  = product.delivery_type === 'auto';
+  const disc    = tierDiscount[tier] || 0;
   const formFields = product.form_fields || [];
 
   const selVariant = variants.find(v => v.id === selected);
@@ -127,35 +181,34 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
         {/* ── Feature chips ── */}
         <div className='flex items-center gap-5 px-4 py-3' style={{ background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
           <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#fbbf24' }}><IBolt /> Fast Process</div>
-          <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#60a5fa' }}><IHeadset /> 24/7 Chat Support</div>
+          <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#60a5fa' }}><IHS /> 24/7 Chat Support</div>
           <div className='flex items-center gap-1.5 text-xs font-semibold' style={{ color:'#34d399' }}><IGlobe /> Global Network</div>
         </div>
 
-        <div className='px-4 mt-4 space-y-6'>
+        <div className='px-4 mt-4 space-y-4'>
 
           {/* ── Deskripsi ── */}
           {product.description && (
             <div className='rounded-2xl overflow-hidden' style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
               <button className='w-full flex items-center justify-between px-4 py-3.5' onClick={() => setDescOpen(o => !o)}>
                 <div className='flex items-center gap-2 text-white font-semibold text-sm'><IDoc /> Deskripsi</div>
-                <IChevron open={descOpen} />
+                <IChev open={descOpen} />
               </button>
               {descOpen && <div className='px-4 pb-4 text-sm leading-relaxed' style={{ color:'#94a3b8' }}>{product.description}</div>}
             </div>
           )}
 
-          {/* ── STEP 1: Data Akun ── */}
+          {/* ── STEP 1: Data Akun (kondisional) ── */}
           {step1 && (
-            <div className='rounded-2xl p-4' style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
-              <div className='flex items-center gap-3 mb-4'>
-                <StepBadge n={step1} />
-                <span className='font-bold text-white text-base'>Masukkan Data Akun</span>
-                {formFields.some(f => f.guide) && (
-                  <button className='ml-auto' style={{ color:'#93c5fd' }}
+            <StepRow n={step1} title='Masukkan Data Akun'>
+              {formFields.some(f => f.guide) && (
+                <div className='flex justify-end mb-3'>
+                  <button className='flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full'
+                    style={{ background:'rgba(29,111,255,0.15)', color:'#93c5fd', border:'1px solid rgba(29,111,255,0.3)' }}
                     onClick={() => { const f=formFields.find(x=>x.guide); if(f) setGuideModal({ title:'Panduan '+f.label, text:f.guide }); }}>
-                    <IInfo /></button>
-                )}
-              </div>
+                    <IInfo /> Panduan</button>
+                </div>
+              )}
               <div className={formFields.length >= 2 ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {formFields.map(field => (
                   <div key={field.label}>
@@ -164,8 +217,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                         {field.label}{field.required && <span className='text-red-400 ml-0.5'>*</span>}
                       </label>
                       {field.guide && (
-                        <button style={{ color:'#93c5fd' }} onClick={() => setGuideModal({ title:'Panduan '+field.label, text:field.guide })}>
-                          <IInfo /></button>
+                        <button style={{ color:'#93c5fd' }} onClick={() => setGuideModal({ title:'Panduan '+field.label, text:field.guide })}><IInfo /></button>
                       )}
                     </div>
                     <input className='w-full rounded-xl px-3 py-2.5 text-sm outline-none'
@@ -177,15 +229,11 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                   </div>
                 ))}
               </div>
-            </div>
+            </StepRow>
           )}
 
           {/* ── STEP 2: Pilih Nominal ── */}
-          <div className='rounded-2xl p-4' style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
-            <div className='flex items-center gap-3 mb-4'>
-              <StepBadge n={step2} />
-              <span className='font-bold text-white text-base'>Pilih Nominal</span>
-            </div>
+          <StepRow n={step2} title='Pilih Nominal'>
             <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
                 const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
@@ -195,80 +243,102 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 const isAct   = selected === v.id;
                 return (
                   <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
-                    className='rounded-2xl p-3.5 text-left relative transition-all'
+                    className='rounded-2xl text-left relative transition-all overflow-hidden flex items-stretch'
                     style={{
                       borderWidth:'2px', borderStyle:'solid',
-                      borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.09)',
-                      background: isAct ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)',
+                      borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
+                      background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
                       opacity: noStock ? 0.45 : 1,
                       cursor: noStock ? 'not-allowed' : 'pointer',
+                      minHeight:'80px',
                     }}>
-                    <p className='text-sm font-semibold text-white leading-tight mb-1'>{v.name}</p>
-                    <p className='font-black text-lg text-white leading-tight'>{formatIDR(showPrc)}</p>
-                    {disc > 0 && (
-                      <p className='text-xs line-through mt-0.5' style={{ color:'#475569' }}>
-                        {formatIDR(isAuto ? calculateFee(v.price).total : v.price)}
-                      </p>
-                    )}
-                    <div className='mt-2 flex items-center'><div className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold'
-                      style={{ background:'rgba(16,185,129,0.15)', color:'#10b981', border:'1px solid rgba(16,185,129,0.3)' }}>
-                      Pengiriman INSTAN</div></div>
-                    {noStock && <p className='text-xs text-red-400 mt-1'>Stok habis</p>}
+                    {/* Left: name + price */}
+                    <div className='flex-1 flex flex-col justify-between p-3 pr-2'>
+                      <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
+                      <div>
+                        <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'6px 0' }} />
+                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.75)' }}>{formatIDR(showPrc)}</p>
+                      </div>
+                    </div>
+                    {/* Divider */}
+                    <div style={{ width:'1px', background:'rgba(255,255,255,0.1)', alignSelf:'stretch' }} />
+                    {/* Right: INSTAN badge */}
+                    <div className='flex items-center justify-center p-2'>
+                      <div className='flex flex-col items-center justify-center rounded-xl px-2 py-2'
+                        style={{ background:'#fff', minWidth:'52px' }}>
+                        <IBolt />
+                        <p style={{ fontSize:'0.6rem', color:'#6b7280', marginTop:'2px', fontWeight:400 }}>Pengiriman</p>
+                        <p style={{ fontSize:'0.65rem', color:'#111827', fontWeight:800, letterSpacing:'0.02em' }}>INSTAN</p>
+                      </div>
+                    </div>
                   </button>
                 );
               })}
             </div>
-          </div>
+            {/* price summary */}
+            {pricing && (
+              <div className='mt-3 rounded-xl p-3 flex justify-between items-center'
+                style={{ background:'rgba(29,111,255,0.08)', border:'1px solid rgba(29,111,255,0.2)' }}>
+                <span className='text-xs' style={{ color:'#93c5fd' }}>{selVariant?.name}</span>
+                <span className='font-black text-sm text-white'>{formatIDR(pricing.total)}</span>
+              </div>
+            )}
+          </StepRow>
 
           {/* ── STEP 3: Pilih Pembayaran ── */}
-          <div className='rounded-2xl p-4' style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
-            <div className='flex items-center gap-3 mb-4'>
-              <StepBadge n={step3} />
-              <span className='font-bold text-white text-base'>Pilih Pembayaran</span>
-            </div>
+          <StepRow n={step3} title='Pilih Pembayaran'>
             <div className='space-y-2'>
-              {/* Credits — disabled */}
+              {/* Credits — always disabled */}
               <div className='rounded-xl p-4 flex items-center gap-3 relative overflow-hidden'
-                style={{ background:'rgba(255,255,255,0.05)', border:'1.5px solid rgba(255,255,255,0.09)', opacity:0.55, cursor:'not-allowed' }}>
+                style={{ background:'rgba(255,255,255,0.05)', border:'1.5px solid rgba(255,255,255,0.09)', opacity:0.45, cursor:'not-allowed' }}>
                 <div className='absolute top-0 right-0 font-black text-xs text-white px-2.5 py-1'
-                  style={{ background:'#1d6fff', borderRadius:'0 12px 0 12px' }}>BEST</div>
+                  style={{ background:'#1d6fff', borderRadius:'0 10px 0 10px', fontSize:'0.6rem' }}>BEST</div>
                 <IWallet />
-                <div><p className='font-bold text-white text-sm'>Credits</p>
-                  <p className='text-xs' style={{ color:'#64748b' }}>Login to view balance</p></div>
+                <div>
+                  <p className='font-bold text-white text-sm'>Credits</p>
+                  <p className='text-xs' style={{ color:'#64748b' }}>Login to view balance</p>
+                </div>
               </div>
-              {/* QRIS */}
-              <button className='w-full rounded-xl p-4 text-left transition-all'
-                style={{ background: payMethod==='qris' ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)',
-                         border: payMethod==='qris' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)' }}
-                onClick={() => setPayMethod('qris')}>
-                <p className='font-semibold text-white text-sm'>QRIS</p>
-                <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>Scan QR — semua e-wallet &amp; m-banking</p>
-              </button>
-              {/* E-Wallet */}
-              <button className='w-full rounded-xl p-4 text-left transition-all'
-                style={{ background: payMethod==='ewallet' ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)',
-                         border: payMethod==='ewallet' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)' }}
-                onClick={() => setPayMethod('ewallet')}>
-                <p className='font-semibold text-white text-sm'>E-Wallet</p>
-                <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>GoPay, OVO, DANA, ShopeePay</p>
-              </button>
-              {/* Bank Transfer */}
-              <button className='w-full rounded-xl p-4 text-left transition-all'
-                style={{ background: payMethod==='bank' ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.04)',
-                         border: payMethod==='bank' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)' }}
-                onClick={() => setPayMethod('bank')}>
-                <p className='font-semibold text-white text-sm'>Bank Transfer</p>
-                <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>Transfer ke rekening bank</p>
-              </button>
+
+              {/* QRIS — enabled for auto, disabled for manual */}
+              <PayOpt label='QRIS'
+                subtitle='Scan QR — semua e-wallet &amp; m-banking'
+                value='qris' payMethod={payMethod} setPayMethod={setPayMethod}
+                disabled={!isAuto}>
+                <div className='flex items-center gap-3 mt-1 p-3 rounded-xl'
+                  style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)' }}>
+                  {/* QRIS logo text-based */}
+                  <div className='flex items-center justify-center rounded-lg px-3 py-2 font-black text-base tracking-widest'
+                    style={{ background:'#fff', color:'#111', letterSpacing:'0.15em', fontFamily:'monospace' }}>
+                    QRIS
+                  </div>
+                  <div>
+                    <p className='text-sm font-semibold text-white'>QRIS</p>
+                    <p className='text-xs' style={{ color:'#64748b' }}>GoPay, OVO, Dana, ShopeePay, m-banking</p>
+                  </div>
+                </div>
+              </PayOpt>
+
+              {/* E-Wallet — enabled for manual, disabled for auto */}
+              <PayOpt label='E-Wallet'
+                subtitle='GoPay, OVO, DANA, ShopeePay'
+                value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod}
+                disabled={isAuto}>
+                <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
+              </PayOpt>
+
+              {/* Bank Transfer — enabled for manual */}
+              <PayOpt label='Bank Transfer'
+                subtitle='Transfer ke rekening bank'
+                value='bank' payMethod={payMethod} setPayMethod={setPayMethod}
+                disabled={isAuto}>
+                <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
+              </PayOpt>
             </div>
-          </div>
+          </StepRow>
 
           {/* ── STEP 4: Detail Kontak ── */}
-          <div className='rounded-2xl p-4' style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
-            <div className='flex items-center gap-3 mb-4'>
-              <StepBadge n={step4} />
-              <span className='font-bold text-white text-base'>Detail Kontak</span>
-            </div>
+          <StepRow n={step4} title='Detail Kontak'>
             <label className='text-xs font-semibold text-white block mb-2'>No. WhatsApp</label>
             <div className='flex items-center rounded-xl overflow-hidden'
               style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
@@ -281,27 +351,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 placeholder='628XXXXXXXX'
                 value={waNumber} onChange={e => setWaNumber(e.target.value)} />
             </div>
-            <p className='text-xs mt-1.5 mb-3' style={{ color:'#64748b' }}>
-              **Nomor ini akan dihubungi jika terjadi masalah**
-            </p>
-            <div className='flex items-center gap-2 rounded-xl px-3 py-2.5'
-              style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
-              <IInfo />
-              <p className='text-xs' style={{ color:'#94a3b8' }}>
-                Bukti transaksi akan dikirim ke whatsapp di atas
-              </p>
-            </div>
-          </div>
-
-          {/* Promo code */}
-          <div className='flex gap-2'>
-            <input className='flex-1 rounded-xl px-4 py-3 text-sm outline-none'
-              style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', color:'#e8f4ff' }}
-              placeholder='Kode promo (opsional)'
-              value={promoCode} onChange={e => setPromoCode(e.target.value)} />
-            <button className='px-5 py-3 rounded-xl font-bold text-white text-sm'
-              style={{ background:'#1d6fff' }}>Pakai</button>
-          </div>
+            <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>**Nomor ini akan dihubungi jika terjadi masalah**</p>
+          </StepRow>
 
           {!session && isAuto && (
             <div className='rounded-xl p-3 text-xs text-center'
@@ -309,9 +360,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               Login Discord untuk harga GOLD/PLATINUM + proses otomatis
             </div>
           )}
-
           {error && <p className='text-sm text-red-400 mt-1'>{error}</p>}
-
         </div>
       </div>
 
@@ -319,7 +368,6 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       <div className='fixed bottom-0 left-0 right-0 z-40 px-4 pb-5 pt-3'
         style={{ background:'linear-gradient(to top, rgba(10,22,48,0.98) 60%, transparent 100%)' }}>
         <div className='max-w-2xl mx-auto'>
-          {/* Selected summary */}
           {!selected && (
             <div className='mb-2 px-4 py-2.5 rounded-xl text-center text-sm'
               style={{ border:'1.5px dashed rgba(255,255,255,0.2)', color:'rgba(255,255,255,0.45)' }}>
@@ -340,10 +388,10 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               className='w-full py-4 rounded-2xl font-black text-base text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2'
               style={{ background: loading ? '#0e2445' : '#1d6fff' }}>
               <IBag />
-              {loading ? 'Memproses...' : isAuto && !session ? 'Login Discord &amp; Pesan' : 'Pesan Sekarang!'}
+              {loading ? 'Memproses...' : isAuto && !session ? 'Login Discord' : 'Pesan Sekarang!'}
             </button>
             <div className='absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none'>
-              <IHeadsetLg />
+              <IHSLg />
             </div>
           </div>
         </div>
