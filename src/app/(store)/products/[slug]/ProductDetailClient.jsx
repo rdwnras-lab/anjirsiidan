@@ -84,10 +84,7 @@ function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, chi
       <button className='w-full flex items-center justify-between px-4 py-3.5 text-left'
         style={{ background: sel ? 'rgba(29,111,255,0.08)' : 'rgba(255,255,255,0.04)', cursor: disabled ? 'not-allowed' : 'pointer' }}
         onClick={handleClick}>
-        <div>
-          <p className='font-semibold text-white text-sm'>{label}</p>
-          {subtitle && <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>{subtitle}</p>}
-        </div>
+        <p className='font-semibold text-white text-sm'>{label}</p>
         {!disabled && <IChev open={open} />}
       </button>
       {open && children && (
@@ -113,6 +110,9 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const [guideModal,setGuideModal]= useState(null);
 
   const tier    = (session?.user?.tier || 'member').toLowerCase();
+  const logoUrl   = process.env.NEXT_PUBLIC_LOGO_URL || '';
+  const userBalance = session?.user?.balance || 0;
+  const formatIDRBal = (n) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n);
   const isAuto  = product.delivery_type === 'auto';
   const disc    = tierDiscount[tier] || 0;
   const formFields = product.form_fields || [];
@@ -164,25 +164,45 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       <div className='max-w-2xl mx-auto pb-36'>
 
         {/* ── BANNER ── */}
-        <div className='relative' style={{ height:'200px' }}>
-          <div className='absolute inset-0 overflow-hidden' style={{ background:'#091828' }}>
-            {product.thumbnail && (
-              <img src={product.thumbnail} alt={product.name} className='w-full h-full object-cover'
-                style={{ filter:'brightness(0.45) blur(1px)', transform:'scale(1.06)' }} />
+        <div className='relative' style={{ height:'220px' }}>
+          {/* Background banner — from banner_image field, NOT thumbnail */}
+          <div className='absolute inset-0 overflow-hidden' style={{ background:'linear-gradient(135deg,#0d1b30,#1a1040)' }}>
+            {(product.banner_image || product.thumbnail) && (
+              <img src={product.banner_image || product.thumbnail} alt=''
+                className='w-full h-full object-cover'
+                style={{ filter:'brightness(0.5)', transform:'scale(1.04)' }} />
             )}
-            <div className='absolute inset-0' style={{ background:'linear-gradient(to top, #0d1b30 0%, transparent 60%)' }} />
+            {/* Diagonal stripe overlay */}
+            <div className='absolute inset-0' style={{ background:'linear-gradient(135deg, rgba(29,111,255,0.08) 0%, transparent 60%)' }} />
+            <div className='absolute inset-0' style={{ background:'linear-gradient(to top, #0d1b30 0%, transparent 55%)' }} />
           </div>
-          <div className='absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-3'>
-            <div className='rounded-2xl overflow-hidden flex-shrink-0'
-              style={{ width:'80px', height:'80px', border:'2px solid rgba(29,111,255,0.5)', background:'#050f1e' }}>
-              {product.thumbnail
-                ? <img src={product.thumbnail} alt={product.name} className='w-full h-full object-cover' />
-                : <div className='w-full h-full flex items-center justify-center text-3xl'>📦</div>
-              }
+
+          {/* Product icon — 3D perspective tilted card */}
+          <div className='absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-4'>
+            {/* Tilted card container */}
+            <div style={{
+              perspective: '600px',
+              flexShrink: 0,
+            }}>
+              <div style={{
+                width:'88px', height:'88px',
+                transform:'rotateY(-15deg) rotateX(5deg)',
+                transformStyle:'preserve-3d',
+                borderRadius:'18px',
+                overflow:'hidden',
+                boxShadow:'-6px 6px 20px rgba(0,0,0,0.6), 2px -2px 8px rgba(29,111,255,0.3)',
+                border:'2px solid rgba(255,255,255,0.15)',
+              }}>
+                {product.thumbnail
+                  ? <img src={product.thumbnail} alt={product.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2rem', background:'rgba(29,111,255,0.2)' }}>📦</div>
+                }
+              </div>
             </div>
-            <div className='pb-1'>
-              <h1 className='text-xl font-black text-white leading-tight'>{product.name}</h1>
-              <p className='text-sm font-bold mt-0.5' style={{ color:'#93c5fd' }}>
+            {/* Name + publisher */}
+            <div className='pb-1 flex-1'>
+              <h1 className='text-xl font-black text-white leading-tight drop-shadow-lg'>{product.name}</h1>
+              <p className='text-sm font-bold mt-0.5 drop-shadow' style={{ color:'#f59e0b' }}>
                 {product.publisher || product.categories?.name || ''}
               </p>
             </div>
@@ -283,23 +303,43 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           {/* ── STEP 3: Pilih Pembayaran ── */}
           <StepRow n={step3} title='Pilih Pembayaran'>
             <div className='space-y-2'>
-              {/* Credits — always disabled */}
-              <div className='rounded-xl p-4 flex items-center gap-3 relative overflow-hidden'
-                style={{ background:'rgba(255,255,255,0.05)', border:'1.5px solid rgba(255,255,255,0.09)', opacity:0.45, cursor:'not-allowed' }}>
-                <div className='absolute top-0 right-0 font-black text-xs text-white px-2.5 py-1'
-                  style={{ background:'#1d6fff', borderRadius:'0 10px 0 10px', fontSize:'0.6rem' }}>BEST</div>
-                <IWallet />
-                <div>
-                  <p className='font-bold text-white text-sm'>Credits</p>
-                  <p className='text-xs' style={{ color:'#64748b' }}>Login to view balance</p>
-                </div>
-              </div>
+              {/* VECHNOST PAYMENT */}
+              {(() => {
+                const canUse = !!session && userBalance >= (pricing?.total || 0) && (pricing?.total || 0) > 0;
+                const sel = payMethod === 'coins';
+                return (
+                  <button
+                    onClick={() => canUse && setPayMethod('coins')}
+                    className='w-full rounded-xl p-4 flex items-center gap-3 relative overflow-hidden transition-all text-left'
+                    style={{
+                      background: sel ? 'rgba(29,111,255,0.12)' : 'rgba(255,255,255,0.05)',
+                      border: sel ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.09)',
+                      opacity: canUse ? 1 : 0.5,
+                      cursor: canUse ? 'pointer' : 'not-allowed',
+                    }}>
+                    <div className='absolute top-0 right-0 font-black text-white px-2.5 py-1'
+                      style={{ background:'#1d6fff', borderRadius:'0 10px 0 10px', fontSize:'0.55rem' }}>BEST</div>
+                    {/* Store logo */}
+                    {logoUrl
+                      ? <img src={logoUrl} alt='logo' style={{ width:'24px', height:'24px', objectFit:'contain', borderRadius:'5px', flexShrink:0 }} />
+                      : <IWallet />
+                    }
+                    <div>
+                      <p className='font-bold text-white text-sm'>VECHNOST PAYMENT</p>
+                      {!session
+                        ? <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>Login untuk melihat saldo</p>
+                        : <p className='text-xs mt-0.5' style={{ color: userBalance >= (pricing?.total||0) && (pricing?.total||0)>0 ? '#10b981' : '#ef4444' }}>
+                            Saldo: {formatIDRBal(userBalance)}
+                            {pricing && userBalance < pricing.total ? ' (tidak cukup)' : ''}
+                          </p>
+                      }
+                    </div>
+                  </button>
+                );
+              })()}
 
               {/* QRIS dropdown */}
-              <PayOpt label='QRIS'
-                subtitle='Pilih metode QRIS'
-                value='qris' payMethod={payMethod} setPayMethod={setPayMethod}
-                disabled={false} noSelect={true}>
+              <PayOpt label='QRIS' value='qris' payMethod={payMethod} setPayMethod={setPayMethod} disabled={false} noSelect={true}>
                 <div className='grid grid-cols-2 gap-2 mt-1'>
                   {/* QRIS OTOMATIS — hanya aktif jika isAuto */}
                   <button
@@ -335,18 +375,12 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               </PayOpt>
 
               {/* E-Wallet — hanya aktif jika manual */}
-              <PayOpt label='E-Wallet'
-                subtitle='GoPay, OVO, DANA, ShopeePay'
-                value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod}
-                disabled={isAuto}>
+              <PayOpt label='E-Wallet' value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
                 <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
               </PayOpt>
 
               {/* Bank Transfer — hanya aktif jika manual */}
-              <PayOpt label='Bank Transfer'
-                subtitle='Transfer ke rekening bank'
-                value='bank' payMethod={payMethod} setPayMethod={setPayMethod}
-                disabled={isAuto}>
+              <PayOpt label='Bank Transfer' value='bank' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
                 <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
               </PayOpt>
             </div>
