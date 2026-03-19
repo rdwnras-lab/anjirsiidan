@@ -2,14 +2,11 @@ export const dynamic = 'force-dynamic';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
-import { redirect } from 'next/navigation';
 import { formatIDR, timeAgo } from '@/lib/utils';
 import TransactionSearch from './TransactionSearch';
 
 export default async function OrdersPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.discordId) redirect('/login');
-
   // 10 transaksi sukses terbaru semua user
   const { data: recentAll } = await supabaseAdmin
     .from('orders')
