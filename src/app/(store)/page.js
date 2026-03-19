@@ -97,7 +97,7 @@ function PopularCard({ product }) {
         background:'rgba(255,255,255,0.07)',
         border:'1px solid rgba(255,255,255,0.1)',
         textDecoration:'none', color:'inherit',
-        minHeight:'96px', padding:'12px',
+        minHeight:'72px', padding:'10px',
       }}
     >
       {/* Diagonal stripes right side */}
@@ -110,7 +110,7 @@ function PopularCard({ product }) {
 
       {/* Icon 90px */}
       <div className='flex-shrink-0 rounded-2xl overflow-hidden'
-        style={{ width:'90px', height:'90px',
+        style={{ width:'56px', height:'56px',
           border:'2px solid rgba(29,111,255,0.55)',
           background:'rgba(255,255,255,0.05)', position:'relative', zIndex:1 }}>
         {product.thumbnail ? (
