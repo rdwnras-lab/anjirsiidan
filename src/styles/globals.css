@@ -8,17 +8,17 @@
 /* ─── ROOT CSS VARS (Store) ─── */
 :root {
   --font-plus: 'Inter', sans-serif;
-  --bg:            #040d1f;
-  --header-bg:     #050f1e;
-  --sidebar-bg:    #040c1a;
-  --card-bg:       #091828;
-  --footer-bg:     #020810;
-  --border:        #0e2445;
-  --border-bright: #1d4ed8;
-  --accent:        #1d6fff;
-  --accent-h:      #1558e0;
-  --accent-light:  #60a5fa;
-  --glow:          rgba(29,111,255,0.25);
+  --bg:            #0d1b2e;
+  --header-bg:     #0a1628;
+  --sidebar-bg:    #071020;
+  --card-bg:       #0a1628;
+  --footer-bg:     #060e1c;
+  --border:        #1a2d4a;
+  --border-bright: #f59e0b;
+  --accent:        #f59e0b;
+  --accent-h:      #d97706;
+  --accent-light:  #fbbf24;
+  --glow:          rgba(245,158,11,0.2);
 }
 
 /* ─── BASE ─── */
@@ -27,7 +27,7 @@ html { scroll-behavior: smooth; }
 
 /* Store pages body */
 body {
-  background: linear-gradient(160deg, #071428 0%, #040d1f 40%, #050f22 100%) fixed;
+  background: linear-gradient(160deg, #0b1a2e 0%, #0d1b2e 40%, #091525 100%) fixed;
   min-height: 100vh;
   color: #e8f4ff;
   font-family: var(--font-plus);
@@ -49,9 +49,9 @@ body.admin-body {
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #0e2445; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #1d6fff; }
-::selection { background: rgba(29,111,255,0.3); }
+::-webkit-scrollbar-thumb { background: #1a2d4a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+::selection { background: rgba(245,158,11,0.25); }
 
 /* ─── STORE UTILITIES ─── */
 .text-gradient {
