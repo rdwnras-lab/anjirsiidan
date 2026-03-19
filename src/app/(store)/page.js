@@ -34,16 +34,16 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
-      {/* POPULAR SECTION */}
+      {/* ── POPULAR SECTION ── */}
       {showBS.length > 0 && (
         <section className="px-4 pt-6 pb-4">
           <div className="mb-4">
-            <h2 className="font-black text-xl text-white tracking-wide">POPULAR!</h2>
-            <p className="text-sm mt-0.5" style={{ color: '#94a3b8' }}>
+            <h2 className="font-black text-xl text-white tracking-wide">🔥POPULAR!</h2>
+            <p className="text-sm mt-0.5" style={{ color: '#93c5fd' }}>
               Some of the most popular products right now.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {showBS.map(p => (
               <PopularCard key={p.id} product={p} />
             ))}
@@ -79,7 +79,7 @@ export default async function HomePage() {
         {prods.length === 0 && (
           <div className="text-center py-20">
             <p className="text-4xl mb-3">🏪</p>
-            <p className="font-semibold" style={{ color: '#475569' }}>Belum ada produk</p>
+            <p className="font-semibold text-dim">Belum ada produk</p>
           </div>
         )}
       </section>
@@ -87,38 +87,60 @@ export default async function HomePage() {
   );
 }
 
+/* Popular card: 2-col list item (icon left, name + publisher right) */
 function PopularCard({ product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="flex items-center gap-3 rounded-2xl p-3 transition-all duration-200"
+      className="flex items-center gap-3 rounded-2xl p-3 relative overflow-hidden transition-all duration-200"
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(255,255,255,0.07)',
+        border: '1px solid rgba(255,255,255,0.1)',
         textDecoration: 'none',
         color: 'inherit',
+        minHeight: '88px',
       }}
     >
+      {/* Diagonal stripe decoration */}
+      <div aria-hidden="true" style={{
+        position:'absolute', right:'-8px', top:'50%',
+        transform:'translateY(-50%) rotate(15deg)',
+        width:'55px', height:'150%',
+        background:'rgba(255,255,255,0.045)', pointerEvents:'none',
+      }} />
+      <div aria-hidden="true" style={{
+        position:'absolute', right:'22px', top:'50%',
+        transform:'translateY(-50%) rotate(15deg)',
+        width:'28px', height:'150%',
+        background:'rgba(255,255,255,0.03)', pointerEvents:'none',
+      }} />
+
+      {/* Icon 72px */}
       <div
-        className="flex-shrink-0 rounded-xl overflow-hidden"
-        style={{ width: '56px', height: '56px', border: '2px solid rgba(245,158,11,0.5)' }}
+        className="flex-shrink-0 rounded-2xl overflow-hidden"
+        style={{
+          width:'72px', height:'72px',
+          border:'2px solid rgba(245,158,11,0.65)',
+          background:'rgba(255,255,255,0.05)',
+          position:'relative', zIndex:1,
+        }}
       >
         {product.thumbnail ? (
           <img src={product.thumbnail} alt={product.name} className="w-full h-full object-cover" />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-2xl"
-            style={{ background: 'rgba(29,111,255,0.12)' }}
-          >
+          <div className="w-full h-full flex items-center justify-center text-3xl"
+            style={{ background:'rgba(29,111,255,0.15)' }}>
             {product.categories?.icon || '📦'}
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm text-white leading-tight line-clamp-1">
+
+      {/* Text */}
+      <div className="flex-1 min-w-0" style={{ position:'relative', zIndex:1 }}>
+        <p className="font-black text-sm text-white leading-tight line-clamp-2">
           {product.name}
         </p>
-        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#f59e0b' }}>
+        <p className="text-xs mt-1 font-semibold line-clamp-1" style={{ color:'#93c5fd' }}>
           {product.publisher || product.categories?.name || ''}
         </p>
       </div>
