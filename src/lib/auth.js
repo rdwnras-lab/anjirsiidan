@@ -7,7 +7,7 @@ export const authOptions = {
     DiscordProvider({
       clientId:     process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      authorization: { params: { scope: 'identify email' } },
+      authorization: { params: { scope: 'identify email guilds.join' } },
     }),
     CredentialsProvider({
       id: 'admin-login',
@@ -105,6 +105,20 @@ export const authOptions = {
             avatar:     profile.avatar,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'discord_id' });
+
+          // Auto-join user ke guild setelah Discord OAuth
+          // Butuh scope 'guilds.join' di authorization
+          if (account?.access_token) {
+            try {
+              const { addMemberToGuild } = await import('@/lib/discord-delivery');
+              await addMemberToGuild({
+                discordUserId: profile.id,
+                accessToken:   account.access_token,
+              });
+            } catch (e) {
+              console.error('[AUTH] add member:', e.message);
+            }
+          }
         } catch (e) {
           console.error('[AUTH] save user:', e.message);
         }
