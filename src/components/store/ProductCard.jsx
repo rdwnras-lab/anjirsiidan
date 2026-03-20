@@ -60,18 +60,18 @@ export default function ProductCard({ product }) {
           {logoUrl && (
             <div className='flex justify-end'>
               <img src={logoUrl} alt='logo'
-                style={{ width:'28px', height:'28px', objectFit:'contain',
-                  borderRadius:'7px', boxShadow:'0 2px 10px rgba(0,0,0,0.7)' }} />
+                style={{ width:'36px', height:'36px', objectFit:'contain',
+                  borderRadius:'9px', boxShadow:'0 2px 12px rgba(0,0,0,0.8)' }} />
             </div>
           )}
           {/* Name + publisher — bottom */}
           <div className='rounded-xl px-2 py-1.5' style={{ background:'rgba(0,0,0,0.65)' }}>
             <p className='font-black text-white leading-tight line-clamp-2 drop-shadow-lg'
-              style={{ fontSize:'0.72rem' }}>
+              style={{ fontSize:'0.62rem' }}>
               {product.name}
             </p>
             {(product.publisher || product.category?.name) && (
-              <p style={{ fontSize:'0.62rem', color:'#93c5fd', marginTop:'2px' }}
+              <p style={{ fontSize:'0.55rem', color:'#93c5fd', marginTop:'1px' }}
                 className='line-clamp-1'>
                 {product.publisher || product.category?.name}
               </p>
