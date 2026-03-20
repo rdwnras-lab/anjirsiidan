@@ -79,14 +79,14 @@ export default function CheckoutClient({ order }) {
   const checkStatus = useCallback(async () => {
     if (status === 'completed' || expired) return;
     try {
-      const res  = await fetch(`/api/payment/status?orderId=${order.id}&amount=${order.total_amount}`);
+      const res  = await fetch(`/api/payment/status?orderId=${order.id}`);
       const data = await res.json();
       if (data.status === 'completed') {
         setStatus('completed');
         setTimeout(() => router.push(`/orders/${order.id}`), 1500);
       }
     } catch {}
-  }, [order.id, order.total_amount, router, status, expired]);
+  }, [order.id, router, status, expired]);
 
   useEffect(() => {
     const id = setInterval(checkStatus, 5000);
