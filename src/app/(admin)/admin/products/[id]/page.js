@@ -11,7 +11,7 @@ export default function EditProductPage() {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [form, setForm]       = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', banner_image:'', best_seller_thumbnail:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
+  const [form, setForm]       = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', banner_image:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
   const [variants, setVariants] = useState([{ name:'', price:'' }]);
   const [formFields, setFormFields] = useState([]);
 
@@ -26,7 +26,7 @@ export default function EditProductPage() {
       if (p) {
         setForm({
           name: p.name||'', slug: p.slug||'', category_id: p.category_id||'',
-          description: p.description||'', thumbnail: p.thumbnail||'', banner_image: p.banner_image||'', best_seller_thumbnail: p.best_seller_thumbnail||'', publisher: p.publisher||'',
+          description: p.description||'', thumbnail: p.thumbnail||'', banner_image: p.banner_image||'', publisher: p.publisher||'',
           delivery_type: p.delivery_type||'auto',
           is_active: p.is_active??true, is_best_seller: p.is_best_seller??false,
         });
@@ -136,12 +136,6 @@ export default function EditProductPage() {
             <input className={inputCls} value={form.banner_image||''} onChange={setF('banner_image')} placeholder="https://... (opsional, landscape)" />
             {form.banner_image && <img src={form.banner_image} alt="banner" className="mt-2 w-full h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />}
             <p className="text-xs text-gray-400 mt-1">Jika kosong, thumbnail digunakan sebagai background</p>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">URL Thumbnail Best Seller (opsional)</label>
-            <input className={inputCls} value={form.best_seller_thumbnail||''} onChange={setF('best_seller_thumbnail')} placeholder="Gambar khusus di section Best Seller (default: thumbnail produk)" />
-            {form.best_seller_thumbnail && <img src={form.best_seller_thumbnail} alt="bs preview" className="mt-2 w-full h-12 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />}
-            <p className="text-xs text-gray-400 mt-1">Jika diisi, gambar ini yang digunakan di Best Seller. Jika kosong, thumbnail produk digunakan.</p>
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Publisher / Developer</label>
