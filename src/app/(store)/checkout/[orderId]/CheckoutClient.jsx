@@ -35,7 +35,7 @@ export default function CheckoutClient({ order }) {
   const [timeLeft, setTimeLeft] = useState('30:00');
   const [expired,  setExpired]  = useState(false);
   const [qrImage,  setQrImage]  = useState('');
-  const [copied,   setCopied]   = useState(false);
+  const [copied,   setCopied]   = useState(null);
 
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
@@ -107,8 +107,8 @@ export default function CheckoutClient({ order }) {
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(order.id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied('id');
+    setTimeout(() => setCopied(null), 2000);
   };
 
   // ── Berhasil
@@ -233,7 +233,7 @@ export default function CheckoutClient({ order }) {
             <div style={{flex:1,background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'10px',padding:'9px 12px',fontFamily:'monospace',fontSize:'0.78rem',color:'#e8f4ff',fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{order.id}</div>
             <button onClick={handleCopy} style={{flexShrink:0,width:'36px',height:'36px',borderRadius:'10px',cursor:'pointer',background:copied?'rgba(16,185,129,0.15)':'rgba(255,255,255,0.07)',border:copied?'1px solid rgba(16,185,129,0.4)':'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s'}}>
               {copied
-                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={copied==='id'?'#10b981':'#94a3b8'} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               }
             </button>
@@ -250,25 +250,92 @@ export default function CheckoutClient({ order }) {
           <p style={{color:'#94a3b8',fontSize:'0.82rem',margin:0,lineHeight:1.5}}>Silakan lakukan pembayaran dengan metode yang kamu pilih.</p>
         </div>
 
-        {/* QR */}
+        {/* Kode Pembayaran / Transfer Info */}
         <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
-          <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 14px'}}>Kode Pembayaran</p>
-          <div style={{display:'flex',justifyContent:'center',marginBottom:'11px'}}>
-            {isManual ? (
-              <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
-                <img src={manualQrUrl} alt="QR" style={{width:'230px',height:'230px',objectFit:'contain',display:'block'}}/>
+          {/* Bank / E-Wallet: tampilkan nomor rekening + nama */}
+          {isManual && payMethodDetail ? (
+            <>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 14px'}}>Transfer ke</p>
+              {/* Provider badge + nama */}
+              <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'16px'}}>
+                <div style={{
+                  width:'44px',height:'44px',borderRadius:'10px',flexShrink:0,overflow:'hidden',
+                  background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'4px',
+                }}>
+                  {payMethodDetail.logo_url
+                    ? <img src={payMethodDetail.logo_url} alt={payMethodDetail.provider} style={{width:'100%',height:'100%',objectFit:'contain'}}/>
+                    : <span style={{fontWeight:900,fontSize:'0.65rem',color:'#111',fontFamily:'monospace'}}>{payMethodDetail.provider.toUpperCase().slice(0,6)}</span>
+                  }
+                </div>
+                <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'1rem'}}>{payMethodDetail.provider}</p>
               </div>
-            ) : qrImage ? (
-              <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
-                <img src={qrImage} alt="QR" style={{width:'230px',height:'230px',display:'block',borderRadius:'6px'}}/>
+              {/* Nomor rekening + copy button */}
+              <div style={{marginBottom:'12px'}}>
+                <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.78rem',margin:'0 0 6px'}}>Nomor Rekening</p>
+                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                  <div style={{
+                    flex:1,background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.1)',
+                    borderRadius:'10px',padding:'10px 14px',
+                    fontFamily:'monospace',fontSize:'1rem',color:'#e8f4ff',fontWeight:700,
+                    letterSpacing:'0.08em',
+                  }}>{payMethodDetail.account_number}</div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(payMethodDetail.account_number);
+                      setCopied('acc');
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    style={{
+                      flexShrink:0,width:'40px',height:'40px',borderRadius:'10px',cursor:'pointer',
+                      background: copied==='acc' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.07)',
+                      border: copied==='acc' ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                      display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.2s',
+                    }}>
+                    {copied==='acc'
+                      ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div style={{width:'256px',height:'256px',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(255,255,255,0.04)',borderRadius:'14px'}}>
-                <LoadingSpinner size={40}/>
+              {/* Atas nama */}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'rgba(255,255,255,0.04)',borderRadius:'10px',border:'1px solid rgba(255,255,255,0.07)'}}>
+                <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem'}}>Atas Nama</span>
+                <span style={{color:'#e8f4ff',fontWeight:700,fontSize:'0.88rem'}}>{payMethodDetail.account_name}</span>
               </div>
-            )}
-          </div>
-          <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>Scan QR Code untuk melakukan pembayaran.</p>
+              <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.75rem',textAlign:'center',margin:'12px 0 0'}}>
+                Transfer sesuai nominal, lalu kirim bukti ke admin.
+              </p>
+            </>
+          ) : isManual ? (
+            /* QRIS manual — tampilkan image QR dari env */
+            <>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 14px'}}>Kode Pembayaran</p>
+              <div style={{display:'flex',justifyContent:'center',marginBottom:'11px'}}>
+                <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
+                  <img src={manualQrUrl} alt="QR" style={{width:'230px',height:'230px',objectFit:'contain',display:'block'}}/>
+                </div>
+              </div>
+              <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>Scan QR Code untuk melakukan pembayaran.</p>
+            </>
+          ) : (
+            /* QRIS otomatis — generate QR dari string */
+            <>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 14px'}}>Kode Pembayaran</p>
+              <div style={{display:'flex',justifyContent:'center',marginBottom:'11px'}}>
+                {qrImage ? (
+                  <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
+                    <img src={qrImage} alt="QR" style={{width:'230px',height:'230px',display:'block',borderRadius:'6px'}}/>
+                  </div>
+                ) : (
+                  <div style={{width:'256px',height:'256px',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(255,255,255,0.04)',borderRadius:'14px'}}>
+                    <LoadingSpinner size={40}/>
+                  </div>
+                )}
+              </div>
+              <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>Scan QR Code untuk melakukan pembayaran.</p>
+            </>
+          )}
         </div>
 
         <p style={{textAlign:'center',color:'rgba(255,255,255,0.25)',fontSize:'0.72rem',paddingBottom:'4px'}}>
