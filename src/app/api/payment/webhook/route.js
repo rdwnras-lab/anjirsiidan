@@ -1,26 +1,17 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { deliverViaDiscordDM } from '@/lib/discord-delivery';
+import { deliverViaDiscordDM, logTransactionToChannel } from '@/lib/discord-delivery';
 
 export async function POST(req) {
   const body = await req.json();
-  // Pakasir sends: { amount, order_id, project, status, payment_method, completed_at }
   console.log('[WEBHOOK]', body);
 
   if (body.status !== 'completed') return Response.json({ ok: true });
 
-  const { order_id, amount } = body;
+  const { order_id } = body;
 
   const { data: order } = await supabaseAdmin.from('orders')
     .select('*').eq('id', order_id).single();
   if (!order) return Response.json({ error: 'Order not found' }, { status: 404 });
-
-  // BUG FIX: Pakasir mengirim base_amount (nominal tanpa fee), bukan total_amount
-  // Jadi bandingkan dengan base_amount, bukan total_amount
-  if (Number(order.base_amount) !== Number(amount)) {
-    console.error('[WEBHOOK] Amount mismatch!', order.base_amount, '!=', amount);
-    // Jangan reject — log saja dan lanjutkan (agar tidak stuck)
-  }
-
   if (order.status === 'completed') return Response.json({ ok: true });
 
   await supabaseAdmin.from('orders').update({
@@ -38,7 +29,7 @@ export async function POST(req) {
   return Response.json({ ok: true });
 }
 
-async function processAutoDelivery(order) {
+export async function processAutoDelivery(order) {
   const { data: keys } = await supabaseAdmin.from('product_keys')
     .select('*').eq('product_id', order.product_id).eq('variant_id', order.variant_id)
     .eq('is_used', false).limit(1);
@@ -61,7 +52,7 @@ async function processAutoDelivery(order) {
     order_id: order.id, key_id: key.id, key_content: key.key_content,
   });
 
-  // Kirim Discord DM SUCCESS dengan Component V2
+  // DM success ke user
   let dmSent = false;
   if (order.discord_id) {
     const result = await deliverViaDiscordDM({
@@ -73,19 +64,33 @@ async function processAutoDelivery(order) {
         baseAmount:  order.base_amount,
         feeAmount:   order.fee_amount,
         totalAmount: order.total_amount,
-        keys: [{ key_content: key.key_content }],
+        keys:        [{ key_content: key.key_content }],
       },
     });
     dmSent = result.ok;
-    if (!result.ok) console.error('[DM SUCCESS]', result.error);
   }
 
   await supabaseAdmin.from('orders').update({
-    status: 'completed',
-    delivery_status: 'delivered',
-    delivered_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    status: 'completed', delivery_status: 'delivered',
+    delivered_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }).eq('id', order.id);
+
+  // Hitung total transaksi sukses untuk nomor urut
+  const { count } = await supabaseAdmin.from('orders')
+    .select('*', { count: 'exact', head: true }).eq('status', 'completed');
+
+  await logTransactionToChannel({
+    orderData: {
+      productName:  order.product_name,
+      variantName:  order.variant_name,
+      baseAmount:   order.base_amount,
+      feeAmount:    order.fee_amount,
+      totalAmount:  order.total_amount,
+      deliveryType: order.delivery_type,
+      discordUserId: order.discord_id,
+    },
+    transactionNumber: count || 1,
+  }).catch(e => console.error('[LOG TRANS]', e.message));
 
   console.log(`[DELIVERY] Order ${order.id} done. DM: ${dmSent ? 'sent' : 'skipped'}`);
 }
