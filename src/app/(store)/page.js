@@ -32,10 +32,24 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <BannerSlider banners={banners} />
-
-      {/* ── FAIRY LIGHTS DECORATION ── */}
-      <FairyLights />
+      {/* Banner + pendant lamp overlaid */}
+      <div style={{ position:'relative' }}>
+        <BannerSlider banners={banners} />
+        {/* Pendant lamp — behind banner bottom edge, z-index low */}
+        <div style={{ position:'absolute', bottom:'-52px', right:'48px', zIndex:0, pointerEvents:'none', userSelect:'none', display:'flex', flexDirection:'column', alignItems:'center' }}>
+          <div style={{ width:'1.5px', height:'36px', background:'linear-gradient(to bottom, rgba(29,111,255,0.6), rgba(29,111,255,0.9))' }} />
+          <div style={{
+            width:'14px', height:'18px',
+            borderRadius:'50% 50% 48% 48%',
+            background:'radial-gradient(circle at 40% 35%, #7bb8ff 0%, #1d6fff 60%, #0a3fa0 100%)',
+            boxShadow:'0 0 10px 4px rgba(29,111,255,0.65), 0 0 22px 8px rgba(29,111,255,0.3)',
+            position:'relative',
+          }}>
+            <div style={{ position:'absolute', top:'3px', left:'4px', width:'4px', height:'4px', borderRadius:'50%', background:'rgba(255,255,255,0.55)' }} />
+          </div>
+          <div style={{ width:'8px', height:'3px', background:'rgba(29,111,255,0.7)', borderRadius:'0 0 3px 3px' }} />
+        </div>
+      </div>
 
       {/* BEST SELLER */}
       {showBS.length > 0 && (
@@ -91,30 +105,6 @@ export default async function HomePage() {
   );
 }
 
-/* Single hanging pendant light — tali + bohlam biru turun dari banner */
-function FairyLights() {
-  return (
-    <div style={{ display:'flex', justifyContent:'flex-end', paddingRight:'48px', position:'relative', height:'56px', overflow:'visible', pointerEvents:'none', userSelect:'none' }}>
-      {/* Tali / kawat turun */}
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-        <div style={{ width:'1.5px', height:'36px', background:'linear-gradient(to bottom, rgba(29,111,255,0.6), rgba(29,111,255,0.9))' }} />
-        {/* Bohlam bulat */}
-        <div style={{
-          width:'14px', height:'18px',
-          borderRadius:'50% 50% 48% 48%',
-          background:'radial-gradient(circle at 40% 35%, #7bb8ff 0%, #1d6fff 60%, #0a3fa0 100%)',
-          boxShadow:'0 0 10px 4px rgba(29,111,255,0.65), 0 0 22px 8px rgba(29,111,255,0.3)',
-          position:'relative',
-        }}>
-          {/* Highlight kecil di bohlam */}
-          <div style={{ position:'absolute', top:'3px', left:'4px', width:'4px', height:'4px', borderRadius:'50%', background:'rgba(255,255,255,0.55)' }} />
-        </div>
-        {/* Ulir bawah bohlam */}
-        <div style={{ width:'8px', height:'3px', background:'rgba(29,111,255,0.7)', borderRadius:'0 0 3px 3px' }} />
-      </div>
-    </div>
-  );
-}
 
 /* Best Seller Card — slim horizontal, 80px height, glassmorphism */
 function BestSellerCard({ product }) {
