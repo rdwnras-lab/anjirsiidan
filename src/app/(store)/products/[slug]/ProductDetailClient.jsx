@@ -167,7 +167,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
         <div style={{ position:'relative' }}>
 
           {/* Background: banner_image from admin ONLY (not thumbnail) */}
-          <div style={{ height:'160px', overflow:'hidden', position:'relative',
+          <div style={{ height:'200px', overflow:'hidden', position:'relative',
             background:'linear-gradient(180deg,#1a2560 0%,#0f1a48 100%)' }}>
             {product.banner_image && (
               <img src={product.banner_image} alt=''
@@ -183,7 +183,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <div style={{
             position:'relative', overflow:'visible',
             background:'linear-gradient(150deg,#1e3caa 0%,#172e90 55%,#112270 100%)',
-            paddingTop:'10px', paddingBottom:'14px',
+            paddingTop:'20px', paddingBottom:'24px',
             paddingLeft:'16px', paddingRight:'16px',
             /* left padding leaves room for the icon that overlaps from top */
           }}>
