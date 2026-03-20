@@ -1,66 +1,62 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30 menit
+const WINDOW_MS = 30 * 60 * 1000; // 30 menit
+
+// Ambil atau buat expiry timestamp di localStorage
+// - First load → buat expiresAt = now + 30min, simpan
+// - Refresh    → baca nilai lama, pakai (countdown lanjut dari posisi sebelumnya)
+// - Expired    → nilai lama tetap dikembalikan, timer akan tampil 00:00 / expired
+function getExpiresAt(orderId) {
+  const key = `vech_exp_${orderId}`;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const val = Number(raw);
+      // Valid: angka positif dan tidak lebih dari 31 menit di masa depan (anti tamper)
+      if (val > 0 && val <= Date.now() + 31 * 60 * 1000) {
+        return val;
+      }
+    }
+  } catch {}
+  // Belum ada / tidak valid → buat baru
+  const exp = Date.now() + WINDOW_MS;
+  try { localStorage.setItem(key, String(exp)); } catch {}
+  return exp;
+}
 
 export default function CheckoutClient({ order }) {
-  const router    = useRouter();
-  // Hitung expiresAt:
-  // 1. Pakai payment_expired_at dari DB jika valid ISO string & tahun masuk akal
-  // 2. Fallback: simpan start time di sessionStorage (tahan refresh)
-  const mountTime = useRef((() => {
-    // Coba pakai payment_expired_at dari DB (sudah pasti ISO string dari route.js)
-    if (order.payment_expired_at) {
-      const d = new Date(order.payment_expired_at);
-      if (!isNaN(d.getTime()) && d.getFullYear() >= 2024) {
-        return d.getTime() - 30 * 60 * 1000; // balik ke start time
-      }
-    }
-    // Fallback: sessionStorage supaya tidak reset saat refresh
-    const key = `checkout_start_${order.id}`;
-    try {
-      const stored = sessionStorage.getItem(key);
-      if (stored) {
-        const t = Number(stored);
-        if (t > 0 && t <= Date.now()) return t;
-      }
-      const now = Date.now();
-      sessionStorage.setItem(key, String(now));
-      return now;
-    } catch {
-      return Date.now();
-    }
-  })());
+  const router = useRouter();
 
-  const [status,  setStatus]  = useState(order.status === 'completed' ? 'completed' : 'pending');
-  const [timeLeft,setTimeLeft]= useState('30:00');
-  const [qrImage, setQrImage] = useState('');
-  const [copied,  setCopied]  = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [status,   setStatus]   = useState(order.status === 'completed' ? 'completed' : 'pending');
+  const [timeLeft, setTimeLeft] = useState('30:00');
+  const [expired,  setExpired]  = useState(false);
+  const [qrImage,  setQrImage]  = useState('');
+  const [copied,   setCopied]   = useState(false);
 
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
   const thumbnail   = order.products?.thumbnail || null;
 
-  // Generate QR image
+  // Generate QR
   useEffect(() => {
     if (!order.payment_qr || isManual) return;
-    import('qrcode').then(QRCode => {
+    import('qrcode').then(QRCode =>
       QRCode.toDataURL(order.payment_qr, {
         width: 300, margin: 2, color: { dark: '#000', light: '#fff' },
-      }).then(url => setQrImage(url));
-    });
+      }).then(setQrImage)
+    );
   }, [order.payment_qr, isManual]);
 
-  // Timer — mulai dari saat halaman dibuka (mountTime), bukan dari DB
-  // Ini 100% aman: tidak bergantung pada created_at, expired_at, atau format apapun dari server
+  // Timer — seluruhnya dari localStorage, tidak bergantung DB sama sekali
   useEffect(() => {
     if (isManual || status === 'completed') return;
 
-    const expiresAt = mountTime.current + PAYMENT_WINDOW_MS;
+    // getExpiresAt hanya jalan di client (useEffect tidak SSR)
+    const expiresAt = getExpiresAt(order.id);
 
     const tick = () => {
       const diff = expiresAt - Date.now();
@@ -71,15 +67,15 @@ export default function CheckoutClient({ order }) {
       }
       const m = Math.floor(diff / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+      setTimeLeft(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
     };
 
-    tick();
+    tick(); // jalankan langsung supaya timer langsung tampil
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isManual, status]);
+  }, [isManual, status, order.id]);
 
-  // Poll status pembayaran setiap 5 detik
+  // Poll status setiap 5 detik
   const checkStatus = useCallback(async () => {
     if (status === 'completed' || expired) return;
     try {
@@ -149,52 +145,24 @@ export default function CheckoutClient({ order }) {
   return (
     <div style={{maxWidth:'448px',margin:'0 auto',paddingBottom:'40px'}}>
 
-      {/* Banner */}
-      <div style={{
-        position:'relative',overflow:'hidden',
-        background:'#0f1e5a',padding:'32px 20px 44px',textAlign:'center',
-      }}>
-        <div style={{
-          position:'absolute',inset:0,
-          background:'linear-gradient(135deg,rgba(29,111,255,0.3) 0%,transparent 50%,rgba(29,111,255,0.2) 100%)',
-          backgroundSize:'300% 300%',animation:'bg 5s ease infinite',
-        }}/>
+      {/* Banner animasi */}
+      <div style={{position:'relative',overflow:'hidden',background:'#0f1e5a',padding:'32px 20px 44px',textAlign:'center'}}>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(29,111,255,0.3) 0%,transparent 50%,rgba(29,111,255,0.2) 100%)',backgroundSize:'300% 300%',animation:'bg 5s ease infinite'}}/>
         {[[90,90,-20,-20,'rgba(29,111,255,0.15)','a'],[60,60,-15,-10,'rgba(96,165,250,0.12)','b'],[40,40,30,'30%','rgba(29,111,255,0.1)','c']].map(([w,h,t,l,bg,k],i)=>(
-          <div key={k} style={{
-            position:'absolute',width:w,height:h,borderRadius:'50%',background:bg,
-            top:i===1?undefined:t, bottom:i===1?t:undefined,
-            left:i!==2?l:undefined, right:i===2?l:undefined,
-            animation:`orb${k} ${4+i}s ease-in-out infinite`,filter:'blur(2px)',
-          }}/>
+          <div key={k} style={{position:'absolute',width:w,height:h,borderRadius:'50%',background:bg,top:i===1?undefined:t,bottom:i===1?t:undefined,left:i!==2?l:undefined,right:i===2?l:undefined,animation:`orb${k} ${4+i}s ease-in-out infinite`,filter:'blur(2px)'}}/>
         ))}
         <div style={{position:'absolute',bottom:-2,left:0,right:0,height:'32px',background:'#0a1628',clipPath:'ellipse(60% 100% at 50% 100%)'}}/>
-        <div style={{
-          width:'60px',height:'60px',borderRadius:'50%',position:'relative',zIndex:1,
-          background:'rgba(29,111,255,0.2)',border:'1.5px solid rgba(96,165,250,0.4)',
-          display:'flex',alignItems:'center',justifyContent:'center',
-          margin:'0 auto 14px',animation:'pulse 2.5s ease-in-out infinite',
-        }}>
+        <div style={{width:'60px',height:'60px',borderRadius:'50%',position:'relative',zIndex:1,background:'rgba(29,111,255,0.2)',border:'1.5px solid rgba(96,165,250,0.4)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',animation:'pulse 2.5s ease-in-out infinite'}}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
         </div>
-        <h1 style={{position:'relative',zIndex:1,margin:0,fontWeight:900,fontSize:'1.25rem',color:'#fff'}}>
-          Menunggu Pembayaran
-        </h1>
-        <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>
-          Silakan lakukan pembayaran dengan metode yang kamu pilih.
-        </p>
+        <h1 style={{position:'relative',zIndex:1,margin:0,fontWeight:900,fontSize:'1.25rem',color:'#fff'}}>Menunggu Pembayaran</h1>
+        <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>Silakan lakukan pembayaran dengan metode yang kamu pilih.</p>
         {!isManual && (
           <div style={{position:'relative',zIndex:1,marginTop:'14px'}}>
-            <span style={{
-              display:'inline-flex',alignItems:'center',gap:'7px',
-              background:'rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.12)',
-              borderRadius:'999px',padding:'5px 16px',
-              fontWeight:800,fontSize:'0.9rem',fontFamily:'monospace',color:'#fbbf24',
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-              </svg>
+            <span style={{display:'inline-flex',alignItems:'center',gap:'7px',background:'rgba(0,0,0,0.4)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'999px',padding:'5px 16px',fontWeight:800,fontSize:'0.9rem',fontFamily:'monospace',color:'#fbbf24'}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {timeLeft}
             </span>
           </div>
@@ -213,10 +181,7 @@ export default function CheckoutClient({ order }) {
         {/* Produk */}
         <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px',display:'flex',alignItems:'center',gap:'14px'}}>
           <div style={{width:'52px',height:'52px',borderRadius:'12px',flexShrink:0,overflow:'hidden',background:'linear-gradient(135deg,rgba(29,111,255,0.15),rgba(10,22,64,0.8))',border:'1.5px solid rgba(29,111,255,0.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            {thumbnail
-              ? <img src={thumbnail} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
-              : <span style={{fontSize:'1.5rem'}}>🎮</span>
-            }
+            {thumbnail ? <img src={thumbnail} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/> : <span style={{fontSize:'1.5rem'}}>🎮</span>}
           </div>
           <div>
             <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'0.95rem'}}>{order.product_name}</p>
@@ -289,9 +254,7 @@ export default function CheckoutClient({ order }) {
               </div>
             )}
           </div>
-          <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>
-            Scan QR Code untuk melakukan pembayaran.
-          </p>
+          <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>Scan QR Code untuk melakukan pembayaran.</p>
         </div>
 
         <p style={{textAlign:'center',color:'rgba(255,255,255,0.25)',fontSize:'0.72rem',paddingBottom:'4px'}}>
