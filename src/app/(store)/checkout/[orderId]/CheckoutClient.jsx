@@ -28,17 +28,23 @@ export default function CheckoutClient({ order }) {
     });
   }, [order.payment_qr, isManual]);
 
-  // ── Timer 30 menit dari created_at order
-  // Tidak pakai payment_expired_at dari Pakasir sama sekali.
-  // created_at adalah field otomatis Supabase, selalu ada dan selalu ISO string valid.
+  // ── Timer 30 menit — dihitung dari created_at, fallback ke Date.now() jika null/invalid
+  // BUG NOTE: new Date(null) = epoch 1970 (bukan Invalid Date!) → langsung expired.
+  // Harus cek null secara eksplisit DAN validasi tahun > 2020.
   useEffect(() => {
     if (isManual || status === 'completed') return;
 
-    const createdAt = new Date(order.created_at);
-    // Jika created_at tidak valid (harusnya tidak terjadi), skip timer
-    if (isNaN(createdAt.getTime())) return;
+    let startMs;
+    if (order.created_at != null && order.created_at !== '') {
+      const parsed = new Date(order.created_at);
+      startMs = (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 2020)
+        ? parsed.getTime()
+        : Date.now();
+    } else {
+      startMs = Date.now();
+    }
 
-    const expiresAt = new Date(createdAt.getTime() + PAYMENT_WINDOW_MS);
+    const expiresAt = new Date(startMs + PAYMENT_WINDOW_MS);
 
     const tick = () => {
       const diff = expiresAt.getTime() - Date.now();
