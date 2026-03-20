@@ -172,5 +172,4 @@ function BestSellerCard({ product }) {
         </p>
       </div>
     </Link>
-  );
-}
+  )
