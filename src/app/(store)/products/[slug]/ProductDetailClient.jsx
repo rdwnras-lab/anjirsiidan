@@ -16,6 +16,7 @@ const IBolt   = () => <svg width='12' height='12' viewBox='0 0 24 24' fill='curr
 const IHS     = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
 const IHSLg   = () => <svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='white' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' style={{opacity:0.75}}><path d='M3 18v-6a9 9 0 0 1 18 0v6'/><path d='M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z'/><path d='M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z'/></svg>;
 const IGlobe  = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='2' y1='12' x2='22' y2='12'/><path d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>;
+const IShield = () => <svg width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>;
 const IDoc    = () => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>;
 const IChev   = ({open}) => <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' style={{transform:open?'rotate(180deg)':'rotate(0)',transition:'transform 0.2s'}}><polyline points='6 9 12 15 18 9'/></svg>;
 const IInfo   = () => <svg width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><circle cx='12' cy='12' r='10'/><line x1='12' y1='16' x2='12' y2='12'/><line x1='12' y1='8' x2='12.01' y2='8'/></svg>;
@@ -187,35 +188,33 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             paddingLeft:'16px', paddingRight:'16px',
             /* left padding leaves room for the icon that overlaps from top */
           }}>
-            {/* Diagonal stripes pattern */}
-            {[
-              {r:'6%',w:'3px',o:.08},{r:'13%',w:'2px',o:.05},
-              {r:'21%',w:'7px',o:.04},{r:'31%',w:'2px',o:.06},
-              {r:'42%',w:'4px',o:.04},{r:'53%',w:'2px',o:.05},
-              {r:'63%',w:'9px',o:.04},{r:'75%',w:'2px',o:.05},
-              {r:'84%',w:'4px',o:.04},
-            ].map((s,i)=>(
-              <div key={i} aria-hidden='true' style={{
-                position:'absolute', top:'-30%', right:s.r, bottom:'-30%', width:s.w,
-                background:`rgba(255,255,255,${s.o})`,
-                transform:'skewX(-22deg)', pointerEvents:'none',
-              }}/>
-            ))}
+            {/* Glossy top highlight */}
+            <div aria-hidden='true' style={{
+              position:'absolute', top:0, left:0, right:0, height:'1px',
+              background:'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0.4) 70%, transparent 100%)',
+              pointerEvents:'none',
+            }} />
+            {/* Inner top glow */}
+            <div aria-hidden='true' style={{
+              position:'absolute', top:0, left:0, right:0, height:'40px',
+              background:'linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 100%)',
+              pointerEvents:'none',
+            }} />
 
             {/* Layout: icon (absolute, overlapping) + text block (margin-left) */}
             <div style={{ display:'flex', alignItems:'center', gap:'0' }}>
 
               {/* Icon — absolute positioned, straddles banner/card boundary */}
               <div style={{
-                flexShrink:0, width:'120px',
+                flexShrink:0, width:'140px',
                 position:'relative', zIndex:3,
-                marginTop:'-60px',
+                marginTop:'-68px',
                 perspective:'800px',
                 marginRight:'14px',
               }}>
                 <div style={{
-                  width:'120px', height:'120px',
-                  borderRadius:'18px', overflow:'hidden',
+                  width:'140px', height:'140px',
+                  borderRadius:'20px', overflow:'hidden',
                   transform:'rotateY(18deg) rotateX(-12deg)',
                   transformStyle:'preserve-3d',
                   boxShadow:'8px 10px 28px rgba(0,0,0,0.85), -4px -4px 14px rgba(29,111,255,0.25)',
@@ -240,19 +239,19 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <p style={{ margin:'3px 0 0', fontWeight:600, fontSize:'0.82rem', color:'#60a5fa' }}>
                   {product.publisher || product.categories?.name || ''}
                 </p>
-                <div style={{ marginTop:'9px', display:'grid', gridTemplateColumns:'1fr 1fr',
-                  rowGap:'5px', columnGap:'8px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
-                    color:'#fbbf24', fontSize:'11px', fontWeight:600 }}>
-                    <IBolt /> Fast Process
+                <div style={{ marginTop:'9px', display:'flex', alignItems:'center',
+                  gap:'10px', flexWrap:'nowrap' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'3px',
+                    color:'#fbbf24', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    <IBolt /> Instan Delivery
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
-                    color:'#60a5fa', fontSize:'11px', fontWeight:600 }}>
-                    <IHS /> 24/7 Chat Support
+                  <div style={{ display:'flex', alignItems:'center', gap:'3px',
+                    color:'#60a5fa', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    <IHS /> 24/7 Support
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
-                    color:'#34d399', fontSize:'11px', fontWeight:600 }}>
-                    <IGlobe /> Global Network
+                  <div style={{ display:'flex', alignItems:'center', gap:'3px',
+                    color:'#34d399', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    <IShield /> Secure Payment
                   </div>
                 </div>
               </div>
