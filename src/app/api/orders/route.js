@@ -29,20 +29,20 @@ export async function POST(req) {
       return Response.json({ error: 'Stok habis untuk varian ini.' }, { status: 400 });
   }
 
-  const orderId   = generateOrderId();
+  const orderId   = generateOrderId(variant.name);
   const basePrice = tierPrice || variant.price;
 
   let baseAmt, fee, total, qrString = null, expiredAt = null;
 
   if (isAuto) {
-    const calc = calculateFee(basePrice);
-    baseAmt = calc.base;
-    fee     = calc.fee;
-    total   = calc.total;
     try {
-      const payment = await createQrisPayment({ orderId, amount: total });
+      // Kirim basePrice ke Pakasir, gunakan fee & total dari response Pakasir
+      const payment = await createQrisPayment({ orderId, amount: basePrice });
       qrString  = payment.payment_number;
       expiredAt = payment.expired_at;
+      baseAmt   = payment.amount || basePrice;
+      fee       = payment.fee || 0;
+      total     = payment.total_payment || (basePrice + fee);
     } catch (e) {
       console.error('[PAKASIR]', e.message);
       return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
