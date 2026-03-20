@@ -8,7 +8,22 @@ const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30 menit
 
 export default function CheckoutClient({ order }) {
   const router    = useRouter();
-  const mountTime = useRef(Date.now()); // waktu halaman pertama kali dibuka
+  // Simpan start time di sessionStorage supaya tidak reset saat refresh
+  const mountTime = useRef((() => {
+    const key = `checkout_start_${order.id}`;
+    try {
+      const stored = sessionStorage.getItem(key);
+      if (stored) {
+        const t = Number(stored);
+        if (t > 0) return t;
+      }
+      const now = Date.now();
+      sessionStorage.setItem(key, String(now));
+      return now;
+    } catch {
+      return Date.now();
+    }
+  })());
 
   const [status,  setStatus]  = useState(order.status === 'completed' ? 'completed' : 'pending');
   const [timeLeft,setTimeLeft]= useState('30:00');
