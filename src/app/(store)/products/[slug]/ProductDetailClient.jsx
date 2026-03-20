@@ -206,15 +206,15 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
               {/* Icon — absolute positioned, straddles banner/card boundary */}
               <div style={{
-                flexShrink:0, width:'140px',
+                flexShrink:0, width:'120px',
                 position:'relative', zIndex:3,
-                marginTop:'-68px',
+                marginTop:'-65px',
                 perspective:'800px',
                 marginRight:'14px',
               }}>
                 <div style={{
-                  width:'140px', height:'140px',
-                  borderRadius:'20px', overflow:'hidden',
+                  width:'120px', height:'130px',
+                  borderRadius:'18px', overflow:'hidden',
                   transform:'rotateY(18deg) rotateX(-12deg)',
                   transformStyle:'preserve-3d',
                   boxShadow:'8px 10px 28px rgba(0,0,0,0.85), -4px -4px 14px rgba(29,111,255,0.25)',
@@ -240,17 +240,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                   {product.publisher || product.categories?.name || ''}
                 </p>
                 <div style={{ marginTop:'9px', display:'flex', alignItems:'center',
-                  gap:'10px', flexWrap:'nowrap' }}>
+                  gap:'7px', flexWrap:'nowrap' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'3px',
-                    color:'#fbbf24', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    color:'#fbbf24', fontSize:'9px', fontWeight:700, whiteSpace:'nowrap' }}>
                     <IBolt /> Instan Delivery
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:'3px',
-                    color:'#60a5fa', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    color:'#60a5fa', fontSize:'9px', fontWeight:700, whiteSpace:'nowrap' }}>
                     <IHS /> 24/7 Support
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:'3px',
-                    color:'#34d399', fontSize:'10px', fontWeight:700, whiteSpace:'nowrap' }}>
+                    color:'#34d399', fontSize:'9px', fontWeight:700, whiteSpace:'nowrap' }}>
                     <IShield /> Secure Payment
                   </div>
                 </div>
