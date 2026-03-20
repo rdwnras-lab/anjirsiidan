@@ -163,76 +163,83 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       )}
       <div className='max-w-2xl mx-auto pb-36'>
 
-        {/* ── BANNER: full-width bg + overlapping card + 3D icon ── */}
-        <div className='relative' style={{ marginBottom:'0' }}>
+        {/* ── BANNER: identical to Tokan Gaming layout ── */}
+        <div style={{ position:'relative', marginBottom:'0' }}>
 
-          {/* Background — banner_image from admin (NOT thumbnail) */}
-          <div style={{ height:'220px', overflow:'hidden', position:'relative', background:'linear-gradient(135deg,#0d1b30,#1a1040)' }}>
+          {/* Full-width background image */}
+          <div style={{ height:'210px', overflow:'hidden', position:'relative', background:'#0d1b30' }}>
             {(product.banner_image || product.thumbnail) && (
               <img src={product.banner_image || product.thumbnail} alt=''
-                style={{ width:'100%', height:'100%', objectFit:'cover', filter:'brightness(0.6)', transform:'scale(1.04)', display:'block' }} />
+                style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'brightness(0.65)', display:'block' }} />
             )}
+            {/* Bottom fade so card merges seamlessly */}
+            <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'80px',
+              background:'linear-gradient(to top, #1d3080 0%, transparent 100%)' }} />
           </div>
 
-          {/* Info card — overlaps background, icon sticks out above */}
+          {/* Blue info card — seamlessly connected to banner, NO gap */}
           <div style={{
             position:'relative',
-            marginTop:'-60px',
-            background:'linear-gradient(135deg, #1a2a6c 0%, #1d3080 50%, #162060 100%)',
-            borderRadius:'0',
-            paddingTop:'16px', paddingBottom:'12px',
+            background:'linear-gradient(160deg, #1e3a9e 0%, #1a2f88 60%, #152370 100%)',
+            paddingTop:'0', paddingBottom:'14px',
             paddingLeft:'16px', paddingRight:'16px',
-            overflow:'visible',
-            boxShadow:'0 -4px 20px rgba(0,0,0,0.4)',
+            overflow:'hidden',
           }}>
-            {/* Diagonal shimmer stripe decoration */}
-            <div aria-hidden='true' style={{
-              position:'absolute', top:0, right:'-10px', bottom:0, width:'70px',
-              background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
-              transform:'skewX(-15deg)', pointerEvents:'none',
-            }} />
-            <div aria-hidden='true' style={{
-              position:'absolute', top:0, right:'40px', bottom:0, width:'30px',
-              background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
-              transform:'skewX(-15deg)', pointerEvents:'none',
-            }} />
+            {/* Multi-layer diagonal stripes — futuristic effect */}
+            {[{r:'8%',w:'3px',o:0.07},{r:'14%',w:'2px',o:0.05},{r:'22%',w:'6px',o:0.04},
+              {r:'30%',w:'2px',o:0.06},{r:'40%',w:'4px',o:0.03},{r:'50%',w:'2px',o:0.05},
+              {r:'60%',w:'8px',o:0.04},{r:'72%',w:'2px',o:0.05},{r:'80%',w:'4px',o:0.04}
+            ].map((s,i) => (
+              <div key={i} aria-hidden='true' style={{
+                position:'absolute', top:'-20%', right:s.r, bottom:'-20%', width:s.w,
+                background:`rgba(255,255,255,${s.o})`,
+                transform:'skewX(-22deg)', pointerEvents:'none',
+              }} />
+            ))}
 
-            <div style={{ display:'flex', alignItems:'flex-start', gap:'14px' }}>
-              {/* 3D Product icon — top half sticks above card */}
-              <div style={{ flexShrink:0, marginTop:'-60px', perspective:'700px' }}>
+            {/* Flex row: 3D icon left + text right */}
+            <div style={{ display:'flex', alignItems:'flex-end', gap:'14px' }}>
+
+              {/* 3D icon — negative margin top, sticks out above container */}
+              <div style={{ flexShrink:0, marginTop:'-70px', perspective:'800px', zIndex:2 }}>
                 <div style={{
-                  width:'120px', height:'120px',
-                  borderRadius:'20px',
-                  overflow:'hidden',
-                  transform:'rotateY(10deg) rotateX(-3deg)',
+                  width:'130px', height:'130px',
+                  borderRadius:'18px', overflow:'hidden',
+                  transform:'rotateY(12deg) rotateX(-2deg)',
                   transformStyle:'preserve-3d',
-                  boxShadow:'4px 8px 24px rgba(0,0,0,0.7), -2px -2px 10px rgba(29,111,255,0.2)',
-                  border:'2.5px solid rgba(255,255,255,0.18)',
+                  boxShadow:'6px 10px 28px rgba(0,0,0,0.75), -3px -2px 12px rgba(29,111,255,0.25)',
+                  border:'2px solid rgba(255,255,255,0.2)',
                   background:'#0a1628',
+                  position:'relative', zIndex:2,
                 }}>
                   {product.thumbnail
-                    ? <img src={product.thumbnail} alt={product.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-                    : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2.5rem', background:'rgba(29,111,255,0.15)' }}>📦</div>
+                    ? <img src={product.thumbnail} alt={product.name}
+                        style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                    : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center',
+                        justifyContent:'center', fontSize:'3rem', background:'rgba(29,111,255,0.15)' }}>📦</div>
                   }
                 </div>
               </div>
 
-              {/* Right: name + publisher + chips */}
-              <div style={{ flex:1, paddingTop:'4px' }}>
-                <h1 className='font-black text-white leading-tight' style={{ fontSize:'1.15rem' }}>{product.name}</h1>
-                <p className='font-semibold mt-0.5' style={{ color:'#93c5fd', fontSize:'0.85rem' }}>
+              {/* Right: name + publisher + feature grid */}
+              <div style={{ flex:1, paddingTop:'6px', paddingBottom:'2px', zIndex:1 }}>
+                <h1 style={{ margin:0, fontWeight:900, fontSize:'1.1rem', color:'#fff',
+                  lineHeight:1.25, letterSpacing:'0.01em' }}>
+                  {product.name}
+                </h1>
+                <p style={{ margin:'3px 0 0', fontWeight:600, fontSize:'0.82rem', color:'#60a5fa' }}>
                   {product.publisher || product.categories?.name || ''}
                 </p>
 
-                {/* Feature chips */}
-                <div style={{ display:'flex', flexWrap:'wrap', gap:'10px', marginTop:'10px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#fbbf24', fontSize:'0.72rem', fontWeight:600 }}>
+                {/* Feature row — 1 grid, icons + text, 11-12px */}
+                <div style={{ marginTop:'10px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'5px 8px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#fbbf24', fontSize:'11px', fontWeight:600 }}>
                     <IBolt /> Fast Process
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#60a5fa', fontSize:'0.72rem', fontWeight:600 }}>
-                    <IHS /> 24/7 Support
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#60a5fa', fontSize:'11px', fontWeight:600 }}>
+                    <IHS /> 24/7 Chat Support
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'5px', color:'#34d399', fontSize:'0.72rem', fontWeight:600 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#34d399', fontSize:'11px', fontWeight:600 }}>
                     <IGlobe /> Global Network
                   </div>
                 </div>
