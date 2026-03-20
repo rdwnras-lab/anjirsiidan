@@ -167,7 +167,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
         <div style={{ position:'relative' }}>
 
           {/* Background: banner_image from admin ONLY (not thumbnail) */}
-          <div style={{ height:'260px', overflow:'hidden', position:'relative',
+          <div style={{ height:'160px', overflow:'hidden', position:'relative',
             background:'linear-gradient(180deg,#1a2560 0%,#0f1a48 100%)' }}>
             {product.banner_image && (
               <img src={product.banner_image} alt=''
@@ -176,7 +176,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             )}
             {/* Gradient fade bottom → merges with blue card */}
             <div style={{ position:'absolute', inset:0,
-              background:'linear-gradient(to top, #162878 0%, transparent 50%)' }} />
+              background:'linear-gradient(to top, #162878 0%, transparent 60%)' }} />
           </div>
 
           {/* Blue card — sits flush below banner */}
@@ -209,16 +209,16 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <div style={{
                 flexShrink:0, width:'120px',
                 position:'relative', zIndex:3,
-                marginTop:'-72px',
+                marginTop:'-60px',
                 perspective:'800px',
                 marginRight:'14px',
               }}>
                 <div style={{
                   width:'120px', height:'120px',
                   borderRadius:'18px', overflow:'hidden',
-                  transform:'rotateY(-18deg) rotateX(12deg)',
+                  transform:'rotateY(18deg) rotateX(-12deg)',
                   transformStyle:'preserve-3d',
-                  boxShadow:'-8px 10px 28px rgba(0,0,0,0.85), 4px -4px 14px rgba(29,111,255,0.25)',
+                  boxShadow:'8px 10px 28px rgba(0,0,0,0.85), -4px -4px 14px rgba(29,111,255,0.25)',
                   border:'2.5px solid rgba(255,255,255,0.22)',
                   background:'#0a1628',
                 }}>
