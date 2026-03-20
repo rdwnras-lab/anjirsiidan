@@ -4,19 +4,14 @@ import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-// DB selalu simpan expired_at sebagai ISO string (dikonversi di route.js)
-function parseExpiredAt(val) {
-  if (!val) return null;
-  const d = new Date(val);
-  return isNaN(d.getTime()) ? null : d;
-}
-
 export default function CheckoutClient({ order }) {
   const router = useRouter();
   const [status,   setStatus]   = useState(order.status === 'completed' ? 'completed' : 'pending');
   const [timeLeft, setTimeLeft] = useState('');
   const [qrImage,  setQrImage]  = useState('');
   const [copied,   setCopied]   = useState(false);
+  // expired HANYA jadi true kalau countdown sudah habis DAN expDate valid
+  // Default false — QR harus tampil dulu, baru expired kalau memang waktunya
   const [expired,  setExpired]  = useState(false);
 
   const isManual    = !order.payment_qr;
@@ -32,25 +27,43 @@ export default function CheckoutClient({ order }) {
     });
   }, [order.payment_qr, isManual]);
 
-  // Countdown — expired_at sudah ISO string dari DB
+  // Countdown timer
   useEffect(() => {
-    if (!order.payment_expired_at || isManual || status === 'completed') return;
-    const expDate = parseExpiredAt(order.payment_expired_at);
-    if (!expDate) return;
+    if (isManual || status === 'completed') return;
+    if (!order.payment_expired_at) return; // tidak ada expiry → tidak ada timer, QR tetap tampil
+
+    // Parse ISO string dari DB (route.js selalu simpan sebagai ISO string)
+    const expDate = new Date(order.payment_expired_at);
+
+    // Jika parse gagal (invalid date) → JANGAN set expired, biarkan QR tampil tanpa timer
+    if (isNaN(expDate.getTime())) {
+      console.warn('[Checkout] payment_expired_at invalid, skipping timer:', order.payment_expired_at);
+      return;
+    }
 
     const tick = () => {
-      const diff = expDate - Date.now();
-      if (diff <= 0) {
+      const diff = expDate.getTime() - Date.now();
+
+      // Grace period 10 detik: hanya expired kalau sudah lewat > 10 detik
+      // Ini mencegah false-expired akibat clock skew kecil antara server & client
+      if (diff < -10000) {
         setExpired(true);
         setTimeLeft('00:00');
         return;
       }
-      setExpired(false);
+
+      if (diff <= 0) {
+        // Masih dalam grace period, tunjukkan 00:00 tapi belum expired
+        setTimeLeft('00:00');
+        return;
+      }
+
       const totalSec = Math.floor(diff / 1000);
       const m = Math.floor(totalSec / 60);
       const s = totalSec % 60;
       setTimeLeft(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
     };
+
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -89,7 +102,7 @@ export default function CheckoutClient({ order }) {
     </div>
   );
 
-  // ── Invoice expired — ganti seluruh halaman ──
+  // ── Invoice expired ──
   if (expired) return (
     <div className="max-w-md mx-auto px-4" style={{paddingTop:'80px', paddingBottom:'40px', textAlign:'center'}}>
       <div style={{
@@ -104,8 +117,9 @@ export default function CheckoutClient({ order }) {
       </div>
       <h2 style={{margin:'0 0 8px', fontWeight:900, fontSize:'1.3rem', color:'#fff'}}>Invoice Kedaluwarsa</h2>
       <p style={{margin:'0 0 28px', fontSize:'0.85rem', color:'rgba(255,255,255,0.5)', lineHeight:1.6}}>
-        Waktu pembayaran untuk invoice <span style={{fontFamily:'monospace', color:'#93c5fd', fontWeight:700}}>{order.id}</span> telah habis.
-        Silakan buat pesanan baru untuk melanjutkan.
+        Waktu pembayaran untuk invoice{' '}
+        <span style={{fontFamily:'monospace', color:'#93c5fd', fontWeight:700}}>{order.id}</span>{' '}
+        telah habis. Silakan buat pesanan baru untuk melanjutkan.
       </p>
       <a href={`/products/${order.product_id}`} style={{
         display:'inline-block', padding:'13px 32px', borderRadius:'14px',
@@ -130,8 +144,7 @@ export default function CheckoutClient({ order }) {
       {/* ── Animated Banner ── */}
       <div style={{
         position:'relative', overflow:'hidden',
-        background:'#0f1e5a',
-        padding:'32px 20px 44px', textAlign:'center',
+        background:'#0f1e5a', padding:'32px 20px 44px', textAlign:'center',
       }}>
         <div style={{
           position:'absolute', inset:0,
@@ -153,7 +166,6 @@ export default function CheckoutClient({ order }) {
           position:'absolute', bottom:-2, left:0, right:0, height:'32px',
           background:'#0a1628', clipPath:'ellipse(60% 100% at 50% 100%)',
         }}/>
-
         <div style={{
           width:'60px', height:'60px', borderRadius:'50%',
           background:'rgba(29,111,255,0.2)', border:'1.5px solid rgba(96,165,250,0.4)',
@@ -166,16 +178,14 @@ export default function CheckoutClient({ order }) {
             <line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
         </div>
-
         <h1 style={{position:'relative',zIndex:1,margin:0,fontWeight:900,fontSize:'1.25rem',color:'#fff'}}>
           Menunggu Pembayaran
         </h1>
         <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>
           Silakan lakukan pembayaran dengan metode yang kamu pilih.
         </p>
-
-        {/* Timer — hanya tampil jika belum expired */}
-        {!isManual && timeLeft && !expired && (
+        {/* Timer — hanya tampil jika ada timeLeft dan belum expired */}
+        {!isManual && timeLeft && (
           <div style={{position:'relative',zIndex:1,marginTop:'14px'}}>
             <span style={{
               display:'inline-flex', alignItems:'center', gap:'7px',
@@ -190,7 +200,6 @@ export default function CheckoutClient({ order }) {
             </span>
           </div>
         )}
-
         <style>{`
           @keyframes bannerGrad{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
           @keyframes iconPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,111,255,0.5)}50%{box-shadow:0 0 0 14px rgba(29,111,255,0)}}
@@ -215,8 +224,7 @@ export default function CheckoutClient({ order }) {
             display:'flex', alignItems:'center', justifyContent:'center',
           }}>
             {thumbnail
-              ? <img src={thumbnail} alt={order.product_name}
-                  style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+              ? <img src={thumbnail} alt={order.product_name} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
               : <span style={{fontSize:'1.5rem'}}>🎮</span>
             }
           </div>
@@ -257,7 +265,6 @@ export default function CheckoutClient({ order }) {
             <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem'}}>Metode Pembayaran</span>
             <span style={{color:'#fff',fontWeight:700,fontSize:'0.85rem'}}>QRIS</span>
           </div>
-
           <div style={{marginBottom:'14px'}}>
             <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 7px'}}>Nomor Invoice</p>
             <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -281,7 +288,6 @@ export default function CheckoutClient({ order }) {
               </button>
             </div>
           </div>
-
           <div style={{display:'flex',gap:'10px',marginBottom:'14px'}}>
             <div style={{flex:1}}>
               <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Pembayaran</p>
@@ -300,7 +306,6 @@ export default function CheckoutClient({ order }) {
               }}>PENDING</span>
             </div>
           </div>
-
           <div>
             <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 5px'}}>Pesan</p>
             <p style={{color:'#94a3b8',fontSize:'0.82rem',margin:0,lineHeight:1.5}}>
