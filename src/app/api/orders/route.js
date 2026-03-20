@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateOrderId } from '@/lib/utils';
 import { createQrisPayment } from '@/lib/pakasir';
+import { sendPendingDM } from '@/lib/discord-delivery';
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -41,13 +42,8 @@ export async function POST(req) {
       baseAmt  = payment.amount || basePrice;
       fee      = payment.fee || 0;
       total    = payment.total_payment || (basePrice + fee);
-
-      // Selalu set expiry 30 menit dari sekarang (waktu server).
-      // Tidak parsing nilai dari Pakasir karena formatnya tidak konsisten
-      // (bisa Unix detik, menit relatif, atau ISO string) sehingga rentan salah parse.
-      // QR Pakasir default valid 30 menit, jadi ini akurat.
+      // Selalu 30 menit dari sekarang — tidak parsing Pakasir expired_at
       expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
     } catch (e) {
       console.error('[PAKASIR]', e.message);
       return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
@@ -89,6 +85,21 @@ export async function POST(req) {
   if (dbErr) {
     console.error('[ORDER DB]', dbErr.message);
     return Response.json({ error: 'Gagal menyimpan pesanan.' }, { status: 500 });
+  }
+
+  // Kirim Discord DM PENDING jika user login
+  if (session?.user?.discordId) {
+    sendPendingDM({
+      discordUserId: session.user.discordId,
+      orderData: {
+        orderId,
+        productName: product.name,
+        variantName: variant.name,
+        baseAmount:  baseAmt,
+        feeAmount:   fee,
+        totalAmount: total,
+      },
+    }).catch(e => console.error('[DM PENDING]', e.message));
   }
 
   return Response.json({ orderId });
