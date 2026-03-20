@@ -10,6 +10,7 @@ const nav = [
   { label: 'Produk',    href: '/admin/products',    icon: '📦' },
   { label: 'Banner',    href: '/admin/banners',     icon: '🖼️' },
   { label: 'Pesanan',   href: '/admin/orders',      icon: '🧾' },
+  { label: 'Pembayaran', href: '/admin/payment-methods', icon: '💳' },
 ];
 
 export default function AdminSidebar() {
