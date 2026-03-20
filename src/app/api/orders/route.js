@@ -1,4 +1,4 @@
-1import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateOrderId } from '@/lib/utils';
