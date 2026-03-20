@@ -101,15 +101,16 @@ export default async function HomePage() {
 
 /* Best Seller Card — slim horizontal, 80px height, glassmorphism */
 function BestSellerCard({ product }) {
+  const imgSrc = product.best_seller_thumbnail || product.thumbnail;
   return (
     <Link
       href={'/products/' + product.slug}
       style={{
-        display:'flex', alignItems:'center', gap:'10px',
+        display:'flex', alignItems:'stretch',
         textDecoration:'none', color:'inherit',
         position:'relative', overflow:'hidden',
         height:'62px',
-        padding:'6px 8px',
+        padding:'0',
         borderRadius:'12px',
         background:'linear-gradient(135deg, rgba(55,100,220,0.7) 0%, rgba(26,52,160,0.85) 100%)',
         border:'1px solid rgba(255,255,255,0.18)',
@@ -130,29 +131,28 @@ function BestSellerCard({ product }) {
         background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
         transform:'skewX(-20deg)', pointerEvents:'none',
       }} />
-
       {/* Top highlight line */}
       <div aria-hidden='true' style={{
         position:'absolute', top:0, left:0, right:0, height:'1px',
         background:'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 40%, rgba(255,255,255,0.35) 60%, transparent 100%)',
         pointerEvents:'none',
       }} />
-      {/* Icon — 50x50, rounded 10px */}
+
+      {/* Image — flush left/top/bottom, border-right as separator */}
       <div style={{
-        flexShrink:0, width:'38px', height:'38px',
-        borderRadius:'8px', overflow:'hidden',
-        border:'1.5px solid rgba(29,111,255,0.7)',
-        background:'rgba(255,255,255,0.06)',
-        position:'relative', zIndex:1,
+        flexShrink:0, width:'62px', height:'62px',
+        borderRight:'1.5px solid rgba(29,111,255,0.5)',
+        overflow:'hidden', position:'relative', zIndex:1,
+        borderRadius:'12px 0 0 12px',
       }}>
-        {product.thumbnail ? (
-          <img src={product.thumbnail} alt={product.name}
+        {imgSrc ? (
+          <img src={imgSrc} alt={product.name}
             style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
         ) : (
           <div style={{
             width:'100%', height:'100%', display:'flex',
             alignItems:'center', justifyContent:'center',
-            fontSize:'1.1rem', background:'rgba(29,111,255,0.18)',
+            fontSize:'1.3rem', background:'rgba(29,111,255,0.18)',
           }}>
             {product.categories?.icon || '📦'}
           </div>
@@ -160,7 +160,7 @@ function BestSellerCard({ product }) {
       </div>
 
       {/* Text */}
-      <div style={{ flex:1, minWidth:0, position:'relative', zIndex:1 }}>
+      <div style={{ flex:1, minWidth:0, position:'relative', zIndex:1, padding:'0 8px', display:'flex', flexDirection:'column', justifyContent:'center' }}>
         <p style={{
           fontWeight:700, fontSize:'14px', color:'#fff',
           lineHeight:1.25, overflow:'hidden',
