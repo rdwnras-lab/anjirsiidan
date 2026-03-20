@@ -135,6 +135,24 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const formFields = product.form_fields || [];
 
   const selVariant = variants.find(v => v.id === selected);
+
+  // Computed label untuk metode pembayaran
+  const payMethodLabel = (() => {
+    if (!payMethod) return '-';
+    if (payMethod === 'coins') return 'VECHNOST PAYMENT';
+    if (payMethod === 'qris_auto' || payMethod === 'qris_manual') return 'QRIS';
+    if (payMethod.startsWith('ewallet_')) {
+      const id = payMethod.replace('ewallet_', '');
+      const m = payMethods.ewallet.find(x => x.id === id);
+      return m ? m.provider : 'E-Wallet';
+    }
+    if (payMethod.startsWith('bank_')) {
+      const id = payMethod.replace('bank_', '');
+      const m = payMethods.bank.find(x => x.id === id);
+      return m ? m.provider : 'Bank Transfer';
+    }
+    return payMethod;
+  })();
   const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
   const discPrc    = selVariant ? Math.floor(selVariant.price * (1 - disc)) : 0;
   const pricing    = selVariant ? (isAuto ? calculateFee(discPrc) : { base:discPrc, fee:0, total:discPrc }) : null;
@@ -221,7 +239,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                 <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Metode</span>
                 <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>
-                  {payMethod === 'coins' ? 'VECHNOST PAYMENT' : payMethod === 'qris_auto' || payMethod === 'qris_manual' ? 'QRIS' : payMethod || '-'}
+                  {payMethodLabel}
                 </span>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
