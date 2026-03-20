@@ -183,7 +183,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <div style={{
             position:'relative', overflow:'visible',
             background:'linear-gradient(150deg,#1e3caa 0%,#172e90 55%,#112270 100%)',
-            paddingTop:'20px', paddingBottom:'34px',
+            paddingTop:'20px', paddingBottom:'54px',
             paddingLeft:'16px', paddingRight:'16px',
             /* left padding leaves room for the icon that overlaps from top */
           }}>
