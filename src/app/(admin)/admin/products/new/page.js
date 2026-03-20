@@ -8,7 +8,7 @@ export default function NewProductPage() {
   const [cats, setCats]     = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
-  const [form, setForm]     = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', banner_image:'', best_seller_thumbnail:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
+  const [form, setForm]     = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', banner_image:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
   const [variants, setVariants]     = useState([{ name:'', price:'' }]);
   const [formFields, setFormFields] = useState([]);
 
@@ -80,12 +80,6 @@ export default function NewProductPage() {
             <input className={inputCls} value={form.banner_image} onChange={setF('banner_image')} placeholder="https://i.imgur.com/banner.jpg (opsional, gunakan gambar landscape)" />
             {form.banner_image && <img src={form.banner_image} alt="banner preview" className="mt-2 w-full h-20 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />}
             <p className="text-xs text-gray-400 mt-1">Jika kosong, thumbnail akan digunakan sebagai background</p>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">URL Thumbnail Best Seller (opsional)</label>
-            <input className={inputCls} value={form.best_seller_thumbnail||''} onChange={setF('best_seller_thumbnail')} placeholder="Gambar khusus di section Best Seller (default: thumbnail produk)" />
-            {form.best_seller_thumbnail && <img src={form.best_seller_thumbnail} alt="bs preview" className="mt-2 w-full h-12 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />}
-            <p className="text-xs text-gray-400 mt-1">Jika diisi, gambar ini yang digunakan di Best Seller. Jika kosong, thumbnail produk digunakan.</p>
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide block mb-1.5">Publisher / Developer</label>
