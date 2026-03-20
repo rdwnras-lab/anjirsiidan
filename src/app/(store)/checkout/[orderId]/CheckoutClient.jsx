@@ -4,56 +4,47 @@ import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
+const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30 menit
+
 export default function CheckoutClient({ order }) {
   const router = useRouter();
   const [status,   setStatus]   = useState(order.status === 'completed' ? 'completed' : 'pending');
   const [timeLeft, setTimeLeft] = useState('');
   const [qrImage,  setQrImage]  = useState('');
   const [copied,   setCopied]   = useState(false);
-  // expired HANYA jadi true kalau countdown sudah habis DAN expDate valid
-  // Default false — QR harus tampil dulu, baru expired kalau memang waktunya
   const [expired,  setExpired]  = useState(false);
 
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
   const thumbnail   = order.products?.thumbnail || null;
 
-  // Generate QR dari string (auto only)
+  // ── Generate QR image dari string
   useEffect(() => {
     if (!order.payment_qr || isManual) return;
     import('qrcode').then(QRCode => {
-      QRCode.toDataURL(order.payment_qr, { width: 300, margin: 2, color: { dark: '#000', light: '#fff' } })
-        .then(url => setQrImage(url));
+      QRCode.toDataURL(order.payment_qr, {
+        width: 300, margin: 2, color: { dark: '#000', light: '#fff' },
+      }).then(url => setQrImage(url));
     });
   }, [order.payment_qr, isManual]);
 
-  // Countdown timer
+  // ── Timer 30 menit dari created_at order
+  // Tidak pakai payment_expired_at dari Pakasir sama sekali.
+  // created_at adalah field otomatis Supabase, selalu ada dan selalu ISO string valid.
   useEffect(() => {
     if (isManual || status === 'completed') return;
-    if (!order.payment_expired_at) return; // tidak ada expiry → tidak ada timer, QR tetap tampil
 
-    // Parse ISO string dari DB (route.js selalu simpan sebagai ISO string)
-    const expDate = new Date(order.payment_expired_at);
+    const createdAt = new Date(order.created_at);
+    // Jika created_at tidak valid (harusnya tidak terjadi), skip timer
+    if (isNaN(createdAt.getTime())) return;
 
-    // Jika parse gagal (invalid date) → JANGAN set expired, biarkan QR tampil tanpa timer
-    if (isNaN(expDate.getTime())) {
-      console.warn('[Checkout] payment_expired_at invalid, skipping timer:', order.payment_expired_at);
-      return;
-    }
+    const expiresAt = new Date(createdAt.getTime() + PAYMENT_WINDOW_MS);
 
     const tick = () => {
-      const diff = expDate.getTime() - Date.now();
-
-      // Grace period 10 detik: hanya expired kalau sudah lewat > 10 detik
-      // Ini mencegah false-expired akibat clock skew kecil antara server & client
-      if (diff < -10000) {
-        setExpired(true);
-        setTimeLeft('00:00');
-        return;
-      }
+      const diff = expiresAt.getTime() - Date.now();
 
       if (diff <= 0) {
-        // Masih dalam grace period, tunjukkan 00:00 tapi belum expired
+        setExpired(true);
         setTimeLeft('00:00');
         return;
       }
@@ -67,9 +58,9 @@ export default function CheckoutClient({ order }) {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [order.payment_expired_at, isManual, status]);
+  }, [order.created_at, isManual, status]);
 
-  // Poll payment status setiap 5 detik
+  // ── Poll status pembayaran setiap 5 detik
   const checkStatus = useCallback(async () => {
     if (status === 'completed' || expired) return;
     try {
@@ -93,18 +84,18 @@ export default function CheckoutClient({ order }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Pembayaran berhasil ──
+  // ── Pembayaran berhasil
   if (status === 'completed') return (
-    <div className="max-w-md mx-auto px-4 py-20 text-center">
-      <div className="text-6xl mb-4 animate-bounce">✅</div>
-      <h2 className="text-xl font-bold text-white">Pembayaran Berhasil!</h2>
-      <p className="text-sm mt-2" style={{color:'#7bafd4'}}>Mengalihkan ke halaman pesanan...</p>
+    <div style={{maxWidth:'448px', margin:'0 auto', padding:'80px 16px 40px', textAlign:'center'}}>
+      <div style={{fontSize:'4rem', marginBottom:'16px', animation:'bounceIn 0.5s'}}>✅</div>
+      <h2 style={{margin:'0 0 8px', fontWeight:900, fontSize:'1.3rem', color:'#fff'}}>Pembayaran Berhasil!</h2>
+      <p style={{margin:0, fontSize:'0.85rem', color:'#7bafd4'}}>Mengalihkan ke halaman pesanan...</p>
     </div>
   );
 
-  // ── Invoice expired ──
+  // ── Invoice expired
   if (expired) return (
-    <div className="max-w-md mx-auto px-4" style={{paddingTop:'80px', paddingBottom:'40px', textAlign:'center'}}>
+    <div style={{maxWidth:'448px', margin:'0 auto', padding:'80px 16px 40px', textAlign:'center'}}>
       <div style={{
         width:'80px', height:'80px', borderRadius:'50%',
         background:'rgba(239,68,68,0.12)', border:'1.5px solid rgba(239,68,68,0.3)',
@@ -126,9 +117,7 @@ export default function CheckoutClient({ order }) {
         background:'linear-gradient(135deg,#1d6fff,#1450cc)',
         color:'#fff', fontWeight:800, fontSize:'0.9rem', textDecoration:'none',
         boxShadow:'0 4px 20px rgba(29,111,255,0.35)',
-      }}>
-        Buat Pesanan Baru
-      </a>
+      }}>Buat Pesanan Baru</a>
       <div style={{marginTop:'16px'}}>
         <a href="/" style={{color:'rgba(255,255,255,0.35)', fontSize:'0.8rem', textDecoration:'none'}}>
           Kembali ke Beranda
@@ -137,41 +126,43 @@ export default function CheckoutClient({ order }) {
     </div>
   );
 
-  // ── Menunggu pembayaran ──
+  // ── Menunggu pembayaran
   return (
-    <div className="max-w-md mx-auto pb-10">
+    <div style={{maxWidth:'448px', margin:'0 auto', paddingBottom:'40px'}}>
 
-      {/* ── Animated Banner ── */}
+      {/* Banner */}
       <div style={{
         position:'relative', overflow:'hidden',
         background:'#0f1e5a', padding:'32px 20px 44px', textAlign:'center',
       }}>
         <div style={{
           position:'absolute', inset:0,
-          background:'linear-gradient(135deg,rgba(29,111,255,0.3) 0%,rgba(10,26,74,0) 50%,rgba(29,111,255,0.2) 100%)',
+          background:'linear-gradient(135deg,rgba(29,111,255,0.3) 0%,transparent 50%,rgba(29,111,255,0.2) 100%)',
           backgroundSize:'300% 300%', animation:'bannerGrad 5s ease infinite',
         }}/>
+        {/* Orbs */}
         {[
-          {w:90,h:90,t:-20,l:-20,c:'rgba(29,111,255,0.15)',a:'orbFloat0'},
-          {w:60,h:60,b:-15,r:-10,c:'rgba(96,165,250,0.12)',a:'orbFloat1'},
-          {w:40,h:40,t:30,r:'30%',c:'rgba(29,111,255,0.1)',a:'orbFloat2'},
-        ].map((orb,i) => (
+          {w:90,h:90,top:-20,left:-20,bg:'rgba(29,111,255,0.15)',anim:'orbA'},
+          {w:60,h:60,bottom:-15,right:-10,bg:'rgba(96,165,250,0.12)',anim:'orbB'},
+          {w:40,h:40,top:30,right:'30%',bg:'rgba(29,111,255,0.1)',anim:'orbC'},
+        ].map((o,i) => (
           <div key={i} style={{
-            position:'absolute', width:orb.w, height:orb.h, borderRadius:'50%',
-            background:orb.c, top:orb.t, left:orb.l, right:orb.r, bottom:orb.b,
-            animation:`${orb.a} ${4+i}s ease-in-out infinite`, filter:'blur(2px)',
+            position:'absolute', width:o.w, height:o.h, borderRadius:'50%',
+            background:o.bg, top:o.top, left:o.left, right:o.right, bottom:o.bottom,
+            animation:`${o.anim} ${4+i}s ease-in-out infinite`, filter:'blur(2px)',
           }}/>
         ))}
+        {/* Wave */}
         <div style={{
           position:'absolute', bottom:-2, left:0, right:0, height:'32px',
           background:'#0a1628', clipPath:'ellipse(60% 100% at 50% 100%)',
         }}/>
+        {/* Icon */}
         <div style={{
-          width:'60px', height:'60px', borderRadius:'50%',
+          width:'60px', height:'60px', borderRadius:'50%', position:'relative', zIndex:1,
           background:'rgba(29,111,255,0.2)', border:'1.5px solid rgba(96,165,250,0.4)',
           display:'flex', alignItems:'center', justifyContent:'center',
-          margin:'0 auto 14px', position:'relative', zIndex:1,
-          animation:'iconPulse 2.5s ease-in-out infinite',
+          margin:'0 auto 14px', animation:'pulse 2.5s ease-in-out infinite',
         }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
@@ -184,16 +175,16 @@ export default function CheckoutClient({ order }) {
         <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>
           Silakan lakukan pembayaran dengan metode yang kamu pilih.
         </p>
-        {/* Timer — hanya tampil jika ada timeLeft dan belum expired */}
+        {/* Timer */}
         {!isManual && timeLeft && (
           <div style={{position:'relative',zIndex:1,marginTop:'14px'}}>
             <span style={{
               display:'inline-flex', alignItems:'center', gap:'7px',
               background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)',
               borderRadius:'999px', padding:'5px 16px',
-              fontWeight:800, fontSize:'0.85rem', fontFamily:'monospace', color:'#fbbf24',
+              fontWeight:800, fontSize:'0.9rem', fontFamily:'monospace', color:'#fbbf24',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
               {timeLeft}
@@ -202,20 +193,19 @@ export default function CheckoutClient({ order }) {
         )}
         <style>{`
           @keyframes bannerGrad{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-          @keyframes iconPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,111,255,0.5)}50%{box-shadow:0 0 0 14px rgba(29,111,255,0)}}
-          @keyframes orbFloat0{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,8px)}}
-          @keyframes orbFloat1{0%,100%{transform:translate(0,0)}50%{transform:translate(-8px,-6px)}}
-          @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5px,10px) scale(1.1)}}
+          @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(29,111,255,0.5)}50%{box-shadow:0 0 0 14px rgba(29,111,255,0)}}
+          @keyframes orbA{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,8px)}}
+          @keyframes orbB{0%,100%{transform:translate(0,0)}50%{transform:translate(-8px,-6px)}}
+          @keyframes orbC{0%,100%{transform:translate(0,0)}50%{transform:translate(5px,10px)}}
         `}</style>
       </div>
 
-      <div className="px-4 mt-5 space-y-3">
+      <div style={{padding:'20px 16px 0', display:'flex', flexDirection:'column', gap:'12px'}}>
 
-        {/* ── Order Item Card ── */}
+        {/* Produk */}
         <div style={{
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
-          borderRadius:'16px', padding:'16px',
-          display:'flex', alignItems:'center', gap:'14px',
+          borderRadius:'16px', padding:'16px', display:'flex', alignItems:'center', gap:'14px',
         }}>
           <div style={{
             width:'52px', height:'52px', borderRadius:'12px', flexShrink:0, overflow:'hidden',
@@ -224,17 +214,17 @@ export default function CheckoutClient({ order }) {
             display:'flex', alignItems:'center', justifyContent:'center',
           }}>
             {thumbnail
-              ? <img src={thumbnail} alt={order.product_name} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+              ? <img src={thumbnail} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
               : <span style={{fontSize:'1.5rem'}}>🎮</span>
             }
           </div>
-          <div style={{flex:1}}>
+          <div>
             <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'0.95rem'}}>{order.product_name}</p>
             <p style={{margin:'3px 0 0',color:'#60a5fa',fontSize:'0.8rem',fontWeight:600}}>{order.variant_name}</p>
           </div>
         </div>
 
-        {/* ── Pricing Card ── */}
+        {/* Harga */}
         <div style={{
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
@@ -256,7 +246,7 @@ export default function CheckoutClient({ order }) {
           </div>
         </div>
 
-        {/* ── Invoice & Status Card ── */}
+        {/* Invoice */}
         <div style={{
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
@@ -265,28 +255,25 @@ export default function CheckoutClient({ order }) {
             <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem'}}>Metode Pembayaran</span>
             <span style={{color:'#fff',fontWeight:700,fontSize:'0.85rem'}}>QRIS</span>
           </div>
-          <div style={{marginBottom:'14px'}}>
-            <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 7px'}}>Nomor Invoice</p>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <div style={{
-                flex:1, background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.1)',
-                borderRadius:'10px', padding:'9px 12px',
-                fontFamily:'monospace', fontSize:'0.78rem', color:'#e8f4ff', fontWeight:700,
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-              }}>{order.id}</div>
-              <button onClick={handleCopy} style={{
-                flexShrink:0, width:'36px', height:'36px', borderRadius:'10px',
-                background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.07)',
-                border: copied ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-                transition:'all 0.2s',
-              }}>
-                {copied
-                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                }
-              </button>
-            </div>
+          <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 7px'}}>Nomor Invoice</p>
+          <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'14px'}}>
+            <div style={{
+              flex:1, background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.1)',
+              borderRadius:'10px', padding:'9px 12px',
+              fontFamily:'monospace', fontSize:'0.78rem', color:'#e8f4ff', fontWeight:700,
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+            }}>{order.id}</div>
+            <button onClick={handleCopy} style={{
+              flexShrink:0, width:'36px', height:'36px', borderRadius:'10px', cursor:'pointer',
+              background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.07)',
+              border: copied ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)',
+              display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s',
+            }}>
+              {copied
+                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              }
+            </button>
           </div>
           <div style={{display:'flex',gap:'10px',marginBottom:'14px'}}>
             <div style={{flex:1}}>
@@ -306,15 +293,13 @@ export default function CheckoutClient({ order }) {
               }}>PENDING</span>
             </div>
           </div>
-          <div>
-            <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 5px'}}>Pesan</p>
-            <p style={{color:'#94a3b8',fontSize:'0.82rem',margin:0,lineHeight:1.5}}>
-              Silakan lakukan pembayaran dengan metode yang kamu pilih.
-            </p>
-          </div>
+          <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 5px'}}>Pesan</p>
+          <p style={{color:'#94a3b8',fontSize:'0.82rem',margin:0,lineHeight:1.5}}>
+            Silakan lakukan pembayaran dengan metode yang kamu pilih.
+          </p>
         </div>
 
-        {/* ── QR Code Card ── */}
+        {/* QR */}
         <div style={{
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
@@ -323,15 +308,17 @@ export default function CheckoutClient({ order }) {
           <div style={{display:'flex',justifyContent:'center',marginBottom:'11px'}}>
             {isManual ? (
               <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
-                <img src={manualQrUrl} alt="QR Pembayaran" style={{width:'230px',height:'230px',objectFit:'contain',display:'block'}}/>
+                <img src={manualQrUrl} alt="QR" style={{width:'230px',height:'230px',objectFit:'contain',display:'block'}}/>
               </div>
             ) : qrImage ? (
               <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
-                <img src={qrImage} alt="QR Code" style={{width:'230px',height:'230px',display:'block',borderRadius:'6px'}}/>
+                <img src={qrImage} alt="QR" style={{width:'230px',height:'230px',display:'block',borderRadius:'6px'}}/>
               </div>
             ) : (
-              <div style={{width:'256px',height:'256px',display:'flex',alignItems:'center',justifyContent:'center',
-                background:'rgba(255,255,255,0.04)',borderRadius:'14px'}}>
+              <div style={{
+                width:'256px',height:'256px',display:'flex',alignItems:'center',
+                justifyContent:'center',background:'rgba(255,255,255,0.04)',borderRadius:'14px',
+              }}>
                 <LoadingSpinner size={40}/>
               </div>
             )}
