@@ -205,16 +205,16 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Harga</span>
                 <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{formatIDR(discPrc)}</span>
               </div>
-              {pricing && pricing.fee > 0 && (
+              {(payMethod === 'qris_auto' || payMethod === 'qris_manual') && (
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                   <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Payment Fee</span>
-                  <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>{formatIDR(pricing.fee)}</span>
+                  <span style={{color:'rgba(255,255,255,0.35)', fontSize:'0.78rem', fontStyle:'italic'}}>Dihitung gateway</span>
                 </div>
               )}
               <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'10px 0'}} />
               <div style={{display:'flex', justifyContent:'space-between'}}>
                 <span style={{color:'#fff', fontWeight:800, fontSize:'0.88rem'}}>Total Bayar</span>
-                <span style={{color:'#60a5fa', fontWeight:900, fontSize:'0.95rem'}}>{formatIDR(pricing?.total || discPrc)}</span>
+                <span style={{color:'#60a5fa', fontWeight:900, fontSize:'0.95rem'}}>{formatIDR(discPrc)}{(payMethod === 'qris_auto' || payMethod === 'qris_manual') ? ' + fee' : ''}</span>
               </div>
             </div>
 
