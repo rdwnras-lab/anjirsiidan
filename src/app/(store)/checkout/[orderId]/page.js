@@ -5,7 +5,6 @@ import CheckoutClient from './CheckoutClient';
 export const metadata = { title: 'Pembayaran' };
 
 export default async function CheckoutPage({ params }) {
-  // Join products untuk ambil thumbnail
   const { data: order } = await supabaseAdmin
     .from('orders')
     .select('*, products(thumbnail, banner_image)')
