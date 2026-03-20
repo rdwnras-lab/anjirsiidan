@@ -1,4 +1,4 @@
-'use client';
+'use client';1
 import { useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
