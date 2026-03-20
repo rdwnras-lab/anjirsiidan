@@ -4,16 +4,28 @@ import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
+// Pakasir returns expired_at as Unix timestamp (seconds) atau ISO string
+function parseExpiredAt(val) {
+  if (!val) return null;
+  // Jika angka (Unix timestamp dalam detik)
+  if (typeof val === 'number') return new Date(val * 1000);
+  // Jika string angka
+  if (/^\d{10,}$/.test(String(val))) return new Date(Number(val) * 1000);
+  // ISO string atau format lain
+  return new Date(val);
+}
+
 export default function CheckoutClient({ order }) {
   const router = useRouter();
-  const [status,   setStatus]   = useState(order.status === 'completed' ? 'completed' : 'pending');
-  const [timeLeft, setTimeLeft] = useState('');
-  const [qrImage,  setQrImage]  = useState('');
-  const [copied,   setCopied]   = useState(false);
-  const [expired,  setExpired]  = useState(false);
+  const [status,  setStatus]  = useState(order.status === 'completed' ? 'completed' : 'pending');
+  const [timeLeft,setTimeLeft]= useState('');
+  const [qrImage, setQrImage] = useState('');
+  const [copied,  setCopied]  = useState(false);
+  const [expired, setExpired] = useState(false);
 
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
+  const thumbnail   = order.products?.thumbnail || null;
 
   // Generate QR dari string (auto only)
   useEffect(() => {
@@ -24,11 +36,13 @@ export default function CheckoutClient({ order }) {
     });
   }, [order.payment_qr, isManual]);
 
-  // Countdown (auto only) — hanya tampilkan sisa waktu, tidak tampilkan "Kadaluarsa" sebagai error
+  // Countdown — Pakasir expired_at bisa berupa Unix timestamp (detik) atau ISO string
   useEffect(() => {
     if (!order.payment_expired_at || isManual || status === 'completed') return;
+    const expDate = parseExpiredAt(order.payment_expired_at);
+    if (!expDate || isNaN(expDate.getTime())) return;
+
     const tick = () => {
-      const expDate = new Date(order.payment_expired_at);
       const diff = expDate - Date.now();
       if (diff <= 0) {
         setTimeLeft('00:00');
@@ -89,39 +103,31 @@ export default function CheckoutClient({ order }) {
         padding: '32px 20px 44px',
         textAlign: 'center',
       }}>
-        {/* Animated gradient overlay */}
         <div style={{
           position:'absolute', inset:0,
           background:'linear-gradient(135deg, rgba(29,111,255,0.3) 0%, rgba(10,26,74,0) 50%, rgba(29,111,255,0.2) 100%)',
           backgroundSize:'300% 300%',
           animation:'bannerGrad 5s ease infinite',
         }}/>
-        {/* Floating orbs */}
         {[
-          {w:90,h:90,t:-20,l:-20,c:'rgba(29,111,255,0.15)'},
-          {w:60,h:60,t:'auto',b:-15,r:-10,c:'rgba(96,165,250,0.12)'},
-          {w:40,h:40,t:30,r:'30%',c:'rgba(29,111,255,0.1)'},
-        ].map((orb,i)=>(
+          {w:90,h:90,t:-20,l:-20,c:'rgba(29,111,255,0.15)',a:'orbFloat0'},
+          {w:60,h:60,b:-15,r:-10,c:'rgba(96,165,250,0.12)',a:'orbFloat1'},
+          {w:40,h:40,t:30,r:'30%',c:'rgba(29,111,255,0.1)',a:'orbFloat2'},
+        ].map((orb,i) => (
           <div key={i} style={{
             position:'absolute', width:orb.w, height:orb.h, borderRadius:'50%',
             background:orb.c, top:orb.t, left:orb.l, right:orb.r, bottom:orb.b,
-            animation:`orbFloat${i} ${4+i}s ease-in-out infinite`,
-            filter:'blur(2px)',
+            animation:`${orb.a} ${4+i}s ease-in-out infinite`, filter:'blur(2px)',
           }}/>
         ))}
-
-        {/* Wave at bottom */}
         <div style={{
           position:'absolute', bottom:-2, left:0, right:0, height:'32px',
-          background:'#0a1628',
-          clipPath:'ellipse(60% 100% at 50% 100%)',
+          background:'#0a1628', clipPath:'ellipse(60% 100% at 50% 100%)',
         }}/>
 
-        {/* Icon */}
         <div style={{
           width:'60px', height:'60px', borderRadius:'50%',
-          background:'rgba(29,111,255,0.2)',
-          border:'1.5px solid rgba(96,165,250,0.4)',
+          background:'rgba(29,111,255,0.2)', border:'1.5px solid rgba(96,165,250,0.4)',
           display:'flex', alignItems:'center', justifyContent:'center',
           margin:'0 auto 14px', position:'relative', zIndex:1,
           animation:'iconPulse 2.5s ease-in-out infinite',
@@ -132,16 +138,15 @@ export default function CheckoutClient({ order }) {
           </svg>
         </div>
 
-        <h1 style={{ position:'relative', zIndex:1, margin:0, fontWeight:900, fontSize:'1.25rem', color:'#fff' }}>
+        <h1 style={{position:'relative',zIndex:1,margin:0,fontWeight:900,fontSize:'1.25rem',color:'#fff'}}>
           Menunggu Pembayaran
         </h1>
-        <p style={{ position:'relative', zIndex:1, margin:'6px 0 0', fontSize:'0.8rem', color:'rgba(255,255,255,0.55)' }}>
+        <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>
           Silakan lakukan pembayaran dengan metode yang kamu pilih.
         </p>
 
-        {/* Timer */}
         {!isManual && timeLeft && (
-          <div style={{ position:'relative', zIndex:1, marginTop:'14px' }}>
+          <div style={{position:'relative',zIndex:1,marginTop:'14px'}}>
             <span style={{
               display:'inline-flex', alignItems:'center', gap:'7px',
               background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)',
@@ -158,11 +163,11 @@ export default function CheckoutClient({ order }) {
         )}
 
         <style>{`
-          @keyframes bannerGrad { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-          @keyframes iconPulse { 0%,100%{box-shadow:0 0 0 0 rgba(29,111,255,0.5)} 50%{box-shadow:0 0 0 14px rgba(29,111,255,0)} }
-          @keyframes orbFloat0 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(10px,8px)} }
-          @keyframes orbFloat1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-8px,-6px)} }
-          @keyframes orbFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(5px,10px) scale(1.1)} }
+          @keyframes bannerGrad{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+          @keyframes iconPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,111,255,0.5)}50%{box-shadow:0 0 0 14px rgba(29,111,255,0)}}
+          @keyframes orbFloat0{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,8px)}}
+          @keyframes orbFloat1{0%,100%{transform:translate(0,0)}50%{transform:translate(-8px,-6px)}}
+          @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5px,10px) scale(1.1)}}
         `}</style>
       </div>
 
@@ -174,16 +179,22 @@ export default function CheckoutClient({ order }) {
           borderRadius:'16px', padding:'16px',
           display:'flex', alignItems:'center', gap:'14px',
         }}>
+          {/* Gambar produk dari admin dashboard */}
           <div style={{
-            width:'52px', height:'52px', borderRadius:'12px',
+            width:'52px', height:'52px', borderRadius:'12px', flexShrink:0, overflow:'hidden',
             background:'linear-gradient(135deg,rgba(29,111,255,0.15),rgba(10,22,64,0.8))',
             border:'1.5px solid rgba(29,111,255,0.3)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:'1.5rem', flexShrink:0,
-          }}>🎮</div>
+          }}>
+            {thumbnail
+              ? <img src={thumbnail} alt={order.product_name}
+                  style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+              : <span style={{fontSize:'1.5rem'}}>🎮</span>
+            }
+          </div>
           <div style={{flex:1}}>
-            <p style={{margin:0, fontWeight:800, color:'#fff', fontSize:'0.95rem'}}>{order.product_name}</p>
-            <p style={{margin:'3px 0 0', color:'#60a5fa', fontSize:'0.8rem', fontWeight:600}}>{order.variant_name}</p>
+            <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'0.95rem'}}>{order.product_name}</p>
+            <p style={{margin:'3px 0 0',color:'#60a5fa',fontSize:'0.8rem',fontWeight:600}}>{order.variant_name}</p>
           </div>
         </div>
 
@@ -192,20 +203,20 @@ export default function CheckoutClient({ order }) {
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
         }}>
-          <div style={{display:'flex', justifyContent:'space-between', marginBottom:'9px'}}>
-            <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.85rem'}}>Harga</span>
-            <span style={{color:'#e8f4ff', fontSize:'0.85rem', fontWeight:600}}>{formatIDR(order.base_amount)}</span>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
+            <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>Harga</span>
+            <span style={{color:'#e8f4ff',fontSize:'0.85rem',fontWeight:600}}>{formatIDR(order.base_amount)}</span>
           </div>
           {order.fee_amount > 0 && (
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'9px'}}>
-              <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.85rem'}}>Payment Fee</span>
-              <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.85rem'}}>{formatIDR(order.fee_amount)}</span>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
+              <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>Payment Fee</span>
+              <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>{formatIDR(order.fee_amount)}</span>
             </div>
           )}
-          <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'10px 0'}}/>
-          <div style={{display:'flex', justifyContent:'space-between'}}>
-            <span style={{color:'#fff', fontWeight:800, fontSize:'0.9rem'}}>Total Pembayaran</span>
-            <span style={{color:'#60a5fa', fontWeight:900, fontSize:'1rem'}}>{formatIDR(order.total_amount)}</span>
+          <div style={{height:'1px',background:'rgba(255,255,255,0.08)',margin:'10px 0'}}/>
+          <div style={{display:'flex',justifyContent:'space-between'}}>
+            <span style={{color:'#fff',fontWeight:800,fontSize:'0.9rem'}}>Total Pembayaran</span>
+            <span style={{color:'#60a5fa',fontWeight:900,fontSize:'1rem'}}>{formatIDR(order.total_amount)}</span>
           </div>
         </div>
 
@@ -214,14 +225,14 @@ export default function CheckoutClient({ order }) {
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
         }}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px'}}>
-            <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Metode Pembayaran</span>
-            <span style={{color:'#fff', fontWeight:700, fontSize:'0.85rem'}}>{isManual ? 'QRIS' : 'QRIS'}</span>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
+            <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem'}}>Metode Pembayaran</span>
+            <span style={{color:'#fff',fontWeight:700,fontSize:'0.85rem'}}>QRIS</span>
           </div>
 
           <div style={{marginBottom:'14px'}}>
-            <p style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem', margin:'0 0 7px'}}>Nomor Invoice</p>
-            <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+            <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 7px'}}>Nomor Invoice</p>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
               <div style={{
                 flex:1, background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,255,255,0.1)',
                 borderRadius:'10px', padding:'9px 12px',
@@ -243,9 +254,9 @@ export default function CheckoutClient({ order }) {
             </div>
           </div>
 
-          <div style={{display:'flex', gap:'10px', marginBottom:'14px'}}>
+          <div style={{display:'flex',gap:'10px',marginBottom:'14px'}}>
             <div style={{flex:1}}>
-              <p style={{color:'rgba(255,255,255,0.45)', fontSize:'0.8rem', margin:'0 0 6px'}}>Status Pembayaran</p>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Pembayaran</p>
               <span style={{
                 display:'inline-block', padding:'4px 12px', borderRadius:'7px',
                 fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.06em',
@@ -253,7 +264,7 @@ export default function CheckoutClient({ order }) {
               }}>UNPAID</span>
             </div>
             <div style={{flex:1}}>
-              <p style={{color:'rgba(255,255,255,0.45)', fontSize:'0.8rem', margin:'0 0 6px'}}>Status Transaksi</p>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Transaksi</p>
               <span style={{
                 display:'inline-block', padding:'4px 12px', borderRadius:'7px',
                 fontSize:'0.72rem', fontWeight:800, letterSpacing:'0.06em',
@@ -263,8 +274,8 @@ export default function CheckoutClient({ order }) {
           </div>
 
           <div>
-            <p style={{color:'rgba(255,255,255,0.45)', fontSize:'0.8rem', margin:'0 0 5px'}}>Pesan</p>
-            <p style={{color:'#94a3b8', fontSize:'0.82rem', margin:0, lineHeight:1.5}}>
+            <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 5px'}}>Pesan</p>
+            <p style={{color:'#94a3b8',fontSize:'0.82rem',margin:0,lineHeight:1.5}}>
               Silakan lakukan pembayaran dengan metode yang kamu pilih.
             </p>
           </div>
@@ -275,44 +286,29 @@ export default function CheckoutClient({ order }) {
           background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
           borderRadius:'16px', padding:'16px',
         }}>
-          <p style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem', margin:'0 0 14px'}}>Kode Pembayaran</p>
-          <div style={{display:'flex', justifyContent:'center', marginBottom:'11px'}}>
+          <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 14px'}}>Kode Pembayaran</p>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:'11px'}}>
             {isManual ? (
-              <div style={{background:'#fff', borderRadius:'14px', padding:'13px'}}>
-                <img src={manualQrUrl} alt="QR Pembayaran" style={{width:'230px', height:'230px', objectFit:'contain', display:'block'}}/>
+              <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
+                <img src={manualQrUrl} alt="QR Pembayaran" style={{width:'230px',height:'230px',objectFit:'contain',display:'block'}}/>
               </div>
             ) : qrImage ? (
-              <div style={{background:'#fff', borderRadius:'14px', padding:'13px'}}>
-                <img src={qrImage} alt="QR Code" style={{width:'230px', height:'230px', display:'block', borderRadius:'6px'}}/>
+              <div style={{background:'#fff',borderRadius:'14px',padding:'13px'}}>
+                <img src={qrImage} alt="QR Code" style={{width:'230px',height:'230px',display:'block',borderRadius:'6px'}}/>
               </div>
             ) : (
-              <div style={{width:'256px', height:'256px', display:'flex', alignItems:'center', justifyContent:'center',
-                background:'rgba(255,255,255,0.04)', borderRadius:'14px'}}>
+              <div style={{width:'256px',height:'256px',display:'flex',alignItems:'center',justifyContent:'center',
+                background:'rgba(255,255,255,0.04)',borderRadius:'14px'}}>
                 <LoadingSpinner size={40}/>
               </div>
             )}
           </div>
-          <p style={{textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:'0.77rem', margin:0}}>
+          <p style={{textAlign:'center',color:'rgba(255,255,255,0.35)',fontSize:'0.77rem',margin:0}}>
             Scan QR Code untuk melakukan pembayaran.
           </p>
         </div>
 
-        {/* ── Instruksi Pembayaran ── */}
-        <div style={{
-          background:'rgba(29,111,255,0.06)', border:'1px solid rgba(29,111,255,0.2)',
-          borderRadius:'14px', padding:'14px',
-        }}>
-          <p style={{color:'#60a5fa', fontWeight:700, fontSize:'0.82rem', margin:'0 0 8px'}}>📋 Instruksi Pembayaran</p>
-          <ol style={{margin:0, paddingLeft:'18px', color:'rgba(255,255,255,0.55)', fontSize:'0.8rem', lineHeight:1.8}}>
-            <li>Buka aplikasi mobile banking atau e-wallet kamu</li>
-            <li>Pilih fitur scan QR / QRIS</li>
-            <li>Scan QR Code di atas</li>
-            <li>Periksa nominal dan konfirmasi pembayaran</li>
-            <li>Selesai — halaman ini otomatis update</li>
-          </ol>
-        </div>
-
-        <p style={{textAlign:'center', color:'rgba(255,255,255,0.25)', fontSize:'0.72rem', paddingBottom:'4px'}}>
+        <p style={{textAlign:'center',color:'rgba(255,255,255,0.25)',fontSize:'0.72rem',paddingBottom:'4px'}}>
           Halaman ini otomatis update saat pembayaran berhasil
         </p>
       </div>
