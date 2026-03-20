@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateOrderId } from '@/lib/utils';
 import { createQrisPayment } from '@/lib/pakasir';
-import { sendPendingDM } from '@/lib/discord-delivery';
+import { sendPendingDM, logOrderToChannel } from '@/lib/discord-delivery';
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -38,11 +38,10 @@ export async function POST(req) {
   if (isAuto) {
     try {
       const payment = await createQrisPayment({ orderId, amount: basePrice });
-      qrString = payment.payment_number;
-      baseAmt  = payment.amount || basePrice;
-      fee      = payment.fee || 0;
-      total    = payment.total_payment || (basePrice + fee);
-      // Selalu 30 menit dari sekarang — tidak parsing Pakasir expired_at
+      qrString  = payment.payment_number;
+      baseAmt   = payment.amount || basePrice;
+      fee       = payment.fee || 0;
+      total     = payment.total_payment || (basePrice + fee);
       expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     } catch (e) {
       console.error('[PAKASIR]', e.message);
@@ -87,20 +86,28 @@ export async function POST(req) {
     return Response.json({ error: 'Gagal menyimpan pesanan.' }, { status: 500 });
   }
 
-  // Kirim Discord DM PENDING jika user login
+  // Fire & forget — tidak block response
+  const orderData = {
+    orderId,
+    productName:      product.name,
+    variantName:      variant.name,
+    baseAmount:       baseAmt,
+    feeAmount:        fee,
+    totalAmount:      total,
+    deliveryType:     product.delivery_type,
+    discordUserId:    session?.user?.discordId || null,
+    customerWhatsapp: customerWhatsapp || null,
+  };
+
+  // DM ke user (kalau login)
   if (session?.user?.discordId) {
-    sendPendingDM({
-      discordUserId: session.user.discordId,
-      orderData: {
-        orderId,
-        productName: product.name,
-        variantName: variant.name,
-        baseAmount:  baseAmt,
-        feeAmount:   fee,
-        totalAmount: total,
-      },
-    }).catch(e => console.error('[DM PENDING]', e.message));
+    sendPendingDM({ discordUserId: session.user.discordId, orderData })
+      .catch(e => console.error('[DM PENDING]', e.message));
   }
+
+  // Log ke channel server
+  logOrderToChannel({ orderData })
+    .catch(e => console.error('[LOG ORDER]', e.message));
 
   return Response.json({ orderId });
 }
