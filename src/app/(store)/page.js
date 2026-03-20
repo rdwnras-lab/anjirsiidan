@@ -101,7 +101,7 @@ export default async function HomePage() {
 
 /* Best Seller Card — slim horizontal, 80px height, glassmorphism */
 function BestSellerCard({ product }) {
-  const imgSrc = product.best_seller_thumbnail || product.thumbnail;
+  const imgSrc = product.thumbnail;
   return (
     <Link
       href={'/products/' + product.slug}
@@ -162,7 +162,7 @@ function BestSellerCard({ product }) {
       {/* Text */}
       <div style={{ flex:1, minWidth:0, position:'relative', zIndex:1, padding:'0 8px', display:'flex', flexDirection:'column', justifyContent:'center' }}>
         <p style={{
-          fontWeight:700, fontSize:'14px', color:'#fff',
+          fontWeight:700, fontSize:'11px', color:'#fff',
           lineHeight:1.25, overflow:'hidden',
           display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
         }}>
