@@ -34,18 +34,22 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
-      {/* ── POPULAR SECTION ── */}
+      {/* BEST SELLER */}
       {showBS.length > 0 && (
-        <section className="px-4 pt-6 pb-4">
-          <div className="mb-4">
-            <h2 className="font-black text-xl text-white tracking-wide">🔥 BEST SELLER!</h2>
-            <p className="text-sm mt-0.5" style={{ color: '#93c5fd' }}>
+        <section style={{ padding:'24px 16px 16px' }}>
+          <div style={{ marginBottom:'14px' }}>
+            <h2 style={{ fontWeight:900, fontSize:'1.2rem', color:'#fff', letterSpacing:'0.02em' }}>
+              🔥 BEST SELLER!
+            </h2>
+            <p style={{ fontSize:'0.8rem', marginTop:'3px', color:'#93c5fd' }}>
               Some of the most popular products right now.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+
+          {/* 2-column grid, ~80px card height */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'11px' }}>
             {showBS.map(p => (
-              <PopularCard key={p.id} product={p} />
+              <BestSellerCard key={p.id} product={p} />
             ))}
           </div>
         </section>
@@ -53,33 +57,30 @@ export default async function HomePage() {
 
       {/* Category chips */}
       {cats.length > 0 && (
-        <section className="px-4 pt-4 pb-2">
+        <section style={{ padding:'16px 16px 8px' }}>
           <CategoryFilter cats={cats} />
         </section>
       )}
 
       {/* Products per category */}
-      <section className="px-4 pb-24">
+      <section style={{ padding:'0 16px 96px' }}>
         {cats.map(cat => {
           const catProds = prods.filter(p => p.category_id === cat.id);
           if (catProds.length === 0) return null;
           return (
-            <div key={cat.id} id={`cat-${cat.slug}`} className="mb-10">
-              <div className="grid grid-cols-3 gap-1.5">
+            <div key={cat.id} id={`cat-${cat.slug}`} style={{ marginBottom:'32px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px' }}>
                 {catProds.map(p => (
-                  <ProductCard
-                    key={p.id}
-                    product={{ ...p, category: p.categories }}
-                  />
+                  <ProductCard key={p.id} product={{ ...p, category: p.categories }} />
                 ))}
               </div>
             </div>
           );
         })}
         {prods.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-3">🏪</p>
-            <p className="font-semibold text-dim">Belum ada produk</p>
+          <div style={{ textAlign:'center', paddingTop:'80px' }}>
+            <p style={{ fontSize:'2.5rem', marginBottom:'8px' }}>🏪</p>
+            <p style={{ fontWeight:600, color:'#93c5fd' }}>Belum ada produk</p>
           </div>
         )}
       </section>
@@ -87,48 +88,74 @@ export default async function HomePage() {
   );
 }
 
-/* Popular card: 2-col list item (icon left, name + publisher right) */
-function PopularCard({ product }) {
+/* Best Seller Card — slim horizontal, 80px height, glassmorphism */
+function BestSellerCard({ product }) {
   return (
     <Link
       href={'/products/' + product.slug}
-      className='flex items-center gap-3 rounded-2xl relative overflow-hidden transition-all duration-200'
       style={{
-        background:'rgba(255,255,255,0.07)',
-        border:'1px solid rgba(255,255,255,0.1)',
+        display:'flex', alignItems:'center', gap:'10px',
         textDecoration:'none', color:'inherit',
-        minHeight:'64px', padding:'8px 10px',
+        position:'relative', overflow:'hidden',
+        height:'80px',
+        padding:'8px 10px',
+        borderRadius:'12px',
+        background:'linear-gradient(135deg, rgba(42,82,190,0.65) 0%, rgba(26,52,140,0.8) 100%)',
+        border:'1px solid rgba(255,255,255,0.12)',
+        backdropFilter:'blur(4px)',
+        boxShadow:'0 2px 10px rgba(0,0,0,0.25)',
       }}
     >
-      {/* Diagonal stripes right side */}
-      <div aria-hidden='true' style={{ position:'absolute', right:'-10px', top:'50%',
-        transform:'translateY(-50%) rotate(15deg)', width:'60px', height:'160%',
-        background:'rgba(255,255,255,0.045)', pointerEvents:'none' }} />
-      <div aria-hidden='true' style={{ position:'absolute', right:'24px', top:'50%',
-        transform:'translateY(-50%) rotate(15deg)', width:'30px', height:'160%',
-        background:'rgba(255,255,255,0.03)', pointerEvents:'none' }} />
+      {/* Diagonal shimmer overlay */}
+      <div aria-hidden='true' style={{
+        position:'absolute', right:'-12px', top:'-20%',
+        width:'50px', height:'180%',
+        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
+        transform:'skewX(-20deg)', pointerEvents:'none',
+      }} />
+      <div aria-hidden='true' style={{
+        position:'absolute', right:'28px', top:'-20%',
+        width:'22px', height:'180%',
+        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.035) 50%, transparent 100%)',
+        transform:'skewX(-20deg)', pointerEvents:'none',
+      }} />
 
-      {/* Icon 90px */}
-      <div className='flex-shrink-0 rounded-xl overflow-hidden'
-        style={{ width:'52px', height:'52px',
-          border:'2px solid rgba(29,111,255,0.55)',
-          background:'rgba(255,255,255,0.05)', position:'relative', zIndex:1 }}>
+      {/* Icon — 50x50, rounded 10px */}
+      <div style={{
+        flexShrink:0, width:'50px', height:'50px',
+        borderRadius:'10px', overflow:'hidden',
+        border:'1.5px solid rgba(245,158,11,0.55)',
+        background:'rgba(255,255,255,0.06)',
+        position:'relative', zIndex:1,
+      }}>
         {product.thumbnail ? (
-          <img src={product.thumbnail} alt={product.name} className='w-full h-full object-cover' />
+          <img src={product.thumbnail} alt={product.name}
+            style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
         ) : (
-          <div className='w-full h-full flex items-center justify-center text-3xl'
-            style={{ background:'rgba(29,111,255,0.15)' }}>
+          <div style={{
+            width:'100%', height:'100%', display:'flex',
+            alignItems:'center', justifyContent:'center',
+            fontSize:'1.4rem', background:'rgba(29,111,255,0.18)',
+          }}>
             {product.categories?.icon || '📦'}
           </div>
         )}
       </div>
 
       {/* Text */}
-      <div className='flex-1 min-w-0' style={{ position:'relative', zIndex:1 }}>
-        <p className='font-black text-base text-white leading-tight line-clamp-2'>
+      <div style={{ flex:1, minWidth:0, position:'relative', zIndex:1 }}>
+        <p style={{
+          fontWeight:700, fontSize:'14px', color:'#fff',
+          lineHeight:1.25, overflow:'hidden',
+          display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
+        }}>
           {product.name}
         </p>
-        <p className='text-sm mt-1 font-semibold line-clamp-1' style={{ color:'#93c5fd' }}>
+        <p style={{
+          fontSize:'11px', marginTop:'3px', fontWeight:500,
+          color:'#93c5fd', overflow:'hidden',
+          whiteSpace:'nowrap', textOverflow:'ellipsis',
+        }}>
           {product.publisher || product.categories?.name || ''}
         </p>
       </div>
