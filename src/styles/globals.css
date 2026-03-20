@@ -27,7 +27,7 @@ html { scroll-behavior: smooth; }
 
 /* Store pages body */
 body {
-  background: linear-gradient(160deg, #0c1d62 0%, #0e2060 50%, #091845 100%) fixed;
+  background: linear-gradient(180deg, #1a45a0 0%, #0d286d 100%) fixed;
   min-height: 100vh;
   color: #e8f4ff;
   font-family: var(--font-plus);
