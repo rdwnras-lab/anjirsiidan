@@ -61,7 +61,7 @@ export default function ProductCard({ product }) {
             <div className='flex justify-end'>
               <img src={logoUrl} alt='logo'
                 style={{ width:'48px', height:'48px', objectFit:'contain',
-                  borderRadius:'12px', boxShadow:'0 3px 14px rgba(0,0,0,0.9)' }} />
+                  borderRadius:'0', boxShadow:'none', background:'none' }} />
             </div>
           )}
           {/* Name + publisher — bottom */}
