@@ -97,8 +97,8 @@ function BestSellerCard({ product }) {
         display:'flex', alignItems:'center', gap:'10px',
         textDecoration:'none', color:'inherit',
         position:'relative', overflow:'hidden',
-        height:'80px',
-        padding:'8px 10px',
+        height:'62px',
+        padding:'6px 8px',
         borderRadius:'12px',
         background:'linear-gradient(135deg, rgba(42,82,190,0.65) 0%, rgba(26,52,140,0.8) 100%)',
         border:'1px solid rgba(255,255,255,0.12)',
@@ -122,8 +122,8 @@ function BestSellerCard({ product }) {
 
       {/* Icon — 50x50, rounded 10px */}
       <div style={{
-        flexShrink:0, width:'50px', height:'50px',
-        borderRadius:'10px', overflow:'hidden',
+        flexShrink:0, width:'38px', height:'38px',
+        borderRadius:'8px', overflow:'hidden',
         border:'1.5px solid rgba(245,158,11,0.55)',
         background:'rgba(255,255,255,0.06)',
         position:'relative', zIndex:1,
@@ -135,7 +135,7 @@ function BestSellerCard({ product }) {
           <div style={{
             width:'100%', height:'100%', display:'flex',
             alignItems:'center', justifyContent:'center',
-            fontSize:'1.4rem', background:'rgba(29,111,255,0.18)',
+            fontSize:'1.1rem', background:'rgba(29,111,255,0.18)',
           }}>
             {product.categories?.icon || '📦'}
           </div>
