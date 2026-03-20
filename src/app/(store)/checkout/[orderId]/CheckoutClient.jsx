@@ -8,14 +8,24 @@ const PAYMENT_WINDOW_MS = 30 * 60 * 1000; // 30 menit
 
 export default function CheckoutClient({ order }) {
   const router    = useRouter();
-  // Simpan start time di sessionStorage supaya tidak reset saat refresh
+  // Hitung expiresAt:
+  // 1. Pakai payment_expired_at dari DB jika valid ISO string & tahun masuk akal
+  // 2. Fallback: simpan start time di sessionStorage (tahan refresh)
   const mountTime = useRef((() => {
+    // Coba pakai payment_expired_at dari DB (sudah pasti ISO string dari route.js)
+    if (order.payment_expired_at) {
+      const d = new Date(order.payment_expired_at);
+      if (!isNaN(d.getTime()) && d.getFullYear() >= 2024) {
+        return d.getTime() - 30 * 60 * 1000; // balik ke start time
+      }
+    }
+    // Fallback: sessionStorage supaya tidak reset saat refresh
     const key = `checkout_start_${order.id}`;
     try {
       const stored = sessionStorage.getItem(key);
       if (stored) {
         const t = Number(stored);
-        if (t > 0) return t;
+        if (t > 0 && t <= Date.now()) return t;
       }
       const now = Date.now();
       sessionStorage.setItem(key, String(now));
