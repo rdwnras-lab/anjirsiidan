@@ -1,4 +1,4 @@
-'use client';1
+'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
