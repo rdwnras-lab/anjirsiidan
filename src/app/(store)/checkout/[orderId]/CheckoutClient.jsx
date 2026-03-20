@@ -4,24 +4,20 @@ import { useRouter } from 'next/navigation';
 import { formatIDR } from '@/lib/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-// Pakasir returns expired_at as Unix timestamp (seconds) atau ISO string
+// DB selalu simpan expired_at sebagai ISO string (dikonversi di route.js)
 function parseExpiredAt(val) {
   if (!val) return null;
-  // Jika angka (Unix timestamp dalam detik)
-  if (typeof val === 'number') return new Date(val * 1000);
-  // Jika string angka
-  if (/^\d{10,}$/.test(String(val))) return new Date(Number(val) * 1000);
-  // ISO string atau format lain
-  return new Date(val);
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 export default function CheckoutClient({ order }) {
   const router = useRouter();
-  const [status,  setStatus]  = useState(order.status === 'completed' ? 'completed' : 'pending');
-  const [timeLeft,setTimeLeft]= useState('');
-  const [qrImage, setQrImage] = useState('');
-  const [copied,  setCopied]  = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [status,   setStatus]   = useState(order.status === 'completed' ? 'completed' : 'pending');
+  const [timeLeft, setTimeLeft] = useState('');
+  const [qrImage,  setQrImage]  = useState('');
+  const [copied,   setCopied]   = useState(false);
+  const [expired,  setExpired]  = useState(false);
 
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
@@ -36,17 +32,17 @@ export default function CheckoutClient({ order }) {
     });
   }, [order.payment_qr, isManual]);
 
-  // Countdown — Pakasir expired_at bisa berupa Unix timestamp (detik) atau ISO string
+  // Countdown — expired_at sudah ISO string dari DB
   useEffect(() => {
     if (!order.payment_expired_at || isManual || status === 'completed') return;
     const expDate = parseExpiredAt(order.payment_expired_at);
-    if (!expDate || isNaN(expDate.getTime())) return;
+    if (!expDate) return;
 
     const tick = () => {
       const diff = expDate - Date.now();
       if (diff <= 0) {
-        setTimeLeft('00:00');
         setExpired(true);
+        setTimeLeft('00:00');
         return;
       }
       setExpired(false);
@@ -62,7 +58,7 @@ export default function CheckoutClient({ order }) {
 
   // Poll payment status setiap 5 detik
   const checkStatus = useCallback(async () => {
-    if (status === 'completed') return;
+    if (status === 'completed' || expired) return;
     try {
       const res  = await fetch(`/api/payment/status?orderId=${order.id}&amount=${order.total_amount}`);
       const data = await res.json();
@@ -71,7 +67,7 @@ export default function CheckoutClient({ order }) {
         setTimeout(() => router.push(`/orders/${order.id}`), 1500);
       }
     } catch {}
-  }, [order.id, order.total_amount, router, status]);
+  }, [order.id, order.total_amount, router, status, expired]);
 
   useEffect(() => {
     const interval = setInterval(checkStatus, 5000);
@@ -84,6 +80,7 @@ export default function CheckoutClient({ order }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Pembayaran berhasil ──
   if (status === 'completed') return (
     <div className="max-w-md mx-auto px-4 py-20 text-center">
       <div className="text-6xl mb-4 animate-bounce">✅</div>
@@ -92,22 +89,54 @@ export default function CheckoutClient({ order }) {
     </div>
   );
 
+  // ── Invoice expired — ganti seluruh halaman ──
+  if (expired) return (
+    <div className="max-w-md mx-auto px-4" style={{paddingTop:'80px', paddingBottom:'40px', textAlign:'center'}}>
+      <div style={{
+        width:'80px', height:'80px', borderRadius:'50%',
+        background:'rgba(239,68,68,0.12)', border:'1.5px solid rgba(239,68,68,0.3)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        margin:'0 auto 20px',
+      }}>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <h2 style={{margin:'0 0 8px', fontWeight:900, fontSize:'1.3rem', color:'#fff'}}>Invoice Kedaluwarsa</h2>
+      <p style={{margin:'0 0 28px', fontSize:'0.85rem', color:'rgba(255,255,255,0.5)', lineHeight:1.6}}>
+        Waktu pembayaran untuk invoice <span style={{fontFamily:'monospace', color:'#93c5fd', fontWeight:700}}>{order.id}</span> telah habis.
+        Silakan buat pesanan baru untuk melanjutkan.
+      </p>
+      <a href={`/products/${order.product_id}`} style={{
+        display:'inline-block', padding:'13px 32px', borderRadius:'14px',
+        background:'linear-gradient(135deg,#1d6fff,#1450cc)',
+        color:'#fff', fontWeight:800, fontSize:'0.9rem', textDecoration:'none',
+        boxShadow:'0 4px 20px rgba(29,111,255,0.35)',
+      }}>
+        Buat Pesanan Baru
+      </a>
+      <div style={{marginTop:'16px'}}>
+        <a href="/" style={{color:'rgba(255,255,255,0.35)', fontSize:'0.8rem', textDecoration:'none'}}>
+          Kembali ke Beranda
+        </a>
+      </div>
+    </div>
+  );
+
+  // ── Menunggu pembayaran ──
   return (
     <div className="max-w-md mx-auto pb-10">
 
       {/* ── Animated Banner ── */}
       <div style={{
-        position: 'relative',
-        overflow: 'hidden',
-        background: '#0f1e5a',
-        padding: '32px 20px 44px',
-        textAlign: 'center',
+        position:'relative', overflow:'hidden',
+        background:'#0f1e5a',
+        padding:'32px 20px 44px', textAlign:'center',
       }}>
         <div style={{
           position:'absolute', inset:0,
-          background:'linear-gradient(135deg, rgba(29,111,255,0.3) 0%, rgba(10,26,74,0) 50%, rgba(29,111,255,0.2) 100%)',
-          backgroundSize:'300% 300%',
-          animation:'bannerGrad 5s ease infinite',
+          background:'linear-gradient(135deg,rgba(29,111,255,0.3) 0%,rgba(10,26,74,0) 50%,rgba(29,111,255,0.2) 100%)',
+          backgroundSize:'300% 300%', animation:'bannerGrad 5s ease infinite',
         }}/>
         {[
           {w:90,h:90,t:-20,l:-20,c:'rgba(29,111,255,0.15)',a:'orbFloat0'},
@@ -145,19 +174,19 @@ export default function CheckoutClient({ order }) {
           Silakan lakukan pembayaran dengan metode yang kamu pilih.
         </p>
 
-        {!isManual && timeLeft && (
+        {/* Timer — hanya tampil jika belum expired */}
+        {!isManual && timeLeft && !expired && (
           <div style={{position:'relative',zIndex:1,marginTop:'14px'}}>
             <span style={{
               display:'inline-flex', alignItems:'center', gap:'7px',
               background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)',
               borderRadius:'999px', padding:'5px 16px',
-              fontWeight:800, fontSize:'0.85rem', fontFamily:'monospace',
-              color: expired ? '#f87171' : '#fbbf24',
+              fontWeight:800, fontSize:'0.85rem', fontFamily:'monospace', color:'#fbbf24',
             }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
-              {expired ? 'Waktu Habis' : timeLeft}
+              {timeLeft}
             </span>
           </div>
         )}
@@ -179,7 +208,6 @@ export default function CheckoutClient({ order }) {
           borderRadius:'16px', padding:'16px',
           display:'flex', alignItems:'center', gap:'14px',
         }}>
-          {/* Gambar produk dari admin dashboard */}
           <div style={{
             width:'52px', height:'52px', borderRadius:'12px', flexShrink:0, overflow:'hidden',
             background:'linear-gradient(135deg,rgba(29,111,255,0.15),rgba(10,22,64,0.8))',
