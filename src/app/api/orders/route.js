@@ -42,28 +42,12 @@ export async function POST(req) {
       fee      = payment.fee || 0;
       total    = payment.total_payment || (basePrice + fee);
 
-      // Pakasir expired_at bisa berupa:
-      // - Unix timestamp absolut (detik) misal: 1742000000  (10 digit, > tahun 2001)
-      // - Durasi relatif (detik)         misal: 1800        (= 30 menit dari sekarang)
-      // - ISO string                     misal: "2026-03-20T11:00:00Z"
-      // Angka < 86400 (1 hari) dianggap durasi relatif, bukan timestamp absolut.
-      const rawExp = payment.expired_at;
-      if (rawExp !== null && rawExp !== undefined && rawExp !== '') {
-        const num = Number(rawExp);
-        let parsed;
-        if (!isNaN(num)) {
-          parsed = num < 86400
-            ? new Date(Date.now() + num * 1000)   // durasi relatif dalam detik
-            : new Date(num * 1000);                // Unix timestamp absolut
-        } else {
-          parsed = new Date(String(rawExp));        // ISO string
-        }
-        expiredAt = parsed && !isNaN(parsed.getTime())
-          ? parsed.toISOString()
-          : new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      } else {
-        expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      }
+      // Selalu set expiry 30 menit dari sekarang (waktu server).
+      // Tidak parsing nilai dari Pakasir karena formatnya tidak konsisten
+      // (bisa Unix detik, menit relatif, atau ISO string) sehingga rentan salah parse.
+      // QR Pakasir default valid 30 menit, jadi ini akurat.
+      expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
     } catch (e) {
       console.error('[PAKASIR]', e.message);
       return Response.json({ error: 'Gagal membuat pembayaran. Coba lagi.' }, { status: 500 });
