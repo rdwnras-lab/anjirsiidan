@@ -34,6 +34,9 @@ export default async function HomePage() {
     <div className="relative min-h-screen">
       <BannerSlider banners={banners} />
 
+      {/* ── FAIRY LIGHTS DECORATION ── */}
+      <FairyLights />
+
       {/* BEST SELLER */}
       {showBS.length > 0 && (
         <section style={{ padding:'24px 16px 16px' }}>
@@ -88,6 +91,52 @@ export default async function HomePage() {
   );
 }
 
+/* Tali + lampu kecil dekoratif di bawah banner */
+function FairyLights() {
+  const bulbs = Array.from({ length: 14 });
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff','#ff9f1c','#fff'];
+  return (
+    <div style={{ position:'relative', height:'28px', overflow:'visible', margin:'0', padding:'0 8px', userSelect:'none' }}>
+      {/* The rope/wire */}
+      <svg width='100%' height='28' viewBox='0 0 360 28' preserveAspectRatio='none'
+        style={{ position:'absolute', top:0, left:0, right:0 }}>
+        <path
+          d='M0,8 Q45,16 90,8 Q135,0 180,8 Q225,16 270,8 Q315,0 360,8'
+          fill='none' stroke='rgba(255,255,255,0.35)' strokeWidth='1.5' />
+      </svg>
+      {/* Bulbs hanging from the rope */}
+      {bulbs.map((_, i) => {
+        const pct = i / (bulbs.length - 1);
+        const x = pct * 100;
+        // Sine wave y matching the rope path
+        const ropeY = 8 + Math.sin(pct * Math.PI * 2 - Math.PI / 2) * 8;
+        const color = colors[i % colors.length];
+        return (
+          <div key={i} style={{
+            position:'absolute',
+            left: `${x}%`,
+            top: `${ropeY + 3}px`,
+            transform:'translateX(-50%)',
+          }}>
+            {/* wire down from rope */}
+            <div style={{ width:'1px', height:'5px', background:'rgba(255,255,255,0.3)', margin:'0 auto' }} />
+            {/* bulb */}
+            <div style={{
+              width:'7px', height:'9px',
+              borderRadius:'50% 50% 45% 45%',
+              background: color,
+              boxShadow: `0 0 6px 2px ${color}88`,
+              margin:'0 auto',
+            }} />
+            {/* bulb base cap */}
+            <div style={{ width:'5px', height:'2px', background:'rgba(255,255,255,0.5)', borderRadius:'1px', margin:'0 auto' }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* Best Seller Card — slim horizontal, 80px height, glassmorphism */
 function BestSellerCard({ product }) {
   return (
@@ -100,31 +149,37 @@ function BestSellerCard({ product }) {
         height:'62px',
         padding:'6px 8px',
         borderRadius:'12px',
-        background:'linear-gradient(135deg, rgba(42,82,190,0.65) 0%, rgba(26,52,140,0.8) 100%)',
-        border:'1px solid rgba(255,255,255,0.12)',
-        backdropFilter:'blur(4px)',
-        boxShadow:'0 2px 10px rgba(0,0,0,0.25)',
+        background:'linear-gradient(135deg, rgba(55,100,220,0.7) 0%, rgba(26,52,160,0.85) 100%)',
+        border:'1px solid rgba(255,255,255,0.18)',
+        backdropFilter:'blur(6px)',
+        boxShadow:'0 2px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
       }}
     >
       {/* Diagonal shimmer overlay */}
       <div aria-hidden='true' style={{
         position:'absolute', right:'-12px', top:'-20%',
         width:'50px', height:'180%',
-        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
+        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)',
         transform:'skewX(-20deg)', pointerEvents:'none',
       }} />
       <div aria-hidden='true' style={{
         position:'absolute', right:'28px', top:'-20%',
         width:'22px', height:'180%',
-        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.035) 50%, transparent 100%)',
+        background:'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
         transform:'skewX(-20deg)', pointerEvents:'none',
       }} />
 
+      {/* Top highlight line */}
+      <div aria-hidden='true' style={{
+        position:'absolute', top:0, left:0, right:0, height:'1px',
+        background:'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 40%, rgba(255,255,255,0.35) 60%, transparent 100%)',
+        pointerEvents:'none',
+      }} />
       {/* Icon — 50x50, rounded 10px */}
       <div style={{
         flexShrink:0, width:'38px', height:'38px',
         borderRadius:'8px', overflow:'hidden',
-        border:'1.5px solid rgba(245,158,11,0.55)',
+        border:'1.5px solid rgba(29,111,255,0.7)',
         background:'rgba(255,255,255,0.06)',
         position:'relative', zIndex:1,
       }}>
