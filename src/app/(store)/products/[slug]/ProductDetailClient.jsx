@@ -163,83 +163,95 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       )}
       <div className='max-w-2xl mx-auto pb-36'>
 
-        {/* ── BANNER: identical to Tokan Gaming layout ── */}
-        <div style={{ position:'relative', marginBottom:'0' }}>
+        {/* ── BANNER: Tokan Gaming style ── */}
+        <div style={{ position:'relative' }}>
 
-          {/* Full-width background image */}
-          <div style={{ height:'210px', overflow:'hidden', position:'relative', background:'#0d1b30' }}>
-            {(product.banner_image || product.thumbnail) && (
-              <img src={product.banner_image || product.thumbnail} alt=''
-                style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'brightness(0.65)', display:'block' }} />
+          {/* Background: banner_image from admin ONLY (not thumbnail) */}
+          <div style={{ height:'200px', overflow:'hidden', position:'relative',
+            background:'linear-gradient(180deg,#1a2560 0%,#0f1a48 100%)' }}>
+            {product.banner_image && (
+              <img src={product.banner_image} alt=''
+                style={{ width:'100%', height:'100%', objectFit:'cover',
+                  filter:'brightness(0.55)', display:'block' }} />
             )}
-            {/* Bottom fade so card merges seamlessly */}
-            <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'80px',
-              background:'linear-gradient(to top, #1d3080 0%, transparent 100%)' }} />
+            {/* Gradient fade bottom → merges with blue card */}
+            <div style={{ position:'absolute', inset:0,
+              background:'linear-gradient(to top, #162878 0%, transparent 55%)' }} />
           </div>
 
-          {/* Blue info card — seamlessly connected to banner, NO gap */}
+          {/* Blue card — sits flush below banner */}
           <div style={{
-            position:'relative',
-            background:'linear-gradient(160deg, #1e3a9e 0%, #1a2f88 60%, #152370 100%)',
-            paddingTop:'0', paddingBottom:'14px',
+            position:'relative', overflow:'hidden',
+            background:'linear-gradient(150deg,#1e3caa 0%,#172e90 55%,#112270 100%)',
+            paddingTop:'10px', paddingBottom:'14px',
             paddingLeft:'16px', paddingRight:'16px',
-            overflow:'hidden',
+            /* left padding leaves room for the icon that overlaps from top */
           }}>
-            {/* Multi-layer diagonal stripes — futuristic effect */}
-            {[{r:'8%',w:'3px',o:0.07},{r:'14%',w:'2px',o:0.05},{r:'22%',w:'6px',o:0.04},
-              {r:'30%',w:'2px',o:0.06},{r:'40%',w:'4px',o:0.03},{r:'50%',w:'2px',o:0.05},
-              {r:'60%',w:'8px',o:0.04},{r:'72%',w:'2px',o:0.05},{r:'80%',w:'4px',o:0.04}
-            ].map((s,i) => (
+            {/* Diagonal stripes pattern */}
+            {[
+              {r:'6%',w:'3px',o:.08},{r:'13%',w:'2px',o:.05},
+              {r:'21%',w:'7px',o:.04},{r:'31%',w:'2px',o:.06},
+              {r:'42%',w:'4px',o:.04},{r:'53%',w:'2px',o:.05},
+              {r:'63%',w:'9px',o:.04},{r:'75%',w:'2px',o:.05},
+              {r:'84%',w:'4px',o:.04},
+            ].map((s,i)=>(
               <div key={i} aria-hidden='true' style={{
-                position:'absolute', top:'-20%', right:s.r, bottom:'-20%', width:s.w,
+                position:'absolute', top:'-30%', right:s.r, bottom:'-30%', width:s.w,
                 background:`rgba(255,255,255,${s.o})`,
                 transform:'skewX(-22deg)', pointerEvents:'none',
-              }} />
+              }}/>
             ))}
 
-            {/* Flex row: 3D icon left + text right */}
-            <div style={{ display:'flex', alignItems:'flex-end', gap:'14px' }}>
+            {/* Layout: icon (absolute, overlapping) + text block (margin-left) */}
+            <div style={{ display:'flex', alignItems:'center', gap:'0' }}>
 
-              {/* 3D icon — negative margin top, sticks out above container */}
-              <div style={{ flexShrink:0, marginTop:'-70px', perspective:'800px', zIndex:2 }}>
+              {/* Icon — absolute positioned, straddles banner/card boundary */}
+              <div style={{
+                flexShrink:0, width:'120px',
+                position:'relative', zIndex:3,
+                marginTop:'-65px',
+                perspective:'800px',
+                marginRight:'14px',
+              }}>
                 <div style={{
-                  width:'130px', height:'130px',
+                  width:'120px', height:'120px',
                   borderRadius:'18px', overflow:'hidden',
-                  transform:'rotateY(12deg) rotateX(-2deg)',
+                  transform:'rotateY(10deg) rotateX(-2deg)',
                   transformStyle:'preserve-3d',
-                  boxShadow:'6px 10px 28px rgba(0,0,0,0.75), -3px -2px 12px rgba(29,111,255,0.25)',
-                  border:'2px solid rgba(255,255,255,0.2)',
+                  boxShadow:'5px 8px 24px rgba(0,0,0,0.8), -2px -2px 10px rgba(29,111,255,0.2)',
+                  border:'2.5px solid rgba(255,255,255,0.22)',
                   background:'#0a1628',
-                  position:'relative', zIndex:2,
                 }}>
                   {product.thumbnail
                     ? <img src={product.thumbnail} alt={product.name}
-                        style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                        style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
                     : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center',
-                        justifyContent:'center', fontSize:'3rem', background:'rgba(29,111,255,0.15)' }}>📦</div>
+                        justifyContent:'center', fontSize:'2.8rem', background:'rgba(29,111,255,0.15)' }}>📦</div>
                   }
                 </div>
               </div>
 
-              {/* Right: name + publisher + feature grid */}
-              <div style={{ flex:1, paddingTop:'6px', paddingBottom:'2px', zIndex:1 }}>
+              {/* Text: name + publisher + features */}
+              <div style={{ flex:1, zIndex:1 }}>
                 <h1 style={{ margin:0, fontWeight:900, fontSize:'1.1rem', color:'#fff',
-                  lineHeight:1.25, letterSpacing:'0.01em' }}>
+                  lineHeight:1.3, letterSpacing:'0.01em' }}>
                   {product.name}
                 </h1>
                 <p style={{ margin:'3px 0 0', fontWeight:600, fontSize:'0.82rem', color:'#60a5fa' }}>
                   {product.publisher || product.categories?.name || ''}
                 </p>
-
-                {/* Feature row — 1 grid, icons + text, 11-12px */}
-                <div style={{ marginTop:'10px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'5px 8px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#fbbf24', fontSize:'11px', fontWeight:600 }}>
+                <div style={{ marginTop:'9px', display:'grid', gridTemplateColumns:'1fr 1fr',
+                  rowGap:'5px', columnGap:'8px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
+                    color:'#fbbf24', fontSize:'11px', fontWeight:600 }}>
                     <IBolt /> Fast Process
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#60a5fa', fontSize:'11px', fontWeight:600 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
+                    color:'#60a5fa', fontSize:'11px', fontWeight:600 }}>
                     <IHS /> 24/7 Chat Support
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px', color:'#34d399', fontSize:'11px', fontWeight:600 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px',
+                    color:'#34d399', fontSize:'11px', fontWeight:600 }}>
                     <IGlobe /> Global Network
                   </div>
                 </div>
