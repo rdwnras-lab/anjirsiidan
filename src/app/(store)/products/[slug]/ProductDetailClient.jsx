@@ -161,7 +161,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <span>{error}</span>
         </div>
       )}
-      <div className='max-w-2xl mx-auto pb-36'>
+      <div className='max-w-2xl mx-auto pb-36' style={{ overflowX:'hidden' }}>
 
         {/* ── BANNER: Tokan Gaming style ── */}
         <div style={{ position:'relative' }}>
@@ -181,7 +181,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
           {/* Blue card — sits flush below banner */}
           <div style={{
-            position:'relative', overflow:'hidden',
+            position:'relative', overflow:'visible',
             background:'linear-gradient(150deg,#1e3caa 0%,#172e90 55%,#112270 100%)',
             paddingTop:'10px', paddingBottom:'14px',
             paddingLeft:'16px', paddingRight:'16px',
@@ -455,6 +455,19 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       <div className='fixed bottom-0 left-0 right-0 z-40 px-4 pb-5 pt-3'
         style={{ background:'linear-gradient(to top, rgba(10,22,48,0.98) 60%, transparent 100%)' }}>
         <div className='max-w-2xl mx-auto'>
+          {!selected && (
+            <div className='mb-2 px-4 py-2.5 rounded-xl text-center text-sm'
+              style={{ border:'1.5px dashed rgba(255,255,255,0.2)', color:'rgba(255,255,255,0.45)' }}>
+              Belum ada item produk yang dipilih.
+            </div>
+          )}
+          {selected && pricing && (
+            <div className='mb-2 px-4 py-2 rounded-xl flex justify-between items-center'
+              style={{ background:'rgba(29,111,255,0.1)', border:'1px solid rgba(29,111,255,0.25)' }}>
+              <span className='text-xs text-white'>{selVariant?.name}</span>
+              <span className='font-black text-sm' style={{ color:'#60a5fa' }}>{formatIDR(pricing.total)}</span>
+            </div>
+          )}
           <div className='relative'>
             <button
               onClick={handleOrder}
