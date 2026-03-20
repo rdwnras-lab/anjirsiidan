@@ -5,9 +5,15 @@ import CheckoutClient from './CheckoutClient';
 export const metadata = { title: 'Pembayaran' };
 
 export default async function CheckoutPage({ params }) {
-  const { data: order } = await supabaseAdmin.from('orders')
-    .select('*').eq('id', params.orderId).single();
+  // Join products untuk ambil thumbnail
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('*, products(thumbnail, banner_image)')
+    .eq('id', params.orderId)
+    .single();
+
   if (!order) notFound();
+
   if (order.status === 'completed') {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
@@ -18,5 +24,6 @@ export default async function CheckoutPage({ params }) {
       </div>
     );
   }
+
   return <CheckoutClient order={order} />;
 }
