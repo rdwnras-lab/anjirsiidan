@@ -224,7 +224,9 @@ export default function CheckoutClient({ order }) {
         <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
             <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem'}}>Metode Pembayaran</span>
-            <span style={{color:'#fff',fontWeight:700,fontSize:'0.85rem'}}>QRIS</span>
+            <span style={{color:'#fff',fontWeight:700,fontSize:'0.85rem'}}>
+              {payMethodDetail ? payMethodDetail.provider : 'QRIS'}
+            </span>
           </div>
           <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.82rem',margin:'0 0 7px'}}>Nomor Invoice</p>
           <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'14px'}}>
