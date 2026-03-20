@@ -535,23 +535,24 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <PayOpt label='E-Wallet' value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
                 {payMethods.ewallet.length === 0
                   ? <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Belum ada rekening e-wallet</p>
-                  : <div className='space-y-2'>
+                  : <div className='grid grid-cols-2 gap-2'>
                       {payMethods.ewallet.map(m => (
                         <button key={m.id} onClick={() => setPayMethod('ewallet_' + m.id)}
-                          className='w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left'
+                          className='flex flex-col items-start p-3 rounded-xl transition-all'
                           style={{
                             background: payMethod === 'ewallet_' + m.id ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
                             border: payMethod === 'ewallet_' + m.id ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
                           }}>
-                          {m.logo_url
-                            ? <img src={m.logo_url} alt={m.provider} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'contain',background:'#fff',padding:'2px',flexShrink:0}} />
-                            : <div style={{width:'32px',height:'32px',borderRadius:'8px',background:'rgba(29,111,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.6rem',fontWeight:900,color:'#60a5fa'}}>{m.provider.slice(0,2).toUpperCase()}</div>
-                          }
-                          <div>
-                            <p className='font-bold text-white text-xs'>{m.provider}</p>
-                            <p className='text-xs font-mono' style={{color:'#64748b'}}>{m.account_number}</p>
-                            <p className='text-xs' style={{color:'#64748b'}}>{m.account_name}</p>
+                          {/* Badge logo — sama persis style QRIS */}
+                          <div className='rounded-md px-2 py-1 mb-2 font-black text-xs tracking-widest'
+                            style={{ background:'#fff', color:'#111', fontFamily:'monospace' }}>
+                            {m.logo_url
+                              ? <img src={m.logo_url} alt={m.provider} style={{height:'14px',objectFit:'contain',display:'block'}}/>
+                              : m.provider.toUpperCase().slice(0,6)
+                            }
                           </div>
+                          <p className='font-bold text-white text-xs'>{m.provider}</p>
+                          <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>E-WALLET</p>
                         </button>
                       ))}
                     </div>
@@ -562,23 +563,24 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <PayOpt label='Bank Transfer' value='bank' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
                 {payMethods.bank.length === 0
                   ? <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Belum ada rekening bank</p>
-                  : <div className='space-y-2'>
+                  : <div className='grid grid-cols-2 gap-2'>
                       {payMethods.bank.map(m => (
                         <button key={m.id} onClick={() => setPayMethod('bank_' + m.id)}
-                          className='w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left'
+                          className='flex flex-col items-start p-3 rounded-xl transition-all'
                           style={{
                             background: payMethod === 'bank_' + m.id ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
                             border: payMethod === 'bank_' + m.id ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
                           }}>
-                          {m.logo_url
-                            ? <img src={m.logo_url} alt={m.provider} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'contain',background:'#fff',padding:'2px',flexShrink:0}} />
-                            : <div style={{width:'32px',height:'32px',borderRadius:'8px',background:'rgba(29,111,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.6rem',fontWeight:900,color:'#60a5fa'}}>{m.provider.slice(0,2).toUpperCase()}</div>
-                          }
-                          <div>
-                            <p className='font-bold text-white text-xs'>{m.provider}</p>
-                            <p className='text-xs font-mono' style={{color:'#64748b'}}>{m.account_number}</p>
-                            <p className='text-xs' style={{color:'#64748b'}}>{m.account_name}</p>
+                          {/* Badge logo — sama persis style QRIS */}
+                          <div className='rounded-md px-2 py-1 mb-2 font-black text-xs tracking-widest'
+                            style={{ background:'#fff', color:'#111', fontFamily:'monospace' }}>
+                            {m.logo_url
+                              ? <img src={m.logo_url} alt={m.provider} style={{height:'14px',objectFit:'contain',display:'block'}}/>
+                              : m.provider.toUpperCase().slice(0,6)
+                            }
                           </div>
+                          <p className='font-bold text-white text-xs'>{m.provider}</p>
+                          <p className='text-xs mt-0.5' style={{ color:'#64748b' }}>TRANSFER</p>
                         </button>
                       ))}
                     </div>
