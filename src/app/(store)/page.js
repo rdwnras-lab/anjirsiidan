@@ -94,7 +94,7 @@ export default async function HomePage() {
 /* Single hanging pendant light — tali + bohlam biru turun dari banner */
 function FairyLights() {
   return (
-    <div style={{ display:'flex', justifyContent:'center', position:'relative', height:'56px', overflow:'visible', pointerEvents:'none', userSelect:'none' }}>
+    <div style={{ display:'flex', justifyContent:'flex-end', paddingRight:'48px', position:'relative', height:'56px', overflow:'visible', pointerEvents:'none', userSelect:'none' }}>
       {/* Tali / kawat turun */}
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
         <div style={{ width:'1.5px', height:'36px', background:'linear-gradient(to bottom, rgba(29,111,255,0.6), rgba(29,111,255,0.9))' }} />
