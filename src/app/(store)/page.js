@@ -6,7 +6,6 @@ import ProductCard from '@/components/store/ProductCard';
 import Link from 'next/link';
 import BannerSlider from '@/components/store/BannerSlider';
 import CategoryFilter from '@/components/store/CategoryFilter';
-import PendantLamp from '@/components/store/PendantLamp';
 
 async function getHomeData() {
   const [catsRes, prodsRes, bannersRes] = await Promise.all([
