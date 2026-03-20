@@ -109,6 +109,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const [error,     setError]     = useState('');
   const [descOpen,  setDescOpen]  = useState(false);
   const [guideModal,setGuideModal]= useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const tier    = (session?.user?.tier || 'member').toLowerCase();
   const logoUrl   = process.env.NEXT_PUBLIC_LOGO_URL || '';
@@ -128,13 +129,18 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const step3 = step2 + 1;
   const step4 = step3 + 1;
 
-  const handleOrder = async () => {
+  const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
     if (isAuto && !session) return setError('Login Discord diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
     if (isAuto && stock === 0) return setError('Stok habis.');
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
+    setError('');
+    setShowConfirm(true);
+  };
+
+  const handleConfirmOrder = async () => {
     setLoading(true); setError('');
     try {
       const res = await fetch('/api/orders', {
@@ -146,13 +152,98 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Gagal membuat pesanan');
       router.push('/checkout/' + data.orderId);
-    } catch(e) { setError(e.message); }
+    } catch(e) { setError(e.message); setShowConfirm(false); }
     finally { setLoading(false); }
   };
 
   return (
     <>
       {guideModal && <GuideModal title={guideModal.title} text={guideModal.text} onClose={() => setGuideModal(null)} />}
+
+      {/* ── CONFIRMATION MODAL ── */}
+      {showConfirm && (
+        <>
+          <div className='fixed inset-0 z-50' style={{background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)'}} onClick={() => !loading && setShowConfirm(false)} />
+          <div className='fixed inset-x-4 bottom-0 z-50 rounded-t-3xl pb-8 pt-6 px-5 max-w-md mx-auto'
+            style={{background:'linear-gradient(160deg,#0d2260 0%,#0a1840 60%,#071230 100%)', border:'1.5px solid rgba(29,111,255,0.35)', borderBottom:'none', left:'50%', transform:'translateX(-50%)', width:'calc(100% - 32px)', maxWidth:'448px'}}>
+            {/* Handle bar */}
+            <div style={{width:'40px', height:'4px', borderRadius:'999px', background:'rgba(255,255,255,0.2)', margin:'0 auto 20px'}} />
+            <h2 style={{margin:'0 0 4px', fontWeight:900, fontSize:'1.1rem', color:'#fff', textAlign:'center'}}>Konfirmasi Pembelian</h2>
+            <p style={{margin:'0 0 20px', fontSize:'0.78rem', color:'rgba(255,255,255,0.45)', textAlign:'center'}}>
+              Pastikan data akun Kamu dan produk yang Kamu pilih valid dan sesuai.
+            </p>
+
+            {/* Detail Produk */}
+            <div style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'14px', padding:'14px', marginBottom:'12px'}}>
+              <p style={{margin:'0 0 12px', fontWeight:800, color:'#fff', fontSize:'0.85rem'}}>Detail Produk</p>
+              {Object.entries(formData).map(([k,v]) => (
+                <div key={k} style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                  <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>{k}</span>
+                  <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600, textAlign:'right', maxWidth:'60%', wordBreak:'break-all'}}>{v}</span>
+                </div>
+              ))}
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Produk</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{product.name}</span>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Varian</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{selVariant?.name}</span>
+              </div>
+            </div>
+
+            {/* Detail Pembayaran */}
+            <div style={{background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'14px', padding:'14px', marginBottom:'16px'}}>
+              <p style={{margin:'0 0 12px', fontWeight:800, color:'#fff', fontSize:'0.85rem'}}>Detail Pembayaran</p>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Metode</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>
+                  {payMethod === 'coins' ? 'VECHNOST PAYMENT' : payMethod === 'qris_auto' || payMethod === 'qris_manual' ? 'QRIS' : payMethod || '-'}
+                </span>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Harga</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{formatIDR(discPrc)}</span>
+              </div>
+              {pricing && pricing.fee > 0 && (
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                  <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Payment Fee</span>
+                  <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>{formatIDR(pricing.fee)}</span>
+                </div>
+              )}
+              <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'10px 0'}} />
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <span style={{color:'#fff', fontWeight:800, fontSize:'0.88rem'}}>Total Bayar</span>
+                <span style={{color:'#60a5fa', fontWeight:900, fontSize:'0.95rem'}}>{formatIDR(pricing?.total || discPrc)}</span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <button
+              onClick={handleConfirmOrder}
+              disabled={loading}
+              style={{
+                width:'100%', padding:'14px', borderRadius:'14px', border:'none',
+                background: loading ? '#0e2445' : 'linear-gradient(135deg,#1d6fff,#1450cc)',
+                color:'#fff', fontWeight:900, fontSize:'0.95rem', cursor: loading ? 'not-allowed' : 'pointer',
+                marginBottom:'10px', transition:'opacity 0.2s',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(29,111,255,0.4)',
+              }}>
+              {loading ? 'Memproses...' : 'Konfirmasi Pembelian'}
+            </button>
+            <button
+              onClick={() => !loading && setShowConfirm(false)}
+              disabled={loading}
+              style={{
+                width:'100%', padding:'13px', borderRadius:'14px', border:'1.5px solid rgba(255,255,255,0.1)',
+                background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.7)',
+                fontWeight:700, fontSize:'0.9rem', cursor: loading ? 'not-allowed' : 'pointer',
+              }}>
+              Batal
+            </button>
+          </div>
+        </>
+      )}
       {/* Floating error toast — top right */}
       {error && (
         <div className='fixed top-16 right-4 z-50 flex items-start gap-2 px-4 py-3 rounded-2xl shadow-xl max-w-xs'
