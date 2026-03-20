@@ -91,48 +91,27 @@ export default async function HomePage() {
   );
 }
 
-/* Tali + lampu kecil dekoratif di bawah banner */
+/* Single hanging pendant light — tali + bohlam biru turun dari banner */
 function FairyLights() {
-  const bulbs = Array.from({ length: 14 });
-  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff','#ff9f1c','#fff'];
   return (
-    <div style={{ position:'relative', height:'28px', overflow:'visible', margin:'0', padding:'0 8px', userSelect:'none' }}>
-      {/* The rope/wire */}
-      <svg width='100%' height='28' viewBox='0 0 360 28' preserveAspectRatio='none'
-        style={{ position:'absolute', top:0, left:0, right:0 }}>
-        <path
-          d='M0,8 Q45,16 90,8 Q135,0 180,8 Q225,16 270,8 Q315,0 360,8'
-          fill='none' stroke='rgba(255,255,255,0.35)' strokeWidth='1.5' />
-      </svg>
-      {/* Bulbs hanging from the rope */}
-      {bulbs.map((_, i) => {
-        const pct = i / (bulbs.length - 1);
-        const x = pct * 100;
-        // Sine wave y matching the rope path
-        const ropeY = 8 + Math.sin(pct * Math.PI * 2 - Math.PI / 2) * 8;
-        const color = colors[i % colors.length];
-        return (
-          <div key={i} style={{
-            position:'absolute',
-            left: `${x}%`,
-            top: `${ropeY + 3}px`,
-            transform:'translateX(-50%)',
-          }}>
-            {/* wire down from rope */}
-            <div style={{ width:'1px', height:'5px', background:'rgba(255,255,255,0.3)', margin:'0 auto' }} />
-            {/* bulb */}
-            <div style={{
-              width:'7px', height:'9px',
-              borderRadius:'50% 50% 45% 45%',
-              background: color,
-              boxShadow: `0 0 6px 2px ${color}88`,
-              margin:'0 auto',
-            }} />
-            {/* bulb base cap */}
-            <div style={{ width:'5px', height:'2px', background:'rgba(255,255,255,0.5)', borderRadius:'1px', margin:'0 auto' }} />
-          </div>
-        );
-      })}
+    <div style={{ display:'flex', justifyContent:'center', position:'relative', height:'56px', overflow:'visible', pointerEvents:'none', userSelect:'none' }}>
+      {/* Tali / kawat turun */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <div style={{ width:'1.5px', height:'36px', background:'linear-gradient(to bottom, rgba(29,111,255,0.6), rgba(29,111,255,0.9))' }} />
+        {/* Bohlam bulat */}
+        <div style={{
+          width:'14px', height:'18px',
+          borderRadius:'50% 50% 48% 48%',
+          background:'radial-gradient(circle at 40% 35%, #7bb8ff 0%, #1d6fff 60%, #0a3fa0 100%)',
+          boxShadow:'0 0 10px 4px rgba(29,111,255,0.65), 0 0 22px 8px rgba(29,111,255,0.3)',
+          position:'relative',
+        }}>
+          {/* Highlight kecil di bohlam */}
+          <div style={{ position:'absolute', top:'3px', left:'4px', width:'4px', height:'4px', borderRadius:'50%', background:'rgba(255,255,255,0.55)' }} />
+        </div>
+        {/* Ulir bawah bohlam */}
+        <div style={{ width:'8px', height:'3px', background:'rgba(29,111,255,0.7)', borderRadius:'0 0 3px 3px' }} />
+      </div>
     </div>
   );
 }
