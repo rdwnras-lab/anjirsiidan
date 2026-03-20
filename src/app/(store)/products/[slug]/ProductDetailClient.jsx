@@ -110,6 +110,21 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const [descOpen,  setDescOpen]  = useState(false);
   const [guideModal,setGuideModal]= useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [payMethods, setPayMethods] = useState({ ewallet: [], bank: [] });
+
+  // Load payment methods dari DB
+  useEffect(() => {
+    fetch('/api/admin/payment-methods')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const active = data.filter(m => m.is_active);
+        setPayMethods({
+          ewallet: active.filter(m => m.type === 'ewallet'),
+          bank:    active.filter(m => m.type === 'bank'),
+        });
+      }).catch(() => {});
+  }, []);
 
   const tier    = (session?.user?.tier || 'member').toLowerCase();
   const logoUrl   = process.env.NEXT_PUBLIC_LOGO_URL || '';
@@ -145,9 +160,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
     try {
       const res = await fetch('/api/orders', {
         method:'POST', headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ productId:product.id, variantId:selected, formData,
-          tierPrice:discPrc, customerName:!isAuto?(session?.user?.name||''):null,
-          customerWhatsapp:!isAuto?waNumber:null, paymentMethod: payMethod === 'qris_auto' || payMethod === 'qris_manual' ? 'qris' : payMethod }),
+        body: JSON.stringify({
+            productId:       product.id,
+            variantId:       selected,
+            formData,
+            tierPrice:       discPrc,
+            customerName:    !isAuto ? (session?.user?.name || '') : null,
+            customerWhatsapp: !isAuto ? waNumber : null,
+            paymentMethodId: payMethod.startsWith('ewallet_') || payMethod.startsWith('bank_')
+              ? payMethod.split('_')[1]
+              : null,
+          }),
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Gagal membuat pesanan');
@@ -510,12 +533,56 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
               {/* E-Wallet — hanya aktif jika manual */}
               <PayOpt label='E-Wallet' value='ewallet' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
-                <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
+                {payMethods.ewallet.length === 0
+                  ? <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Belum ada rekening e-wallet</p>
+                  : <div className='space-y-2'>
+                      {payMethods.ewallet.map(m => (
+                        <button key={m.id} onClick={() => setPayMethod('ewallet_' + m.id)}
+                          className='w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left'
+                          style={{
+                            background: payMethod === 'ewallet_' + m.id ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: payMethod === 'ewallet_' + m.id ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
+                          }}>
+                          {m.logo_url
+                            ? <img src={m.logo_url} alt={m.provider} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'contain',background:'#fff',padding:'2px',flexShrink:0}} />
+                            : <div style={{width:'32px',height:'32px',borderRadius:'8px',background:'rgba(29,111,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.6rem',fontWeight:900,color:'#60a5fa'}}>{m.provider.slice(0,2).toUpperCase()}</div>
+                          }
+                          <div>
+                            <p className='font-bold text-white text-xs'>{m.provider}</p>
+                            <p className='text-xs font-mono' style={{color:'#64748b'}}>{m.account_number}</p>
+                            <p className='text-xs' style={{color:'#64748b'}}>{m.account_name}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                }
               </PayOpt>
 
               {/* Bank Transfer — hanya aktif jika manual */}
               <PayOpt label='Bank Transfer' value='bank' payMethod={payMethod} setPayMethod={setPayMethod} disabled={isAuto}>
-                <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Segera hadir</p>
+                {payMethods.bank.length === 0
+                  ? <p className='text-xs py-2 text-center' style={{ color:'#64748b' }}>Belum ada rekening bank</p>
+                  : <div className='space-y-2'>
+                      {payMethods.bank.map(m => (
+                        <button key={m.id} onClick={() => setPayMethod('bank_' + m.id)}
+                          className='w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left'
+                          style={{
+                            background: payMethod === 'bank_' + m.id ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: payMethod === 'bank_' + m.id ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
+                          }}>
+                          {m.logo_url
+                            ? <img src={m.logo_url} alt={m.provider} style={{width:'32px',height:'32px',borderRadius:'8px',objectFit:'contain',background:'#fff',padding:'2px',flexShrink:0}} />
+                            : <div style={{width:'32px',height:'32px',borderRadius:'8px',background:'rgba(29,111,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'0.6rem',fontWeight:900,color:'#60a5fa'}}>{m.provider.slice(0,2).toUpperCase()}</div>
+                          }
+                          <div>
+                            <p className='font-bold text-white text-xs'>{m.provider}</p>
+                            <p className='text-xs font-mono' style={{color:'#64748b'}}>{m.account_number}</p>
+                            <p className='text-xs' style={{color:'#64748b'}}>{m.account_name}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                }
               </PayOpt>
             </div>
           </StepRow>

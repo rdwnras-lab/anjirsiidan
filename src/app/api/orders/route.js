@@ -8,7 +8,7 @@ import { sendPendingDM, logOrderToChannel } from '@/lib/discord-delivery';
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const body    = await req.json();
-  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice } = body;
+  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice, paymentMethodId } = body;
 
   const { data: product } = await supabaseAdmin.from('products')
     .select('*, product_variants(*)').eq('id', productId).single();
@@ -79,6 +79,7 @@ export async function POST(req) {
     status:             'pending',
     payment_qr:         qrString,
     payment_expired_at: expiredAt,
+    payment_method_id:  paymentMethodId || null,
   });
 
   if (dbErr) {
