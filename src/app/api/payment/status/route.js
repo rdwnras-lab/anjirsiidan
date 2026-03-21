@@ -78,13 +78,15 @@ async function processAutoDelivery(order) {
     await deliverViaDiscordDM({
       discordUserId: order.discord_id,
       orderData: {
-        orderId:     order.id,
-        productName: order.product_name,
-        variantName: order.variant_name,
-        baseAmount:  order.base_amount,
-        feeAmount:   order.fee_amount,
-        totalAmount: order.total_amount,
-        keys:        [{ key_content: key.key_content }],
+        orderId:      order.id,
+        productName:  order.product_name,
+        variantName:  order.variant_name,
+        baseAmount:   order.base_amount,
+        feeAmount:    order.fee_amount,
+        totalAmount:  order.total_amount,
+        deliveryType: order.delivery_type,
+        qty:          order.quantity || 1,
+        keys:         [{ key_content: key.key_content }],
       },
     }).catch(e => console.error('[DM SUCCESS]', e.message));
   }
