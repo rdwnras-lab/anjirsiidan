@@ -473,19 +473,18 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                     </div>
                     {/* Divider */}
                     <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    {/* Bottom: badge INSTAN hanya untuk produk otomatis */}
-                    {isAuto && (
-                      <div className='px-3 py-2 flex justify-end'>
-                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
-                          style={{ background:'#fff' }}>
-                          <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
-                          <div>
-                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
-                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
-                          </div>
+                    {/* Divider + badge INSTAN untuk semua produk */}
+                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
+                    <div className='px-3 py-2 flex justify-end'>
+                      <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
+                        style={{ background:'#fff' }}>
+                        <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
+                        <div>
+                          <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
+                          <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </button>
                 );
               })}
