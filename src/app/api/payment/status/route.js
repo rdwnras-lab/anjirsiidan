@@ -1,6 +1,7 @@
 import { getPaymentStatus } from '@/lib/pakasir';
 import { supabaseAdmin } from '@/lib/supabase';
 import { deliverViaDiscordDM, logTransactionToChannel } from '@/lib/discord-delivery';
+import { checkAndUpgradeTier } from '@/lib/tier-upgrade';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -95,6 +96,11 @@ async function processAutoDelivery(order) {
     status: 'completed', delivery_status: 'delivered',
     delivered_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }).eq('id', order.id);
+
+  if (order.discord_id) {
+    checkAndUpgradeTier(order.discord_id, order.total_amount)
+      .catch(e => console.error('[TIER]', e.message));
+  }
 
   const { count } = await supabaseAdmin.from('orders')
     .select('*', { count: 'exact', head: true }).eq('status', 'completed');
