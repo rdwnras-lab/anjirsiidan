@@ -99,6 +99,7 @@ export async function POST(req) {
     deliveryType:     product.delivery_type,
     discordUserId:    session?.user?.discordId || null,
     customerWhatsapp: customerWhatsapp || null,
+    formData:         formData || {},
   };
 
   // DM ke user (kalau login)
