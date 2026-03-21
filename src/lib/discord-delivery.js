@@ -104,8 +104,28 @@ export async function sendPendingDM({ discordUserId, orderData }) {
 // ── DM SUCCESS: kirim ke DM user saat pembayaran sukses
 export async function deliverViaDiscordDM({ discordUserId, orderData }) {
   if (!process.env.DISCORD_BOT_TOKEN || !discordUserId) return { ok: false };
-  const { orderId, productName, variantName, baseAmount, feeAmount, totalAmount, keys } = orderData;
-  const keyContent = keys?.[0]?.key_content || '-';
+  const { orderId, productName, variantName, baseAmount, feeAmount, totalAmount, keys, deliveryType, qty } = orderData;
+  const isAuto     = deliveryType === 'auto';
+  const hasKeys    = isAuto && keys && keys.length > 0 && keys[0]?.key_content;
+  const keyContent = hasKeys ? keys[0].key_content : null;
+  const qtyLabel   = (qty && qty > 1) ? ` ×${qty}` : '';
+
+  // Body section utama (sama untuk auto & manual)
+  const bodyLines = [
+    `**Product**`, productName, ``,
+    `**Item**`, `${variantName}${qtyLabel}`, ``,
+    `**Price**`, formatIDR(baseAmount), ``,
+    `**Fee**`, formatIDR(feeAmount), ``,
+    `**Total**`, formatIDR(totalAmount),
+  ];
+
+  // Footer berbeda: auto = key, manual = tunggu admin
+  const footerContent = hasKeys
+    ? `**Here is your ${variantName}**
+\`\`\`
+${keyContent}
+\`\`\``
+    : `Admin sedang memproses pesananmu, mohon ditunggu.`;
 
   try {
     const channelId = await openDM(discordUserId);
@@ -116,26 +136,9 @@ export async function deliverViaDiscordDM({ discordUserId, orderData }) {
         components: [
           { type: 10, content: '## PAYMENT - SUCCESS' },
           { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: [
-              `**Product**`,
-              productName,
-              ``,
-              `**Item**`,
-              variantName,
-              ``,
-              `**Price**`,
-              formatIDR(baseAmount),
-              ``,
-              `**Fee**`,
-              formatIDR(feeAmount),
-              ``,
-              `**Total**`,
-              formatIDR(totalAmount),
-              ``,
-              `Silakan lanjutkan pembayaran di: ${process.env.NEXT_PUBLIC_APP_URL || 'https://vechnost.xyz'}/checkout/${orderId}`,
-            ].join('\n') },
+          { type: 10, content: bodyLines.join('\n') },
           { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: `**Here is your ${variantName}**\n\`\`\`\n${keyContent}\n\`\`\`` },
+          { type: 10, content: footerContent },
         ],
       }],
     });
