@@ -8,7 +8,7 @@ import { sendPendingDM, logOrderToChannel } from '@/lib/discord-delivery';
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const body    = await req.json();
-  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice, paymentMethodId } = body;
+  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice, paymentMethodId, quantity } = body;
 
   const { data: product } = await supabaseAdmin.from('products')
     .select('*, product_variants(*)').eq('id', productId).single();
@@ -63,6 +63,7 @@ export async function POST(req) {
 
   const { error: dbErr } = await supabaseAdmin.from('orders').insert({
     id:                 orderId,
+    quantity:           quantity || 1,
     user_id:            userUUID,
     discord_id:         session?.user?.discordId || null,
     product_id:         productId,
