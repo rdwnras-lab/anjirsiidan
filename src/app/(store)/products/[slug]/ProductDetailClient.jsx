@@ -191,7 +191,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             tierPrice:       discPrcQty,
             quantity:        qty,
             customerName:    !isAuto ? (session?.user?.name || '') : null,
-            customerWhatsapp: !isAuto ? waNumber : null,
+            customerWhatsapp: waNumber || null,
             paymentMethodId: (payMethod && (payMethod.startsWith('ewallet_') || payMethod.startsWith('bank_')))
               ? payMethod.replace(/^(ewallet|bank)_/, '')
               : null,
@@ -450,18 +450,21 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               {variants.map(v => {
                 const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
                 const noStock = isAuto && vStock === 0;
+                // Untuk produk manual: cek is_available (false = Sold)
+                const isSold  = !isAuto && v.is_available === false;
+                const disabled = noStock || isSold;
                 const dPrice  = Math.floor(v.price * (1 - disc));
                 const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
                 const isAct   = selected === v.id;
                 return (
-                  <button key={v.id} onClick={() => !noStock && setSelected(v.id)}
+                  <button key={v.id} onClick={() => !disabled && setSelected(v.id)}
                     className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
                     style={{
                       borderWidth:'2px', borderStyle:'solid',
-                      borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
-                      background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
-                      opacity: noStock ? 0.45 : 1,
-                      cursor: noStock ? 'not-allowed' : 'pointer',
+                      borderColor: isAct ? '#1d6fff' : isSold ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)',
+                      background: isAct ? 'rgba(29,111,255,0.1)' : isSold ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.04)',
+                      opacity: disabled ? 0.5 : 1,
+                      cursor: disabled ? 'not-allowed' : 'pointer',
                     }}>
                     {/* Top: name */}
                     <div className='px-3 pt-3 pb-1'>
@@ -471,18 +474,30 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                     <div className='px-3 pb-2'>
                       <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(showPrc)}</p>
                     </div>
-                    {/* Divider — BELOW price */}
+                    {/* Divider */}
                     <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    {/* Bottom: INSTAN badge — smaller + bolt icon */}
+                    {/* Bottom: badge */}
                     <div className='px-3 py-2 flex justify-end'>
-                      <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
-                        style={{ background:'#fff' }}>
-                        <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
-                        <div>
-                          <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
-                          <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                      {isSold ? (
+                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
+                          style={{ background:'rgba(239,68,68,0.15)', border:'1px solid rgba(239,68,68,0.3)' }}>
+                          <p style={{ fontSize:'0.58rem', color:'#ef4444', fontWeight:800, lineHeight:1.1 }}>SOLD</p>
                         </div>
-                      </div>
+                      ) : isAuto ? (
+                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
+                          style={{ background:'#fff' }}>
+                          <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
+                          <div>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
+                          style={{ background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.3)' }}>
+                          <p style={{ fontSize:'0.58rem', color:'#10b981', fontWeight:800, lineHeight:1.1 }}>READY</p>
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
