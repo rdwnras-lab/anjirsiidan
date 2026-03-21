@@ -170,7 +170,7 @@ export default function OrderDetailClient({ order, canSeeKeys }) {
                 background: isCompleted ? 'rgba(16,185,129,0.12)' : 'rgba(251,191,36,0.1)',
                 color: isCompleted ? '#4ade80' : '#fbbf24',
                 border: isCompleted ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(251,191,36,0.25)',
-              }}>{isCompleted ? 'SUKSES' : (statusLabel[order.status] || order.status).toUpperCase()}</span>
+              }}>{isCompleted ? 'SUCCESS' : (statusLabel[order.status] || order.status).toUpperCase()}</span>
             </div>
           </div>
         </div>
