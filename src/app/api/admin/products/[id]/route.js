@@ -48,7 +48,7 @@ export async function PATCH(req, { params }) {
       // No existing variants — just insert all
       if (incoming.length > 0) {
         const { error: insErr } = await supabaseAdmin.from('product_variants').insert(
-          incoming.map(v => ({ ...v, product_id: params.id }))
+          incoming.map(v => ({ ...v, product_id: params.id, stock: v.stock ?? 0 }))
         );
         if (insErr) return Response.json({ error: 'Gagal menyimpan varian: ' + insErr.message }, { status: 500 });
       }
@@ -61,7 +61,7 @@ export async function PATCH(req, { params }) {
         if (i < existingIds.length && i < incoming.length) {
           // Update existing variant in place (safe — keys still reference same variant_id)
           await supabaseAdmin.from('product_variants')
-            .update({ name: incoming[i].name, price: incoming[i].price, sort_order: i })
+            .update({ name: incoming[i].name, price: incoming[i].price, sort_order: i, stock: incoming[i].stock ?? 0 })
             .eq('id', existingIds[i]);
         } else if (i >= existingIds.length) {
           // New variant — insert
