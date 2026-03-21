@@ -36,13 +36,15 @@ export async function PATCH(req, { params }) {
       deliverViaDiscordDM({
         discordUserId: order.discord_id,
         orderData: {
-          orderId:     order.id,
-          productName: order.product_name,
-          variantName: order.variant_name,
-          baseAmount:  order.base_amount,
-          feeAmount:   order.fee_amount,
-          totalAmount: order.total_amount,
-          keys:        [],
+          orderId:      order.id,
+          productName:  order.product_name,
+          variantName:  order.variant_name,
+          baseAmount:   order.base_amount,
+          feeAmount:    order.fee_amount,
+          totalAmount:  order.total_amount,
+          deliveryType: order.delivery_type,
+          qty:          order.quantity || 1,
+          keys:         [],
         },
       }).catch(e => console.error('[DM SUCCESS manual]', e.message));
     }
