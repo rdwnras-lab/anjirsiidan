@@ -14,11 +14,7 @@ const statusLabel = {
   pending:'Menunggu', paid:'Dibayar', processing:'Diproses',
   completed:'Selesai', failed:'Gagal', cancelled:'Batal',
 };
-const tierInfo = {
-  platinum: { color:'#e2e8f0', bg:'rgba(226,232,240,0.08)', border:'rgba(226,232,240,0.25)', label:'PLATINUM', next:null, nextMin:null, nextCount:null },
-  gold:     { color:'#fbbf24', bg:'rgba(251,191,36,0.08)',  border:'rgba(251,191,36,0.25)',  label:'GOLD',     next:'PLATINUM', nextMin:5000000,  nextCount:50 },
-  member:   { color:'#60a5fa', bg:'rgba(96,165,250,0.08)',  border:'rgba(96,165,250,0.25)',  label:'MEMBER',   next:'GOLD',     nextMin:1000000,  nextCount:10 },
-};
+// tierInfo sekarang dari DB tier_settings — diambil di dalam komponen
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -26,27 +22,24 @@ export default async function ProfilePage() {
 
   const discordId = session.user.discordId;
 
-  const { data: user } = await supabaseAdmin
-    .from('users').select('id, tier, balance, total_spent')
-    .eq('discord_id', discordId).single();
-
-  const { data: orders } = await supabaseAdmin
-    .from('orders').select('id, status, total_amount, created_at, product_name, variant_name')
-    .eq('discord_id', discordId)
-    .order('created_at', { ascending: false }).limit(20);
+  const [{ data: user }, { data: orders }, { data: tierSettings }] = await Promise.all([
+    supabaseAdmin.from('users').select('id, tier, balance, total_spent').eq('discord_id', discordId).single(),
+    supabaseAdmin.from('orders').select('id, status, total_amount, created_at, product_name, variant_name')
+      .eq('discord_id', discordId).order('created_at', { ascending: false }).limit(20),
+    supabaseAdmin.from('tier_settings').select('*').eq('is_active', true).order('min_spent', { ascending: true }),
+  ]);
 
   const orderList  = orders || [];
+  const allTiers   = tierSettings || [];
   const tier       = (user?.tier || session.user.tier || 'member').toLowerCase();
-  const tInfo      = tierInfo[tier] || tierInfo.member;
   const totalSpent = user?.total_spent
     || orderList.filter(o => o.status === 'completed').reduce((s,o) => s + o.total_amount, 0);
-  const totalDone  = orderList.filter(o => o.status === 'completed').length;
 
   const stats = {
     total:   orderList.length,
     pending: orderList.filter(o => o.status === 'pending').length,
     proses:  orderList.filter(o => ['paid','processing'].includes(o.status)).length,
-    sukses:  totalDone,
+    sukses:  orderList.filter(o => o.status === 'completed').length,
     gagal:   orderList.filter(o => ['failed','cancelled'].includes(o.status)).length,
   };
 
@@ -54,11 +47,26 @@ export default async function ProfilePage() {
     ? `https://cdn.discordapp.com/avatars/${discordId}/${session.user.avatar}.png?size=128`
     : null;
 
-  // Progress: gabungan Rp dan jumlah transaksi (ambil yang lebih tinggi)
-  const progressRp    = tInfo.next && tInfo.nextMin   ? Math.min(100, Math.round((totalSpent / tInfo.nextMin) * 100)) : 100;
-  const progressCount = tInfo.next && tInfo.nextCount ? Math.min(100, Math.round((totalDone  / tInfo.nextCount) * 100)) : 100;
-  // Progress bar fill = rata-rata keduanya
-  const progressFill  = tInfo.next ? Math.round((progressRp + progressCount) / 2) : 100;
+  // Tier saat ini dari DB
+  const currentTierData = allTiers.find(t => t.tier_name.toLowerCase() === tier);
+  const currentColor    = currentTierData?.color || (tier === 'member' ? '#60a5fa' : '#fbbf24');
+  const currentDiscount = currentTierData ? Math.round(parseFloat(currentTierData.discount) * 100) : 0;
+
+  // Tier berikutnya (yang lebih tinggi dari sekarang)
+  const nextTierData = allTiers.find(t => t.min_spent > (currentTierData?.min_spent || 0) && t.min_spent > totalSpent);
+  const progressFill = nextTierData
+    ? Math.min(100, Math.round((totalSpent / nextTierData.min_spent) * 100))
+    : 100;
+
+  // Untuk backward compat UI
+  const tInfo = {
+    color:  currentColor,
+    bg:     `${currentColor}14`,
+    border: `${currentColor}40`,
+    label:  tier.toUpperCase(),
+    next:   nextTierData?.tier_name.toUpperCase() || null,
+    nextMin: nextTierData?.min_spent || null,
+  };
 
   return (
     <div className="px-4 pb-24 pt-4 max-w-xl mx-auto">
@@ -89,6 +97,11 @@ export default async function ProfilePage() {
                 {formatIDR(user?.balance || session.user.balance || 0)}
               </span>
             </p>
+            {currentDiscount > 0 && (
+              <p className="text-xs mt-1" style={{color:'#10b981'}}>
+                Diskon member: <strong>{currentDiscount}% OFF</strong>
+              </p>
+            )}
           </div>
         </div>
 
@@ -99,32 +112,20 @@ export default async function ProfilePage() {
               Progress ke <span style={{color:tInfo.color}}>{tInfo.next}</span>
             </p>
 
-            {/* Progress Rp */}
-            <div className="mb-2">
+            {/* Progress Total Belanja saja */}
+            <div>
               <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
                 <span>Total Belanja</span>
                 <span>{formatIDR(totalSpent)} / {formatIDR(tInfo.nextMin)}</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{background:'#0e2445'}}>
                 <div className="h-full rounded-full transition-all duration-500"
-                  style={{width:`${progressRp}%`, background:`linear-gradient(90deg, ${tInfo.color}, #1d6fff)`}} />
-              </div>
-            </div>
-
-            {/* Progress transaksi */}
-            <div>
-              <div className="flex justify-between text-xs mb-1" style={{color:'#7bafd4'}}>
-                <span>Jumlah Transaksi Sukses</span>
-                <span>{totalDone} / {tInfo.nextCount}</span>
-              </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{background:'#0e2445'}}>
-                <div className="h-full rounded-full transition-all duration-500"
-                  style={{width:`${progressCount}%`, background:`linear-gradient(90deg, ${tInfo.color}, #10b981)`}} />
+                  style={{width:`${progressFill}%`, background:`linear-gradient(90deg, ${tInfo.color}, #1d6fff)`}} />
               </div>
             </div>
 
             <p className="text-xs mt-2 text-center" style={{color:'#3d5a7a'}}>
-              Penuhi salah satu syarat untuk naik ke {tInfo.next}
+              Belanja {formatIDR((tInfo.nextMin||0) - totalSpent)} lagi untuk naik ke {tInfo.next}
             </p>
           </div>
         )}
