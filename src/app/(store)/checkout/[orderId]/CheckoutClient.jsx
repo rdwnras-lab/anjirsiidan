@@ -103,10 +103,62 @@ export default function CheckoutClient({ order }) {
 
   // ── Berhasil
   if (status === 'completed') return (
-    <div style={{maxWidth:'448px',margin:'0 auto',padding:'80px 16px',textAlign:'center'}}>
-      <div style={{fontSize:'4rem',marginBottom:'16px'}}>✅</div>
-      <h2 style={{margin:'0 0 8px',fontWeight:900,fontSize:'1.3rem',color:'#fff'}}>Pembayaran Berhasil!</h2>
-      <p style={{margin:0,fontSize:'0.85rem',color:'#7bafd4'}}>Mengalihkan ke halaman pesanan...</p>
+    <div style={{maxWidth:'448px',margin:'0 auto',paddingBottom:'40px'}}>
+      {/* Banner success */}
+      <div style={{
+        position:'relative',overflow:'hidden',
+        background:'linear-gradient(135deg,#0a2e1a 0%,#0f3d22 50%,#0a2e1a 100%)',
+        padding:'32px 20px 44px',textAlign:'center',
+      }}>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(34,197,94,0.2) 0%,transparent 50%,rgba(34,197,94,0.15) 100%)',backgroundSize:'300% 300%',animation:'bg 5s ease infinite'}}/>
+        {[{w:90,h:90,t:-20,l:-20,c:'rgba(34,197,94,0.15)'},{w:60,h:60,b:-15,r:-10,c:'rgba(34,197,94,0.1)'},{w:40,h:40,t:30,r:'30%',c:'rgba(34,197,94,0.08)'}].map((o,i)=>(
+          <div key={i} style={{position:'absolute',width:o.w,height:o.h,borderRadius:'50%',background:o.c,top:o.t,left:o.l,right:o.r,bottom:o.b,animation:`orb${i} ${4+i}s ease-in-out infinite`,filter:'blur(2px)'}}/>
+        ))}
+        <div style={{position:'absolute',bottom:-2,left:0,right:0,height:'32px',background:'#0a1628',clipPath:'ellipse(60% 100% at 50% 100%)'}}/>
+        <div style={{width:'64px',height:'64px',borderRadius:'50%',background:'rgba(34,197,94,0.2)',border:'2px solid rgba(34,197,94,0.5)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',position:'relative',zIndex:1,animation:'successPulse 2s ease-in-out infinite'}}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1 style={{position:'relative',zIndex:1,margin:0,fontWeight:900,fontSize:'1.3rem',color:'#fff'}}>Pembayaran Berhasil!</h1>
+        <p style={{position:'relative',zIndex:1,margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.55)'}}>Terima kasih, pesananmu sedang diproses.</p>
+        <style>{`
+          @keyframes bg{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+          @keyframes successPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)}50%{box-shadow:0 0 0 14px rgba(34,197,94,0)}}
+          @keyframes orb0{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,8px)}}
+          @keyframes orb1{0%,100%{transform:translate(0,0)}50%{transform:translate(-8px,-6px)}}
+          @keyframes orb2{0%,100%{transform:translate(0,0)}50%{transform:translate(5px,10px)}}
+        `}</style>
+      </div>
+      <div style={{padding:'20px 16px 0',display:'flex',flexDirection:'column',gap:'12px'}}>
+        {/* Produk */}
+        <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px',display:'flex',alignItems:'center',gap:'14px'}}>
+          <div style={{width:'52px',height:'52px',borderRadius:'12px',flexShrink:0,overflow:'hidden',background:'linear-gradient(135deg,rgba(34,197,94,0.15),rgba(10,22,64,0.8))',border:'1.5px solid rgba(34,197,94,0.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {thumbnail?<img src={thumbnail} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>:<span style={{fontSize:'1.5rem'}}>🎮</span>}
+          </div>
+          <div>
+            <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'0.95rem'}}>{order.product_name}</p>
+            <p style={{margin:'3px 0 0',color:'#4ade80',fontSize:'0.8rem',fontWeight:600}}>
+              {order.variant_name}{order.quantity&&order.quantity>1?` ×${order.quantity}`:''}
+            </p>
+          </div>
+        </div>
+        {/* Status */}
+        <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
+          <div style={{display:'flex',gap:'10px'}}>
+            <div style={{flex:1}}>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Pembayaran</p>
+              <span style={{display:'inline-block',padding:'4px 12px',borderRadius:'7px',fontSize:'0.72rem',fontWeight:800,letterSpacing:'0.06em',background:'rgba(34,197,94,0.12)',color:'#4ade80',border:'1px solid rgba(34,197,94,0.3)'}}>PAID</span>
+            </div>
+            <div style={{flex:1}}>
+              <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Transaksi</p>
+              <span style={{display:'inline-block',padding:'4px 12px',borderRadius:'7px',fontSize:'0.72rem',fontWeight:800,letterSpacing:'0.06em',background:'rgba(34,197,94,0.12)',color:'#4ade80',border:'1px solid rgba(34,197,94,0.3)'}}>SUCCESS</span>
+            </div>
+          </div>
+        </div>
+        {/* CTA */}
+        <a href={`/orders/${order.id}`} style={{display:'block',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#16a34a,#15803d)',color:'#fff',fontWeight:800,fontSize:'0.9rem',textAlign:'center',textDecoration:'none',boxShadow:'0 4px 20px rgba(34,197,94,0.3)'}}>
+          Lihat Detail Pesanan
+        </a>
+      </div>
     </div>
   );
 
@@ -300,7 +352,7 @@ export default function CheckoutClient({ order }) {
                 <span style={{color:'#e8f4ff',fontWeight:700,fontSize:'0.88rem'}}>{payMethodDetail.account_name}</span>
               </div>
               <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.75rem',textAlign:'center',margin:'12px 0 0'}}>
-                Transfer sesuai nominal, lalu kirim bukti ke admin.
+                Konfirmasi ke admin dan kirim bukti transfer.
               </p>
             </>
           ) : isManual ? (
@@ -334,9 +386,7 @@ export default function CheckoutClient({ order }) {
           )}
         </div>
 
-        <p style={{textAlign:'center',color:'rgba(255,255,255,0.25)',fontSize:'0.72rem',paddingBottom:'4px'}}>
-          Halaman ini otomatis update saat pembayaran berhasil
-        </p>
+
       </div>
     </div>
   );
