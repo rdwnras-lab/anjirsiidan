@@ -152,11 +152,29 @@ ${keyContent}
 // ── CHANNEL LOG PENDING: kirim ke channel log orderan
 export async function logOrderToChannel({ orderData }) {
   if (!process.env.DISCORD_BOT_TOKEN) return { ok: false };
-  const { orderId, productName, variantName, baseAmount, feeAmount, totalAmount, deliveryType, discordUserId, customerWhatsapp } = orderData;
+  const {
+    productName, variantName, baseAmount, feeAmount, totalAmount,
+    deliveryType, customerWhatsapp, formData,
+  } = orderData;
 
-  const typeLabel = deliveryType === 'auto' ? 'Otomatis' : 'Manual';
-  const buyerLine = discordUserId ? `<@${discordUserId}>` : 'Guest';
-  const waLine    = customerWhatsapp ? `\n\n**WhatsApp**\n${customerWhatsapp}` : '';
+  // Bangun baris form fields (jika ada)
+  const formLines = [];
+  if (formData && typeof formData === 'object') {
+    for (const [key, val] of Object.entries(formData)) {
+      if (val) formLines.push(`**${key}**\n${val}`);
+    }
+  }
+
+  // Susun semua baris konten
+  const lines = [
+    ...formLines,
+    customerWhatsapp ? `**No WhatsApp**\n${customerWhatsapp}` : null,
+    `**Product**\n${productName}`,
+    `**Item**\n${variantName}`,
+    `**Price**\n${formatIDR(baseAmount)}`,
+    `**Fee**\n${deliveryType === 'auto' ? formatIDR(feeAmount) : 'Rp 0'}`,
+    `**Total**\n${formatIDR(totalAmount)}`,
+  ].filter(Boolean);
 
   try {
     await postToChannel(CH_ORDERS, {
@@ -164,9 +182,9 @@ export async function logOrderToChannel({ orderData }) {
       components: [{
         type: 17,
         components: [
-          { type: 10, content: '## PAYMENT - PENDING' },
+          { type: 10, content: '## NEW ORDER!' },
           { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: `**Type**\n${typeLabel}\n\n**Product**\n${productName}\n\n**Item**\n${variantName}\n\n**Price**\n${formatIDR(baseAmount)}\n\n**Fee**\n${formatIDR(feeAmount)}\n\n**Total**\n${formatIDR(totalAmount)}\n\n**Buyer**\n${buyerLine}${waLine}\n\n**Order ID**\n\`${orderId}\`` },
+          { type: 10, content: lines.join('\n\n') },
         ],
       }],
     });
