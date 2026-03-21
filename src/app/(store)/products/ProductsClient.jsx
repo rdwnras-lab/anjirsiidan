@@ -25,16 +25,21 @@ export default function ProductsClient({ prods, tierSettings, currentTier }) {
 
   // Tier kolom: urutkan dari terkecil diskon ke terbesar, max 3 kolom
   const tierCols = useMemo(() => {
-    return tierSettings
+    const sorted = tierSettings
       .filter(t => t.is_active)
       .sort((a, b) => a.min_spent - b.min_spent)
-      .slice(0, 3)
       .map(t => ({
         key:      t.tier_name.toLowerCase(),
         name:     t.tier_name.toUpperCase(),
         discount: parseFloat(t.discount || 0),
         color:    t.color || '#60a5fa',
       }));
+    // Pastikan member selalu ada di kolom pertama
+    const hasMember = sorted.some(t => t.key === 'member');
+    if (!hasMember) {
+      sorted.unshift({ key:'member', name:'MEMBER', discount:0, color:'#60a5fa' });
+    }
+    return sorted;
   }, [tierSettings]);
 
   const selectedProd = prods.find(p => p.id === selected);
@@ -155,47 +160,50 @@ export default function ProductsClient({ prods, tierSettings, currentTier }) {
               </div>
             </div>
 
-            {/* Tabel header */}
-            <div style={{
-              display:'grid',
-              gridTemplateColumns:`1fr ${tierCols.map(()=>'90px').join(' ')}`,
-              padding:'8px 16px',
-              background:'rgba(0,0,0,0.2)',
-              borderBottom:'1px solid rgba(255,255,255,0.06)',
-            }}>
-              <div style={{fontSize:'0.68rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em'}}>NAMA PRODUK</div>
-              {tierCols.map(t => (
-                <div key={t.key} style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',textAlign:'right',color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.35)'}}>
-                  {t.name}
-                </div>
-              ))}
-            </div>
-
-            {/* Variant rows */}
-            {sortedVars.map((v, i) => (
-              <Link key={v.id} href={`/products/${selectedProd.slug}`}
-                style={{
+            {/* Scrollable table — geser kiri/kanan jika banyak tier */}
+            <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
+              <div style={{minWidth:`${Math.max(320, 160 + tierCols.length * 90)}px`}}>
+                {/* Header */}
+                <div style={{
                   display:'grid',
-                  gridTemplateColumns:`1fr ${tierCols.map(()=>'90px').join(' ')}`,
-                  padding:'12px 16px',
-                  borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                  textDecoration:'none',
-                  background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                  transition:'background 0.15s',
+                  gridTemplateColumns:`160px ${tierCols.map(()=>'90px').join(' ')}`,
+                  padding:'8px 16px',
+                  background:'rgba(0,0,0,0.25)',
+                  borderBottom:'1px solid rgba(255,255,255,0.07)',
                 }}>
-                <div style={{fontSize:'0.85rem',fontWeight:600,color:'#e8f4ff',paddingRight:'8px',display:'flex',alignItems:'center'}}>{v.name}</div>
-                {tierCols.map(t => (
-                  <div key={t.key} style={{
-                    textAlign:'right', fontSize:'0.82rem',
-                    fontWeight: t.key===currentTier ? 800 : 500,
-                    color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.4)',
-                    display:'flex', alignItems:'center', justifyContent:'flex-end',
-                  }}>
-                    {priceFor(v.price, t.discount)}
-                  </div>
+                  <div style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em'}}>NAMA PRODUK</div>
+                  {tierCols.map(t => (
+                    <div key={t.key} style={{
+                      fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',
+                      letterSpacing:'0.06em',textAlign:'right',
+                      color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.4)',
+                    }}>{t.name}</div>
+                  ))}
+                </div>
+                {/* Rows */}
+                {sortedVars.map((v, i) => (
+                  <Link key={v.id} href={`/products/${selectedProd.slug}`}
+                    style={{
+                      display:'grid',
+                      gridTemplateColumns:`160px ${tierCols.map(()=>'90px').join(' ')}`,
+                      padding:'11px 16px',
+                      borderTop:'1px solid rgba(255,255,255,0.06)',
+                      textDecoration:'none',
+                      background:'transparent',
+                    }}>
+                    <div style={{fontSize:'0.82rem',fontWeight:600,color:'#e8f4ff',paddingRight:'8px',display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.name}</div>
+                    {tierCols.map(t => (
+                      <div key={t.key} style={{
+                        textAlign:'right',fontSize:'0.82rem',whiteSpace:'nowrap',
+                        fontWeight: t.key===currentTier ? 800 : 500,
+                        color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.4)',
+                        display:'flex',alignItems:'center',justifyContent:'flex-end',
+                      }}>{priceFor(v.price, t.discount)}</div>
+                    ))}
+                  </Link>
                 ))}
-              </Link>
-            ))}
+              </div>
+            </div>
           </div>
         )}
 
