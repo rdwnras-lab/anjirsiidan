@@ -144,7 +144,7 @@ export default function ProductsClient({ prods, tierSettings, currentTier }) {
 
         {/* Tabel harga — hanya tampil jika produk dipilih */}
         {selectedProd && sortedVars.length > 0 && (
-          <div style={{borderRadius:'16px',overflow:'hidden',border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.03)'}}>
+          <div style={{borderRadius:'16px',border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.03)',overflow:'visible'}}>
 
             {/* Product header */}
             <div style={{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',background:'rgba(29,111,255,0.08)',borderBottom:'1px solid rgba(255,255,255,0.07)'}}>
@@ -161,15 +161,16 @@ export default function ProductsClient({ prods, tierSettings, currentTier }) {
             </div>
 
             {/* Scrollable table — geser kiri/kanan jika banyak tier */}
-            <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
-              <div style={{minWidth:`${Math.max(320, 160 + tierCols.length * 90)}px`}}>
+            {/* padding-right 16px di wrapper biar kolom terakhir tidak terpotong */}
+            <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch',borderBottomLeftRadius:'16px',borderBottomRightRadius:'16px',overflow:'auto'}}>
+              <div style={{minWidth:`${Math.max(340, 160 + tierCols.length * 95)}px`, paddingRight:'1px'}}>
                 {/* Header */}
                 <div style={{
                   display:'grid',
-                  gridTemplateColumns:`160px ${tierCols.map(()=>'90px').join(' ')}`,
-                  padding:'8px 16px',
+                  gridTemplateColumns:`minmax(140px,1fr) ${tierCols.map(()=>'95px').join(' ')}`,
+                  padding:'8px 0 8px 16px',
                   background:'rgba(0,0,0,0.25)',
-                  borderBottom:'1px solid rgba(255,255,255,0.07)',
+                  borderBottom:'1px solid rgba(255,255,255,0.09)',
                 }}>
                   <div style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em'}}>NAMA PRODUK</div>
                   {tierCols.map(t => (
@@ -177,26 +178,27 @@ export default function ProductsClient({ prods, tierSettings, currentTier }) {
                       fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',
                       letterSpacing:'0.06em',textAlign:'right',
                       color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.4)',
+                      paddingRight:'8px',
                     }}>{t.name}</div>
                   ))}
                 </div>
-                {/* Rows */}
-                {sortedVars.map((v, i) => (
+                {/* Rows — separator border-bottom per baris */}
+                {sortedVars.map((v) => (
                   <Link key={v.id} href={`/products/${selectedProd.slug}`}
                     style={{
                       display:'grid',
-                      gridTemplateColumns:`160px ${tierCols.map(()=>'90px').join(' ')}`,
-                      padding:'11px 16px',
-                      borderTop:'1px solid rgba(255,255,255,0.06)',
+                      gridTemplateColumns:`minmax(140px,1fr) ${tierCols.map(()=>'95px').join(' ')}`,
+                      padding:'12px 0 12px 16px',
+                      borderBottom:'1px solid rgba(255,255,255,0.07)',
                       textDecoration:'none',
                       background:'transparent',
                     }}>
-                    <div style={{fontSize:'0.82rem',fontWeight:600,color:'#e8f4ff',paddingRight:'8px',display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.name}</div>
+                    <div style={{fontSize:'0.82rem',fontWeight:600,color:'#e8f4ff',paddingRight:'12px',display:'flex',alignItems:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.name}</div>
                     {tierCols.map(t => (
                       <div key={t.key} style={{
-                        textAlign:'right',fontSize:'0.82rem',whiteSpace:'nowrap',
+                        textAlign:'right',fontSize:'0.82rem',whiteSpace:'nowrap',paddingRight:'8px',
                         fontWeight: t.key===currentTier ? 800 : 500,
-                        color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.4)',
+                        color: t.key===currentTier ? t.color : 'rgba(255,255,255,0.45)',
                         display:'flex',alignItems:'center',justifyContent:'flex-end',
                       }}>{priceFor(v.price, t.discount)}</div>
                     ))}
