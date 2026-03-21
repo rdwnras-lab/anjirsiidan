@@ -169,6 +169,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
     if (isAuto && !session) return setError('Login Discord diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
     if (isAuto && stock === 0) return setError('Stok habis.');
+    if (isAuto && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
