@@ -12,7 +12,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [form, setForm]       = useState({ name:'', slug:'', category_id:'', description:'', thumbnail:'', banner_image:'', publisher:'', delivery_type:'auto', is_active:true, is_best_seller:false });
-  const [variants, setVariants] = useState([{ name:'', price:'' }]);
+  const [variants, setVariants] = useState([{ name:'', price:'', stock:'0' }]);
   const [formFields, setFormFields] = useState([]);
 
   useEffect(() => {
@@ -32,8 +32,8 @@ export default function EditProductPage() {
         });
         setVariants(
           p.product_variants?.length
-            ? p.product_variants.map(v => ({ id: v.id, name: v.name || '', price: String(v.price || '') }))
-            : [{ name:'', price:'' }]
+            ? p.product_variants.map(v => ({ id: v.id, name: v.name || '', price: String(v.price || ''), stock: String(v.stock ?? 0) }))
+            : [{ name:'', price:'', stock:'0' }]
         );
         setFormFields(p.form_fields || []);
       }
@@ -45,10 +45,31 @@ export default function EditProductPage() {
   const setF  = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
   const setFB = k => e => setForm(f => ({ ...f, [k]: e.target.checked }));
 
-  const addVariant    = () => setVariants(v => [...v, { name:'', price:'' }]);
+  const addVariant    = () => setVariants(v => [...v, { name:'', price:'', stock:'0' }]);
   const removeVariant = i => setVariants(v => v.filter((_,j)=>j!==i));
   const setVariant    = (i,k,v) => setVariants(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
   const addField      = () => setFormFields(f => [...f, { label:'', placeholder:'', guide:'', required:true }]);
+
+  // Toggle Ready/Sold untuk varian manual yang sudah tersimpan (punya id)
+  const toggleAvailability = async (i, currentVal) => {
+    const variant = variants[i];
+    const newVal  = !currentVal;
+    // Update state lokal dulu
+    setVariant(i, 'is_available', newVal);
+    // Kalau sudah punya ID (sudah tersimpan di DB), langsung hit API
+    if (variant.id) {
+      try {
+        await fetch(`/api/admin/variants/${variant.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_available: newVal }),
+        });
+      } catch (e) {
+        console.error('[TOGGLE]', e.message);
+        setVariant(i, 'is_available', currentVal); // rollback
+      }
+    }
+  };
   const removeField   = i => setFormFields(f => f.filter((_,j)=>j!==i));
   const setField      = (i,k,v) => setFormFields(prev => prev.map((x,j)=>j===i?{...x,[k]:v}:x));
 
@@ -63,7 +84,7 @@ export default function EditProductPage() {
       body: JSON.stringify({
         ...form,
         form_fields: formFields,
-        variant_sync: variants.map(v => ({ name: v.name, price: parseInt(v.price) })),
+        variant_sync: variants.map(v => ({ name: v.name, price: parseInt(v.price), stock: parseInt(v.stock) || 0 })),
       }),
     });
     const data = await res.json();
@@ -173,15 +194,43 @@ export default function EditProductPage() {
               + Tambah Varian
             </button>
           </div>
-          <div className="space-y-2">
+          {/* Sub-header kolom */}
+          <div className="grid gap-1 mb-1" style={{gridTemplateColumns:'1fr 90px 80px 32px'}}>
+            <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Nama Item</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Harga (Rp)</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Stok</span>
+            <span></span>
+          </div>
+          <div className="space-y-1.5">
             {variants.map((v,i) => (
-              <div key={i} className="flex gap-2 items-center">
-                <input value={v.name} onChange={e=>setVariant(i,'name',e.target.value)} placeholder="50 Diamond" className={`flex-1 ${inputCls}`} />
-                <input value={v.price} onChange={e=>setVariant(i,'price',e.target.value)} placeholder="15000" type="number" className={`flex-1 ${inputCls}`} />
-                <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 flex-shrink-0 text-lg">×</button>
+              <div key={i} className="grid gap-1.5 items-center" style={{gridTemplateColumns:'1fr 90px 80px 32px'}}>
+                <input
+                  value={v.name}
+                  onChange={e=>setVariant(i,'name',e.target.value)}
+                  placeholder="80 ROBUX"
+                  className={inputCls}
+                />
+                <input
+                  value={v.price}
+                  onChange={e=>setVariant(i,'price',e.target.value)}
+                  placeholder="15000"
+                  type="number"
+                  className={inputCls}
+                />
+                <input
+                  value={v.stock}
+                  onChange={e=>setVariant(i,'stock',e.target.value)}
+                  placeholder="0"
+                  type="number"
+                  min="0"
+                  className={inputCls}
+                  title="0 = tidak tersedia (tidak bisa dipilih pembeli)"
+                />
+                <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl">×</button>
               </div>
             ))}
           </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">💡 Stok 0 = variant tidak bisa dipilih pembeli</p>
         </div>
 
         {/* Form Fields */}
