@@ -40,18 +40,8 @@ export default function CheckoutClient({ order }) {
   const isManual    = !order.payment_qr;
   const manualQrUrl = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
   const thumbnail   = order.products?.thumbnail || null;
-  const [payMethodDetail, setPayMethodDetail] = useState(null);
-
-  // Ambil detail metode pembayaran jika order manual dengan bank/ewallet
-  useEffect(() => {
-    if (!isManual || !order.payment_method_id) return;
-    fetch('/api/admin/payment-methods')
-      .then(r => r.json())
-      .then(data => {
-        const found = data.find(m => m.id === order.payment_method_id);
-        if (found) setPayMethodDetail(found);
-      }).catch(() => {});
-  }, [isManual, order.payment_method_id]);
+  // Langsung pakai dari server join — tidak perlu fetch, tidak ada flash
+  const payMethodDetail = order.payment_methods || null;
 
   // Generate QR
   useEffect(() => {
