@@ -187,7 +187,9 @@ export default function CheckoutClient({ order }) {
           </div>
           <div>
             <p style={{margin:0,fontWeight:800,color:'#fff',fontSize:'0.95rem'}}>{order.product_name}</p>
-            <p style={{margin:'3px 0 0',color:'#60a5fa',fontSize:'0.8rem',fontWeight:600}}>{order.variant_name}</p>
+            <p style={{margin:'3px 0 0',color:'#60a5fa',fontSize:'0.8rem',fontWeight:600}}>
+              {order.variant_name}{order.quantity && order.quantity > 1 ? ` ×${order.quantity}` : ''}
+            </p>
           </div>
         </div>
 
@@ -195,7 +197,11 @@ export default function CheckoutClient({ order }) {
         <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
           <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
             <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>Harga</span>
-            <span style={{color:'#e8f4ff',fontSize:'0.85rem',fontWeight:600}}>{formatIDR(order.base_amount)}</span>
+            <span style={{color:'#e8f4ff',fontSize:'0.85rem',fontWeight:600}}>
+              {order.quantity && order.quantity > 1
+                ? `${formatIDR(Math.round(order.base_amount / order.quantity))} × ${order.quantity}`
+                : formatIDR(order.base_amount)}
+            </span>
           </div>
           {order.fee_amount > 0 && (
             <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
