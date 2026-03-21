@@ -41,6 +41,7 @@ export async function PATCH(req, { params }) {
     const incoming = incomingVariants.map((v, i) => ({
       name: v.name,
       price: parseInt(v.price),
+      stock: parseInt(v.stock) || 0,
       sort_order: i,
     }));
 
@@ -69,6 +70,7 @@ export async function PATCH(req, { params }) {
             product_id: params.id,
             name: incoming[i].name,
             price: incoming[i].price,
+            stock: incoming[i].stock ?? 0,
             sort_order: i,
           });
         } else {
