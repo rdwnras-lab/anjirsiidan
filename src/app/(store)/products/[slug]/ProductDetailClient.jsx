@@ -448,9 +448,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <StepRow n={step2} title='Pilih Nominal'>
             <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
-                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 0);
+                const vStock  = stockByVariant[v.id] ?? 0;
                 const disabled = vStock === 0;
-                const isSold   = !isAuto && disabled; // manual dengan stok 0
                 const dPrice  = Math.floor(v.price * (1 - disc));
                 const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
                 const isAct   = selected === v.id;
@@ -459,9 +458,9 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                     className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
                     style={{
                       borderWidth:'2px', borderStyle:'solid',
-                      borderColor: isAct ? '#1d6fff' : isSold ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)',
-                      background: isAct ? 'rgba(29,111,255,0.1)' : isSold ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.04)',
-                      opacity: disabled ? 0.5 : 1,
+                      borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
+                      background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
+                      opacity: disabled ? 0.45 : 1,
                       cursor: disabled ? 'not-allowed' : 'pointer',
                     }}>
                     {/* Top: name */}
@@ -474,14 +473,9 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                     </div>
                     {/* Divider */}
                     <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    {/* Bottom: badge */}
+                    {/* Bottom: badge — tidak diubah, tetap INSTAN untuk auto */}
                     <div className='px-3 py-2 flex justify-end'>
-                      {isSold ? (
-                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
-                          style={{ background:'rgba(239,68,68,0.15)', border:'1px solid rgba(239,68,68,0.3)' }}>
-                          <p style={{ fontSize:'0.58rem', color:'#ef4444', fontWeight:800, lineHeight:1.1 }}>SOLD</p>
-                        </div>
-                      ) : isAuto ? (
+                      {isAuto ? (
                         <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
                           style={{ background:'#fff' }}>
                           <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
@@ -490,12 +484,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                             <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
                           </div>
                         </div>
-                      ) : (
-                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
-                          style={{ background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.3)' }}>
-                          <p style={{ fontSize:'0.58rem', color:'#10b981', fontWeight:800, lineHeight:1.1 }}>READY</p>
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </button>
                 );
