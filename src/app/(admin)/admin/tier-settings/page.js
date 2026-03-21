@@ -35,7 +35,7 @@ export default function TierSettingsPage() {
   };
   const openEdit = t => {
     setEditing(t);
-    setForm({ tier_name:t.tier_name, min_spent:t.min_spent, discount:t.discount, color:t.color||'#fbbf24', is_active:t.is_active });
+    setForm({ tier_name:t.tier_name, min_spent:t.min_spent, discount:(parseFloat(t.discount||0)*100).toString(), color:t.color||'#fbbf24', is_active:t.is_active });
     setModal(true);
   };
   const setF  = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
