@@ -198,10 +198,21 @@ export async function logOrderToChannel({ orderData }) {
 // ── CHANNEL LOG SUCCESS: kirim ke channel log transaksi
 export async function logTransactionToChannel({ orderData, transactionNumber }) {
   if (!process.env.DISCORD_BOT_TOKEN) return { ok: false };
-  const { productName, variantName, baseAmount, feeAmount, totalAmount, deliveryType, discordUserId } = orderData;
+  const { productName, variantName, baseAmount, feeAmount, totalAmount, deliveryType, discordUserId, customerWhatsapp, qty } = orderData;
 
   const typeLabel = deliveryType === 'auto' ? 'Otomatis' : 'Manual';
-  const buyerLine = discordUserId ? `<@${discordUserId}>` : 'Guest';
+  // Buyer: jika login → mention Discord, jika tidak → sensor WA (3 depan *** 3 belakang)
+  let buyerLine;
+  if (discordUserId) {
+    buyerLine = `<@${discordUserId}>`;
+  } else if (customerWhatsapp) {
+    const wa = String(customerWhatsapp).trim();
+    buyerLine = wa.length >= 6
+      ? wa.slice(0, 3) + '***' + wa.slice(-3)
+      : wa;
+  } else {
+    buyerLine = 'Guest';
+  }
 
   try {
     await postToChannel(CH_TRANS, {
