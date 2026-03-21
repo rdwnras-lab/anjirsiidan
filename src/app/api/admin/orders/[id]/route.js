@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { deliverViaDiscordDM, logTransactionToChannel } from '@/lib/discord-delivery';
+import { checkAndUpgradeTier } from '@/lib/tier-upgrade';
 
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions);
@@ -31,6 +32,11 @@ export async function PATCH(req, { params }) {
   if (status === 'completed') {
     const { data: order } = await supabaseAdmin
       .from('orders').select('*').eq('id', params.id).single();
+
+    if (order?.discord_id) {
+      checkAndUpgradeTier(order.discord_id, order.total_amount)
+        .catch(e => console.error('[TIER]', e.message));
+    }
 
     if (order?.discord_id) {
       deliverViaDiscordDM({
