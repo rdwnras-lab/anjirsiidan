@@ -111,6 +111,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const [guideModal,setGuideModal]= useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [payMethods, setPayMethods] = useState({ ewallet: [], bank: [] });
+  const [qty, setQty] = useState(1);
 
   // Load payment methods dari DB
   useEffect(() => {
@@ -155,11 +156,13 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   })();
   const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
   const discPrc    = selVariant ? Math.floor(selVariant.price * (1 - disc)) : 0;
-  const pricing    = selVariant ? (isAuto ? calculateFee(discPrc) : { base:discPrc, fee:0, total:discPrc }) : null;
+  const discPrcQty  = discPrc * qty;
+  const pricing    = selVariant ? (isAuto ? calculateFee(discPrcQty) : { base:discPrcQty, fee:0, total:discPrcQty }) : null;
 
   const step1 = formFields.length > 0 ? 1 : null;
   const step2 = step1 ? 2 : 1;
-  const step3 = step2 + 1;
+  const stepQty = step2 + 1;
+  const step3 = stepQty + 1;
   const step4 = step3 + 1;
 
   const handleOrder = () => {
@@ -169,6 +172,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
+    if (!waNumber || waNumber.trim().length < 9) return setError('Nomor WhatsApp wajib diisi.');
+    if (qty < 1) return setError('Jumlah minimal 1.');
     setError('');
     setShowConfirm(true);
   };
@@ -182,7 +187,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             productId:       product.id,
             variantId:       selected,
             formData,
-            tierPrice:       discPrc,
+            tierPrice:       discPrcQty,
+            quantity:        qty,
             customerName:    !isAuto ? (session?.user?.name || '') : null,
             customerWhatsapp: !isAuto ? waNumber : null,
             paymentMethodId: (payMethod && (payMethod.startsWith('ewallet_') || payMethod.startsWith('bank_')))
@@ -227,9 +233,13 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Produk</span>
                 <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{product.name}</span>
               </div>
-              <div style={{display:'flex', justifyContent:'space-between'}}>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                 <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Varian</span>
                 <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{selVariant?.name}</span>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Jumlah</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{qty}x</span>
               </div>
             </div>
 
@@ -475,6 +485,39 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
             </div>
           </StepRow>
 
+          {/* ── STEP QTY: Jumlah ── */}
+          <StepRow n={stepQty} title='Jumlah'>
+            <div className='flex items-center gap-3'>
+              <button
+                onClick={() => setQty(q => Math.max(1, q - 1))}
+                className='w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg transition-all'
+                style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', color:'#e8f4ff' }}>
+                −
+              </button>
+              <input
+                type='number' min='1' max='99'
+                className='flex-1 text-center rounded-xl py-2.5 text-base font-black outline-none'
+                style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', color:'#e8f4ff' }}
+                value={qty}
+                onChange={e => {
+                  const v = parseInt(e.target.value);
+                  if (!isNaN(v) && v >= 1 && v <= 99) setQty(v);
+                }}
+              />
+              <button
+                onClick={() => setQty(q => Math.min(99, q + 1))}
+                className='w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg transition-all'
+                style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', color:'#e8f4ff' }}>
+                +
+              </button>
+            </div>
+            {qty > 1 && pricing && (
+              <p className='text-xs mt-2 text-center' style={{color:'#60a5fa'}}>
+                {qty} × {formatIDR(discPrc)} = {formatIDR(discPrcQty)}
+              </p>
+            )}
+          </StepRow>
+
           {/* ── STEP 3: Pilih Pembayaran ── */}
           <StepRow n={step3} title='Pilih Pembayaran'>
             <div className='space-y-2'>
@@ -641,7 +684,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           {selected && pricing && (
             <div className='mb-2 px-4 py-2 rounded-xl flex justify-between items-center'
               style={{ background:'rgba(29,111,255,0.1)', border:'1px solid rgba(29,111,255,0.25)' }}>
-              <span className='text-xs text-white'>{selVariant?.name}</span>
+              <span className='text-xs text-white'>{selVariant?.name}{qty > 1 ? ` × ${qty}` : ''}</span>
               <span className='font-black text-sm' style={{ color:'#60a5fa' }}>{formatIDR(pricing.total)}</span>
             </div>
           )}
