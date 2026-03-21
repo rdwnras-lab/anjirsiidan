@@ -13,16 +13,21 @@ export default async function CheckoutPage({ params }) {
 
   if (!order) notFound();
 
+  // Jika sudah completed, fetch juga order_keys untuk tampilkan key (produk otomatis)
   if (order.status === 'completed') {
+    const { data: orderKeys } = await supabaseAdmin
+      .from('order_keys')
+      .select('key_content')
+      .eq('order_id', params.orderId);
+
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4">✅</div>
-        <h1 className="text-xl font-bold mb-2">Sudah Dibayar</h1>
-        <p className="text-dim text-sm">Pesanan ini sudah selesai.</p>
-        <a href={`/orders/${params.orderId}`} className="inline-block mt-6 text-accent-light underline text-sm">Lihat Detail</a>
-      </div>
+      <CheckoutClient
+        order={order}
+        initialCompleted={true}
+        orderKeys={orderKeys || []}
+      />
     );
   }
 
-  return <CheckoutClient order={order} />;
+  return <CheckoutClient order={order} initialCompleted={false} orderKeys={[]} />;
 }
