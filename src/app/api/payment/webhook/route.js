@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { deliverViaDiscordDM, logTransactionToChannel } from '@/lib/discord-delivery';
+import { checkAndUpgradeTier } from '@/lib/tier-upgrade';
 
 export async function POST(req) {
   const body = await req.json();
@@ -76,6 +77,12 @@ export async function processAutoDelivery(order) {
     status: 'completed', delivery_status: 'delivered',
     delivered_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }).eq('id', order.id);
+
+  // Upgrade tier user berdasarkan total belanja
+  if (order.discord_id) {
+    checkAndUpgradeTier(order.discord_id, order.total_amount)
+      .catch(e => console.error('[TIER]', e.message));
+  }
 
   // Hitung total transaksi sukses untuk nomor urut
   const { count } = await supabaseAdmin.from('orders')
