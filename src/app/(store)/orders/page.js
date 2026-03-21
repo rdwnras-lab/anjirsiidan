@@ -17,10 +17,10 @@ export default async function OrdersPage() {
     return id.slice(0, 4) + '...' + id.slice(-2);
   };
 
-  // Helper: mask WA → *****xxx (9 bintang + 3 digit terakhir)
+  // Helper: mask WA → +62 + 3 digit terakhir
   const maskWA = (wa) => {
     const s = wa ? String(wa).trim() : '';
-    return s.length >= 4 ? '*'.repeat(9) + s.slice(-3) : '—';
+    return s.length >= 4 ? '+62' + s.slice(-3) : '—';
   };
 
   const fmt = (n) => new Intl.NumberFormat('id-ID', {
