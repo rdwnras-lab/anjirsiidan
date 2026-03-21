@@ -3,18 +3,50 @@ import { supabaseAdmin } from '@/lib/supabase';
 import TransactionSearch from './TransactionSearch';
 
 export default async function OrdersPage() {
-  // Ambil 10 transaksi completed terbaru (semua user, untuk realtime feed)
   const { data: recent } = await supabaseAdmin
     .from('orders')
-    .select('id, product_name, variant_name, quantity, total_amount, created_at, customer_whatsapp, status')
+    .select('id, variant_name, quantity, total_amount, created_at, customer_whatsapp, status')
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(10);
 
+  // Helper: mask invoice → VECH...xx (max 9 char, selalu muat)
+  const maskInvoice = (id) => {
+    if (!id) return '—';
+    // Format: 4 char awal + "..." + 2 char terakhir = 9 char fix
+    return id.slice(0, 4) + '...' + id.slice(-2);
+  };
+
+  // Helper: mask WA → *****xxx (9 bintang + 3 digit terakhir)
+  const maskWA = (wa) => {
+    const s = wa ? String(wa).trim() : '';
+    return s.length >= 4 ? '*'.repeat(9) + s.slice(-3) : '—';
+  };
+
+  const fmt = (n) => new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
+  }).format(n);
+
+  const fmtDate = (d) => new Date(d).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const badgeStyle = (status) => {
+    if (status === 'completed') return { bg:'rgba(16,185,129,0.18)', color:'#10b981', border:'rgba(16,185,129,0.4)', label:'Success' };
+    if (status === 'processing') return { bg:'rgba(96,165,250,0.18)', color:'#60a5fa', border:'rgba(96,165,250,0.4)', label:'Processing' };
+    if (status === 'paid')       return { bg:'rgba(96,165,250,0.18)', color:'#60a5fa', border:'rgba(96,165,250,0.4)', label:'Paid' };
+    if (status === 'pending')    return { bg:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'rgba(251,191,36,0.35)', label:'Pending' };
+    return { bg:'rgba(107,114,128,0.15)', color:'#9ca3af', border:'rgba(107,114,128,0.3)', label: status || '—' };
+  };
+
+  // Grid: TANGGAL 105px | INVOICE 80px | WA 120px | HARGA 85px | STATUS 90px = 480px + 32px padding
+  const COLS = '105px 80px 120px 85px 90px';
+  const HEADERS = ['TANGGAL', 'INVOICE', 'WHATSAPP', 'HARGA', 'STATUS'];
+
   return (
     <div style={{paddingBottom:'96px'}}>
 
-      {/* Animated Banner */}
+      {/* ── Animated Banner */}
       <div style={{
         position:'relative', overflow:'hidden',
         background:'linear-gradient(135deg,#0a1a4a 0%,#0f2d6e 40%,#1a3fa3 70%,#0a1a4a 100%)',
@@ -44,59 +76,94 @@ export default async function OrdersPage() {
 
       <div style={{padding:'20px 16px 0', display:'flex', flexDirection:'column', gap:'16px'}}>
 
-        {/* Search */}
+        {/* ── Search */}
         <TransactionSearch />
 
-        {/* Tabel transaksi terbaru — horizontal scroll */}
+        {/* ── Container Transaksi Real-Time — persis seperti referensi */}
         {recent && recent.length > 0 && (
-          <div style={{borderRadius:'16px',overflow:'hidden',border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.03)'}}>
-            <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
-              <div style={{minWidth:'620px'}}>
-                {/* Header */}
+          <div style={{
+            borderRadius:'16px',
+            overflow:'hidden',
+            background:'rgba(10,14,35,0.92)',
+            border:'1px solid rgba(255,255,255,0.09)',
+          }}>
+
+            {/* Title header dalam container */}
+            <div style={{
+              padding:'20px 16px 16px',
+              textAlign:'center',
+              borderBottom:'1px solid rgba(255,255,255,0.07)',
+            }}>
+              <p style={{margin:0, fontWeight:800, fontSize:'1.05rem', color:'#fff', letterSpacing:'0.01em'}}>
+                Transaksi Real-Time
+              </p>
+              <p style={{margin:'5px 0 0', fontSize:'0.75rem', color:'rgba(255,255,255,0.45)', lineHeight:1.5}}>
+                Berikut ini 10 transaksi terakhir yang baru saja masuk.
+              </p>
+            </div>
+
+            {/* Scrollable table */}
+            <div style={{overflowX:'auto', WebkitOverflowScrolling:'touch'}}>
+              <div style={{minWidth:'512px'}}>
+
+                {/* Header kolom */}
                 <div style={{
-                  display:'grid', gridTemplateColumns:'120px 180px 130px 100px 100px',
+                  display:'grid', gridTemplateColumns: COLS,
                   padding:'8px 16px',
-                  background:'rgba(0,0,0,0.25)',
+                  background:'rgba(255,255,255,0.04)',
                   borderBottom:'1px solid rgba(255,255,255,0.07)',
                 }}>
-                  {['TANGGAL','INVOICE','WHATSAPP','HARGA','STATUS'].map(h => (
-                    <span key={h} style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.08em'}}>{h}</span>
+                  {HEADERS.map(h => (
+                    <span key={h} style={{
+                      fontSize:'0.62rem', fontWeight:800, letterSpacing:'0.09em',
+                      color:'rgba(255,255,255,0.5)', textTransform:'uppercase',
+                    }}>{h}</span>
                   ))}
                 </div>
+
                 {/* Rows */}
-                {recent.map((o, i) => {
-                  const date  = new Date(o.created_at);
-                  const label = date.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
-                  // Mask invoice: 3 awal + xxx... + 2 akhir
-                  const inv   = o.id ? o.id.slice(0,3) + 'x'.repeat(Math.max(0, o.id.length - 5)) + o.id.slice(-2) : '-';
-                  // Mask WA: *****  + 3 digit akhir
-                  const wa    = o.customer_whatsapp
-                    ? '*'.repeat(9) + String(o.customer_whatsapp).slice(-3)
-                    : '-';
-                  const harga = new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(o.total_amount);
-                  const statusColor = o.status === 'completed' ? {bg:'rgba(16,185,129,0.15)',color:'#10b981',border:'rgba(16,185,129,0.3)',label:'Success'}
-                    : o.status === 'processing' ? {bg:'rgba(96,165,250,0.15)',color:'#60a5fa',border:'rgba(96,165,250,0.3)',label:'Processing'}
-                    : o.status === 'paid'       ? {bg:'rgba(96,165,250,0.15)',color:'#60a5fa',border:'rgba(96,165,250,0.3)',label:'Paid'}
-                    : o.status === 'pending'    ? {bg:'rgba(251,191,36,0.12)',color:'#fbbf24',border:'rgba(251,191,36,0.3)',label:'Pending'}
-                    :                             {bg:'rgba(107,114,128,0.15)',color:'#9ca3af',border:'rgba(107,114,128,0.3)',label:o.status};
+                {(recent || []).map((o, i) => {
+                  const badge = badgeStyle(o.status);
                   return (
                     <div key={o.id} style={{
-                      display:'grid', gridTemplateColumns:'120px 180px 130px 100px 100px',
+                      display:'grid', gridTemplateColumns: COLS,
                       padding:'11px 16px', alignItems:'center',
                       borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                     }}>
-                      <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.5)',whiteSpace:'nowrap'}}>{label}</span>
-                      <span style={{fontSize:'0.78rem',fontWeight:600,color:'#e8f4ff',fontFamily:'monospace',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',paddingRight:'8px'}}>{inv}</span>
-                      <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.55)',fontFamily:'monospace',whiteSpace:'nowrap'}}>{wa}</span>
-                      <span style={{fontSize:'0.78rem',fontWeight:700,color:'#10b981',whiteSpace:'nowrap'}}>{harga}</span>
-                      <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'3px 10px',borderRadius:'20px',fontSize:'0.7rem',fontWeight:700,background:statusColor.bg,color:statusColor.color,border:`1px solid ${statusColor.border}`,whiteSpace:'nowrap'}}>{statusColor.label}</span>
+                      {/* Tanggal */}
+                      <span style={{fontSize:'0.73rem', color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', paddingRight:'4px'}}>
+                        {fmtDate(o.created_at)}
+                      </span>
+                      {/* Invoice — pendek & pasti muat */}
+                      <span style={{fontSize:'0.73rem', fontWeight:700, color:'#e8f4ff', fontFamily:'monospace', whiteSpace:'nowrap', paddingRight:'4px'}}>
+                        {maskInvoice(o.id)}
+                      </span>
+                      {/* WhatsApp */}
+                      <span style={{fontSize:'0.73rem', color:'rgba(255,255,255,0.55)', fontFamily:'monospace', whiteSpace:'nowrap', paddingRight:'4px'}}>
+                        {maskWA(o.customer_whatsapp)}
+                      </span>
+                      {/* Harga */}
+                      <span style={{fontSize:'0.73rem', fontWeight:700, color:'#10b981', whiteSpace:'nowrap', paddingRight:'4px'}}>
+                        {fmt(o.total_amount)}
+                      </span>
+                      {/* Status badge — fixed width agar tidak terpotong */}
+                      <span style={{
+                        display:'inline-flex', alignItems:'center', justifyContent:'center',
+                        padding:'4px 8px', borderRadius:'20px',
+                        fontSize:'0.65rem', fontWeight:700, letterSpacing:'0.02em',
+                        background: badge.bg, color: badge.color,
+                        border:`1px solid ${badge.border}`,
+                        whiteSpace:'nowrap', width:'82px', boxSizing:'border-box',
+                      }}>{badge.label}</span>
                     </div>
                   );
                 })}
+
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
