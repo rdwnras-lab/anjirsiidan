@@ -154,7 +154,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
     }
     return payMethod;
   })();
-  const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
+  const stock      = selected ? (stockByVariant[selected] ?? 0) : 0;
   const discPrc    = selVariant ? Math.floor(selVariant.price * (1 - disc)) : 0;
   const discPrcQty  = discPrc * qty;
   const pricing    = selVariant ? (isAuto ? calculateFee(discPrcQty) : { base:discPrcQty, fee:0, total:discPrcQty }) : null;
@@ -168,8 +168,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
   const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
     if (isAuto && !session) return setError('Login Discord diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
-    if (isAuto && stock === 0) return setError('Stok habis.');
-    if (isAuto && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
+    if (stock === 0) return setError('Stok habis.');
+    if (stock > 0 && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
@@ -448,11 +448,9 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <StepRow n={step2} title='Pilih Nominal'>
             <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
-                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
-                const noStock = isAuto && vStock === 0;
-                // Untuk produk manual: cek is_available (false = Sold)
-                const isSold  = !isAuto && v.is_available === false;
-                const disabled = noStock || isSold;
+                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 0);
+                const disabled = vStock === 0;
+                const isSold   = !isAuto && disabled; // manual dengan stok 0
                 const dPrice  = Math.floor(v.price * (1 - disc));
                 const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
                 const isAct   = selected === v.id;
@@ -707,7 +705,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           <div className='relative'>
             <button
               onClick={handleOrder}
-              disabled={loading || (isAuto && stock === 0)}
+              disabled={loading || stock === 0}
               className='w-full py-4 rounded-2xl font-black text-base text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2'
               style={{ background: loading ? '#0e2445' : '#1d6fff' }}>
               <IBag />
