@@ -6,7 +6,7 @@ export default async function OrdersPage() {
   // Ambil 10 transaksi completed terbaru (semua user, untuk realtime feed)
   const { data: recent } = await supabaseAdmin
     .from('orders')
-    .select('id, product_name, variant_name, quantity, total_amount, created_at')
+    .select('id, product_name, variant_name, quantity, total_amount, created_at, customer_whatsapp, status')
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(10);
@@ -47,40 +47,54 @@ export default async function OrdersPage() {
         {/* Search */}
         <TransactionSearch />
 
-        {/* Tabel transaksi terbaru */}
+        {/* Tabel transaksi terbaru — horizontal scroll */}
         {recent && recent.length > 0 && (
           <div style={{borderRadius:'16px',overflow:'hidden',border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.03)'}}>
-            {/* Header tabel */}
-            <div style={{
-              display:'grid', gridTemplateColumns:'1fr 1fr auto',
-              padding:'8px 16px',
-              background:'rgba(0,0,0,0.2)',
-              borderBottom:'1px solid rgba(255,255,255,0.07)',
-            }}>
-              <span style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em'}}>TANGGAL</span>
-              <span style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em'}}>PRODUK</span>
-              <span style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.08em',textAlign:'right'}}>HARGA</span>
-            </div>
-            {/* Rows */}
-            {recent.map((o, i) => {
-              const date   = new Date(o.created_at);
-              const label  = date.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
-              const qty    = o.quantity || 1;
-              const item   = qty > 1 ? `${o.variant_name} x${qty}` : o.variant_name;
-              const harga  = new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(o.total_amount);
-              return (
-                <div key={o.id} style={{
-                  display:'grid', gridTemplateColumns:'1fr 1fr auto',
-                  padding:'11px 16px',
-                  borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                  alignItems:'center',
+            <div style={{overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
+              <div style={{minWidth:'620px'}}>
+                {/* Header */}
+                <div style={{
+                  display:'grid', gridTemplateColumns:'120px 180px 130px 100px 100px',
+                  padding:'8px 16px',
+                  background:'rgba(0,0,0,0.25)',
+                  borderBottom:'1px solid rgba(255,255,255,0.07)',
                 }}>
-                  <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.5)'}}>{label}</span>
-                  <span style={{fontSize:'0.82rem',fontWeight:600,color:'#e8f4ff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:'8px'}}>{item}</span>
-                  <span style={{fontSize:'0.82rem',fontWeight:700,color:'#10b981',textAlign:'right',whiteSpace:'nowrap'}}>{harga}</span>
+                  {['TANGGAL','INVOICE','WHATSAPP','HARGA','STATUS'].map(h => (
+                    <span key={h} style={{fontSize:'0.65rem',fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.08em'}}>{h}</span>
+                  ))}
                 </div>
-              );
-            })}
+                {/* Rows */}
+                {recent.map((o, i) => {
+                  const date  = new Date(o.created_at);
+                  const label = date.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+                  // Mask invoice: 3 awal + xxx... + 2 akhir
+                  const inv   = o.id ? o.id.slice(0,3) + 'x'.repeat(Math.max(0, o.id.length - 5)) + o.id.slice(-2) : '-';
+                  // Mask WA: *****  + 3 digit akhir
+                  const wa    = o.customer_whatsapp
+                    ? '*'.repeat(9) + String(o.customer_whatsapp).slice(-3)
+                    : '-';
+                  const harga = new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(o.total_amount);
+                  const statusColor = o.status === 'completed' ? {bg:'rgba(16,185,129,0.15)',color:'#10b981',border:'rgba(16,185,129,0.3)',label:'Success'}
+                    : o.status === 'processing' ? {bg:'rgba(96,165,250,0.15)',color:'#60a5fa',border:'rgba(96,165,250,0.3)',label:'Processing'}
+                    : o.status === 'paid'       ? {bg:'rgba(96,165,250,0.15)',color:'#60a5fa',border:'rgba(96,165,250,0.3)',label:'Paid'}
+                    : o.status === 'pending'    ? {bg:'rgba(251,191,36,0.12)',color:'#fbbf24',border:'rgba(251,191,36,0.3)',label:'Pending'}
+                    :                             {bg:'rgba(107,114,128,0.15)',color:'#9ca3af',border:'rgba(107,114,128,0.3)',label:o.status};
+                  return (
+                    <div key={o.id} style={{
+                      display:'grid', gridTemplateColumns:'120px 180px 130px 100px 100px',
+                      padding:'11px 16px', alignItems:'center',
+                      borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    }}>
+                      <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.5)',whiteSpace:'nowrap'}}>{label}</span>
+                      <span style={{fontSize:'0.78rem',fontWeight:600,color:'#e8f4ff',fontFamily:'monospace',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',paddingRight:'8px'}}>{inv}</span>
+                      <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.55)',fontFamily:'monospace',whiteSpace:'nowrap'}}>{wa}</span>
+                      <span style={{fontSize:'0.78rem',fontWeight:700,color:'#10b981',whiteSpace:'nowrap'}}>{harga}</span>
+                      <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'3px 10px',borderRadius:'20px',fontSize:'0.7rem',fontWeight:700,background:statusColor.bg,color:statusColor.color,border:`1px solid ${statusColor.border}`,whiteSpace:'nowrap'}}>{statusColor.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
