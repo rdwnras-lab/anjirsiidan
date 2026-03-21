@@ -254,9 +254,11 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               </div>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                 <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Harga</span>
-                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>{formatIDR(discPrc)}</span>
+                <span style={{color:'#e8f4ff', fontSize:'0.82rem', fontWeight:600}}>
+                  {qty > 1 ? `${formatIDR(discPrc)} × ${qty}` : formatIDR(discPrc)}
+                </span>
               </div>
-              {(payMethod === 'qris_auto' || payMethod === 'qris_manual') && (
+              {isAuto && (payMethod === 'qris_auto') && (
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                   <span style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem'}}>Payment Fee</span>
                   <span style={{color:'rgba(255,255,255,0.35)', fontSize:'0.78rem', fontStyle:'italic'}}>Dihitung gateway</span>
@@ -265,7 +267,9 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               <div style={{height:'1px', background:'rgba(255,255,255,0.08)', margin:'10px 0'}} />
               <div style={{display:'flex', justifyContent:'space-between'}}>
                 <span style={{color:'#fff', fontWeight:800, fontSize:'0.88rem'}}>Total Bayar</span>
-                <span style={{color:'#60a5fa', fontWeight:900, fontSize:'0.95rem'}}>{formatIDR(discPrc)}{(payMethod === 'qris_auto' || payMethod === 'qris_manual') ? ' + fee' : ''}</span>
+                <span style={{color:'#60a5fa', fontWeight:900, fontSize:'0.95rem'}}>
+                  {formatIDR(discPrcQty)}{isAuto && payMethod === 'qris_auto' ? ' + fee' : ''}
+                </span>
               </div>
             </div>
 
@@ -511,11 +515,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 +
               </button>
             </div>
-            {qty > 1 && pricing && (
-              <p className='text-xs mt-2 text-center' style={{color:'#60a5fa'}}>
-                {qty} × {formatIDR(discPrc)} = {formatIDR(discPrcQty)}
-              </p>
-            )}
+
           </StepRow>
 
           {/* ── STEP 3: Pilih Pembayaran ── */}
