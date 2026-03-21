@@ -66,7 +66,8 @@ export async function PATCH(req, { params }) {
           feeAmount:     order.fee_amount,
           totalAmount:   order.total_amount,
           deliveryType:  order.delivery_type,
-          discordUserId: order.discord_id,
+          discordUserId:    order.discord_id,
+        customerWhatsapp: order.customer_whatsapp || null,
         },
         transactionNumber: count || 1,
       }).catch(e => console.error('[LOG TRANS manual]', e.message));
