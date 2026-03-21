@@ -85,8 +85,8 @@ body.admin-body {
 
 .cat-chip { transition: all 0.2s; }
 
-.cs-float { position: fixed; bottom: 24px; right: 20px; z-index: 100; width: 52px; height: 52px; border-radius: 50%; background: #1d6fff; box-shadow: 0 4px 20px rgba(29,111,255,0.45); display: flex; align-items: center; justify-content: center; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; text-decoration: none; }
-.cs-float:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(29,111,255,0.6); }
+.cs-float { position: fixed; bottom: 24px; right: 20px; z-index: 100; width: 52px; height: 52px; border-radius: 50%; background: transparent !important; box-shadow: none !important; display: flex; align-items: center; justify-content: center; transition: transform 0.2s, border 0.2s, background 0.2s; cursor: pointer; text-decoration: none; padding: 0; outline: none; }
+.cs-float:hover { transform: scale(1.1); opacity: 0.85; }
 
 .profile-card { border: 1px solid #1d4ed8; border-radius: 16px; background: transparent; padding: 16px; }
 .stat-box { border: 1px solid #1d4ed8; border-radius: 12px; background: transparent; text-align: center; padding: 14px 8px; }
