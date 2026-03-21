@@ -7,7 +7,7 @@ export const metadata = { title: 'Pembayaran' };
 export default async function CheckoutPage({ params }) {
   const { data: order } = await supabaseAdmin
     .from('orders')
-    .select('*, products(thumbnail, banner_image)')
+    .select('*, products(thumbnail, banner_image), payment_methods(*)')
     .eq('id', params.orderId)
     .single();
 
