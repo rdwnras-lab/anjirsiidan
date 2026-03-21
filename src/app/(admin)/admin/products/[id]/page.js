@@ -194,16 +194,16 @@ export default function EditProductPage() {
               + Tambah Varian
             </button>
           </div>
-          {/* Sub-header kolom */}
-          <div className="grid gap-1 mb-1" style={{gridTemplateColumns:'1fr 90px 80px 32px'}}>
+          {/* Sub-header kolom — stok hanya untuk manual */}
+          <div className="grid gap-1 mb-1" style={{gridTemplateColumns: form.delivery_type === 'manual' ? '1fr 90px 80px 32px' : '1fr 100px 32px'}}>
             <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Nama Item</span>
             <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Harga (Rp)</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Stok</span>
+            {form.delivery_type === 'manual' && <span className="text-xs text-gray-400 dark:text-gray-500 px-1">Stok</span>}
             <span></span>
           </div>
           <div className="space-y-1.5">
             {variants.map((v,i) => (
-              <div key={i} className="grid gap-1.5 items-center" style={{gridTemplateColumns:'1fr 90px 80px 32px'}}>
+              <div key={i} className="grid gap-1.5 items-center" style={{gridTemplateColumns: form.delivery_type === 'manual' ? '1fr 90px 80px 32px' : '1fr 100px 32px'}}>
                 <input
                   value={v.name}
                   onChange={e=>setVariant(i,'name',e.target.value)}
@@ -217,20 +217,24 @@ export default function EditProductPage() {
                   type="number"
                   className={inputCls}
                 />
-                <input
-                  value={v.stock}
-                  onChange={e=>setVariant(i,'stock',e.target.value)}
-                  placeholder="0"
-                  type="number"
-                  min="0"
-                  className={inputCls}
-                  title="0 = tidak tersedia (tidak bisa dipilih pembeli)"
-                />
+                {form.delivery_type === 'manual' && (
+                  <input
+                    value={v.stock ?? '0'}
+                    onChange={e=>setVariant(i,'stock',e.target.value)}
+                    placeholder="0"
+                    type="number"
+                    min="0"
+                    className={inputCls}
+                    title="0 = tidak tersedia (tidak bisa dipilih pembeli)"
+                  />
+                )}
                 <button onClick={()=>removeVariant(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl">×</button>
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">💡 Stok 0 = variant tidak bisa dipilih pembeli</p>
+          {form.delivery_type === 'manual' && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">💡 Stok 0 = variant tidak bisa dipilih pembeli</p>
+          )}
         </div>
 
         {/* Form Fields */}
