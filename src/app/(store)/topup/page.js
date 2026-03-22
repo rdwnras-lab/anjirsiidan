@@ -27,5 +27,5 @@ export default async function TopupPage() {
       currentBalance={user?.balance || 0}
       history={history || []}
     />
-  );
+  );1
 }
