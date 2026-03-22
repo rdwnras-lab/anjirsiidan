@@ -1,4 +1,4 @@
-'use client';1
+'use client';
 import { useState, useRef } from 'react';
 
 const fmt = n => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
