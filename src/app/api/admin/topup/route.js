@@ -13,4 +13,4 @@ export async function GET() {
     .limit(100);
 
   return Response.json(data || []);
-}
+}1
