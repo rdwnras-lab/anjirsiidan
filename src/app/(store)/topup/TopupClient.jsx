@@ -21,6 +21,7 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
   const [success,  setSuccess]  = useState(false);
   const [error,    setError]    = useState('');
   const fileRef = useRef(null);
+  const camRef  = useRef(null);
 
   const banks    = paymentMethods.filter(m => m.type === 'bank');
   const ewallets = paymentMethods.filter(m => m.type === 'ewallet');
@@ -40,6 +41,7 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
     setFile(null);
     setPreview('');
     if (fileRef.current) fileRef.current.value = '';
+    if (camRef.current)  camRef.current.value  = '';
   };
 
   const handleSubmit = async () => {
@@ -62,6 +64,7 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
       setSuccess(true);
       setAmount(''); setMethod(null); setFile(null); setPreview(''); setNotes('');
       if (fileRef.current) fileRef.current.value = '';
+      if (camRef.current)  camRef.current.value  = '';
     } catch (e) {
       setError(e.message);
     } finally {
@@ -192,20 +195,31 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
             <p style={{ margin:'0 0 4px',fontWeight:700,color:'#fff',fontSize:'0.88rem' }}>3. Upload Bukti Transfer</p>
             <p style={{ margin:'0 0 12px',fontSize:'0.75rem',color:'rgba(255,255,255,0.4)' }}>Foto struk/screenshot bukti transfer. Maks 5 MB.</p>
 
-            {/* Hidden file input */}
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display:'none' }} />
+            {/* 2 inputs: galeri & kamera */}
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display:'none' }} />
+            <input ref={camRef}  type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display:'none' }} />
 
             {!file ? (
-              <button onClick={() => fileRef.current?.click()}
-                style={{ width:'100%',padding:'20px',borderRadius:'12px',border:'2px dashed rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.03)',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',transition:'all 0.2s' }}>
-                <div style={{ width:'44px',height:'44px',borderRadius:'12px',background:'rgba(29,111,255,0.15)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                </div>
-                <p style={{ margin:0,fontWeight:700,color:'#60a5fa',fontSize:'0.88rem' }}>Pilih Foto dari Galeri</p>
-                <p style={{ margin:0,fontSize:'0.73rem',color:'rgba(255,255,255,0.35)' }}>JPG, PNG, WEBP • Maks 5 MB</p>
-              </button>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+                <button onClick={() => camRef.current?.click()}
+                  style={{ padding:'16px 8px',borderRadius:'12px',border:'1.5px dashed rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.03)',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px' }}>
+                  <div style={{ width:'40px',height:'40px',borderRadius:'10px',background:'rgba(96,165,250,0.12)',display:'flex',alignItems:'center',justifyContent:'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                  <p style={{ margin:0,fontWeight:700,color:'#60a5fa',fontSize:'0.82rem' }}>Kamera</p>
+                </button>
+                <button onClick={() => fileRef.current?.click()}
+                  style={{ padding:'16px 8px',borderRadius:'12px',border:'1.5px dashed rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.03)',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'8px' }}>
+                  <div style={{ width:'40px',height:'40px',borderRadius:'10px',background:'rgba(96,165,250,0.12)',display:'flex',alignItems:'center',justifyContent:'center' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <p style={{ margin:0,fontWeight:700,color:'#60a5fa',fontSize:'0.82rem' }}>Galeri</p>
+                </button>
+              </div>
             ) : (
               <div style={{ position:'relative' }}>
                 <img src={preview} alt="Bukti transfer"
