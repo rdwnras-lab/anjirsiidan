@@ -200,7 +200,12 @@ export async function logTransactionToChannel({ orderData, transactionNumber }) 
   if (!process.env.DISCORD_BOT_TOKEN) return { ok: false };
   const { productName, variantName, baseAmount, feeAmount, totalAmount, deliveryType, discordUserId, customerWhatsapp, qty } = orderData;
 
-  const typeLabel = deliveryType === 'auto' ? 'Otomatis' : 'Manual';
+  const typeLabel  = deliveryType === 'auto' ? 'Otomatis' : 'Manual';
+  const qtyNum     = qty && qty > 1 ? qty : 1;
+  const unitPrice  = qtyNum > 1 ? Math.round(baseAmount / qtyNum) : baseAmount;
+  const itemLabel  = qtyNum > 1 ? `${variantName} x${qtyNum}` : variantName;
+  const priceLabel = qtyNum > 1 ? `${formatIDR(unitPrice)} x${qtyNum}` : formatIDR(baseAmount);
+
   // Buyer: jika login → mention Discord, jika tidak → sensor WA (3 depan *** 3 belakang)
   let buyerLine;
   if (discordUserId) {
@@ -222,7 +227,7 @@ export async function logTransactionToChannel({ orderData, transactionNumber }) 
         components: [
           { type: 10, content: '## VECHNOST - TRANSACTION' },
           { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: `__#${transactionNumber} website transaction__\n\n**Type**\n${typeLabel}\n\n**Product**\n${productName}\n\n**Item**\n${variantName}\n\n**Price**\n${formatIDR(baseAmount)}\n\n**Fee**\n${formatIDR(feeAmount)}\n\n**Total**\n${formatIDR(totalAmount)}\n\n**Buyer**\n${buyerLine}` },
+          { type: 10, content: `__#${transactionNumber} website transaction__\n\n**Type**\n${typeLabel}\n\n**Product**\n${productName}\n\n**Item**\n${itemLabel}\n\n**Price**\n${priceLabel}\n\n**Fee**\n${formatIDR(feeAmount)}\n\n**Total**\n${formatIDR(totalAmount)}\n\n**Buyer**\n${buyerLine}` },
         ],
       }],
     });
