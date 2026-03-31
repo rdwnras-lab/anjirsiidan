@@ -38,6 +38,19 @@ export async function PATCH(req, { params }) {
         .catch(e => console.error('[TIER]', e.message));
     }
 
+    // Kurangi stok variant untuk produk manual
+    if (order?.variant_id && order?.delivery_type === 'manual') {
+      const qty = order.quantity || 1;
+      const { data: variant } = await supabaseAdmin
+        .from('product_variants').select('stock').eq('id', order.variant_id).single();
+      if (variant) {
+        const newStock = Math.max(0, (variant.stock || 0) - qty);
+        await supabaseAdmin.from('product_variants')
+          .update({ stock: newStock })
+          .eq('id', order.variant_id);
+      }
+    }
+
     if (order?.discord_id) {
       deliverViaDiscordDM({
         discordUserId: order.discord_id,
