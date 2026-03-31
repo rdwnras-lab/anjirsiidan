@@ -61,7 +61,9 @@ export default function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [csOpen, setCsOpen] = useState(false);
   const [searchOpen, setSearchOpen]   = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const storeName = process.env.NEXT_PUBLIC_STORE_NAME || 'VECHNOST';
   const logoUrl   = process.env.NEXT_PUBLIC_LOGO_URL || '';
@@ -79,6 +81,21 @@ export default function Navbar() {
   }, [sidebarOpen]);
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Debounce search
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    setSearchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        const data = await res.json();
+        setSearchResults(data || []);
+      } catch { setSearchResults([]); }
+      setSearchLoading(false);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   const navLinks = [
     { href: '/',            icon: <IconHome/>,    label: 'HOME' },
@@ -185,12 +202,42 @@ export default function Navbar() {
                 type="text"
                 placeholder="Cari produk..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); }}
                 className="flex-1 bg-transparent text-sm text-white placeholder-dim outline-none"
                 autoFocus={searchOpen}
               />
+              {searchLoading && (
+                <div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#60a5fa',borderRadius:'50%',animation:'spin 0.6s linear infinite',flexShrink:0}}/>
+              )}
             </div>
+            {/* Search results dropdown */}
+            {searchQuery.trim() && (
+              <div style={{marginTop:'8px',borderRadius:'12px',overflow:'hidden',border:'1px solid rgba(29,111,255,0.3)',background:'rgba(8,15,40,0.97)',backdropFilter:'blur(12px)',maxHeight:'300px',overflowY:'auto'}}>
+                {searchResults.length === 0 && !searchLoading ? (
+                  <div style={{padding:'14px 16px',textAlign:'center',fontSize:'0.82rem',color:'rgba(255,255,255,0.35)'}}>
+                    Produk tidak ditemukan
+                  </div>
+                ) : searchResults.map(p => (
+                  <a key={p.id} href={`/products/${p.slug}`}
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}
+                    style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 14px',textDecoration:'none',borderBottom:'1px solid rgba(255,255,255,0.05)',transition:'background 0.15s',background:'transparent'}}>
+                    <div style={{width:'40px',height:'40px',borderRadius:'10px',flexShrink:0,overflow:'hidden',background:'rgba(29,111,255,0.1)',border:'1px solid rgba(29,111,255,0.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      {p.thumbnail
+                        ? <img src={p.thumbnail} alt={p.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        : <span style={{fontSize:'1.1rem'}}>📦</span>
+                      }
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{margin:0,fontWeight:700,color:'#fff',fontSize:'0.85rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</p>
+                      {p.publisher && <p style={{margin:'2px 0 0',fontSize:'0.72rem',color:'rgba(255,255,255,0.45)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.publisher}</p>}
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       </header>
 
