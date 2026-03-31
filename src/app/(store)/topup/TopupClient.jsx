@@ -195,9 +195,10 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
             <p style={{ margin:'0 0 4px',fontWeight:700,color:'#fff',fontSize:'0.88rem' }}>3. Upload Bukti Transfer</p>
             <p style={{ margin:'0 0 12px',fontSize:'0.75rem',color:'rgba(255,255,255,0.4)' }}>Foto struk/screenshot bukti transfer. Maks 5 MB.</p>
 
-            {/* 2 inputs: galeri & kamera */}
+            {/* Galeri: no capture → iOS shows photo library picker */}
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display:'none' }} />
-            <input ref={camRef}  type="file" accept="image/*" capture="environment" onChange={handleFileChange} style={{ display:'none' }} />
+            {/* Kamera: capture="environment" → langsung buka kamera */}
+            <input ref={camRef}  type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display:'none' }} />
 
             {!file ? (
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
