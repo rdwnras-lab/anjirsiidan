@@ -62,7 +62,7 @@ function SuccessPage({ order, thumbnail, keys }) {
 
         {/* Status PAID / SUCCESS */}
         <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
-          <div style={{display:'flex',gap:'10px'}}>
+          <div style={{display:'flex',gap:'10px'}}> 
             <div style={{flex:1}}>
               <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Pembayaran</p>
               <span style={{display:'inline-block',padding:'4px 12px',borderRadius:'7px',fontSize:'0.72rem',fontWeight:800,letterSpacing:'0.06em',background:'rgba(34,197,94,0.12)',color:'#4ade80',border:'1px solid rgba(34,197,94,0.3)'}}>PAID</span>
@@ -71,6 +71,27 @@ function SuccessPage({ order, thumbnail, keys }) {
               <p style={{color:'rgba(255,255,255,0.45)',fontSize:'0.8rem',margin:'0 0 6px'}}>Status Transaksi</p>
               <span style={{display:'inline-block',padding:'4px 12px',borderRadius:'7px',fontSize:'0.72rem',fontWeight:800,letterSpacing:'0.06em',background:'rgba(34,197,94,0.12)',color:'#4ade80',border:'1px solid rgba(34,197,94,0.3)'}}>SUCCESS</span>
             </div>
+          </div>
+        </div>
+
+        {/* Pricing card */}
+        <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.09)',borderRadius:'16px',padding:'16px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
+            <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>Harga</span>
+            <span style={{color:'#e8f4ff',fontSize:'0.85rem',fontWeight:600}}>
+              {qty > 1 ? `${formatIDR(Math.round(order.base_amount / qty))} x ${qty}` : formatIDR(order.base_amount)}
+            </span>
+          </div>
+          {order.fee_amount > 0 && (
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:'9px'}}>
+              <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>Fee</span>
+              <span style={{color:'rgba(255,255,255,0.45)',fontSize:'0.85rem'}}>{formatIDR(order.fee_amount)}</span>
+            </div>
+          )}
+          <div style={{height:'1px',background:'rgba(255,255,255,0.08)',margin:'10px 0'}}/>
+          <div style={{display:'flex',justifyContent:'space-between'}}>
+            <span style={{color:'#fff',fontWeight:800,fontSize:'0.9rem'}}>Total Pembayaran</span>
+            <span style={{color:'#4ade80',fontWeight:900,fontSize:'1rem'}}>{formatIDR(order.total_amount)}</span>
           </div>
         </div>
 
@@ -135,7 +156,7 @@ export default function CheckoutClient({ order, initialCompleted = false, orderK
   const [fetchedKeys, setFetchedKeys] = useState(orderKeys);
 
   const isManual      = !order.payment_qr;
-  const manualQrUrl   = process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
+  const manualQrUrl   = order.qris_url || process.env.NEXT_PUBLIC_MANUAL_QR_URL || 'https://i.ibb.co.com/JR78g396/vechqr.png';
   const thumbnail     = order.products?.thumbnail || null;
   const payMethodDetail = order.payment_methods || null;
 
