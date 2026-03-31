@@ -30,6 +30,15 @@ export async function POST(req) {
   const fileName = `${session.user.discordId}_${Date.now()}.${ext}`;
   const buffer   = await proofFile.arrayBuffer();
 
+  // Pastikan bucket ada, buat jika belum ada
+  const { error: bucketErr } = await supabaseAdmin.storage.createBucket('topup-proofs', {
+    public: true, allowedMimeTypes: ['image/*'], fileSizeLimit: 5242880,
+  });
+  // Abaikan error jika bucket sudah ada (code 'already_exists' atau 409)
+  if (bucketErr && !bucketErr.message?.includes('already exist') && bucketErr.status !== 409) {
+    console.error('[BUCKET]', bucketErr.message);
+  }
+
   const { error: upErr } = await supabaseAdmin.storage
     .from('topup-proofs')
     .upload(fileName, buffer, { contentType: proofFile.type || 'image/jpeg', upsert: false });
