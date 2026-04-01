@@ -3,23 +3,26 @@ import Navbar from '@/components/store/Navbar';
 import Footer from '@/components/store/Footer';
 
 export default async function StoreLayout({ children }) {
-  // Ambil warna dari DB
-  let colors = {};
+  let css = '';
   try {
     const { data } = await supabaseAdmin
       .from('site_settings').select('value').eq('key', 'colors').single();
-    if (data?.value) colors = JSON.parse(data.value);
+    if (data?.value) {
+      const colors = JSON.parse(data.value);
+      css = Object.entries(colors)
+        .map(([k, v]) => '--c-' + k.replace(/_/g, '-') + ':' + v)
+        .join(';');
+    }
   } catch {}
 
-  // Bangun CSS custom properties
-  const css = Object.entries(colors).map(([k, v]) => `--color-${k.replace(/_/g,'-')}:${v}`).join(';');
-
   return (
-    <div className="min-h-screen flex flex-col" style={css ? { [Symbol.iterator]: undefined, cssText: css } : {}}>
-      {css && <style>{`:root{${css}}`}</style>}
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </div>
+    <>
+      {css && <style>{':root{' + css + '}'}</style>}
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </div>
+    </>
   );
 }
