@@ -4,25 +4,27 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 function isAdmin(s) { return s?.user?.role === 'admin'; }
 
-export async function GET(req) {
+export async function GET() {
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data } = await supabaseAdmin
-    .from('site_settings').select('key, value').in('key', [
-      'pakasir_slug', 'pakasir_key', 'qris_url', 'colors',
-    ]);
+    .from('site_settings')
+    .select('key, value');
 
   const result = {};
-  for (const row of data || []) {
+  for (const row of (data || [])) {
     if (row.key === 'colors') {
       try { result.colors = JSON.parse(row.value); } catch { result.colors = {}; }
     } else {
-      result[row.key] = row.value;
+      // Mask API key display
+      if (row.key === 'pakasir_key' && row.value) {
+        result[row.key] = row.value.slice(0, 4) + '****';
+      } else {
+        result[row.key] = row.value;
+      }
     }
   }
-  // Mask pakasir_key
-  if (result.pakasir_key) result.pakasir_key = '••••••••';
   return Response.json(result);
 }
 
@@ -31,21 +33,27 @@ export async function PATCH(req) {
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const updates = [];
+  const now = new Date().toISOString();
+
+  const upserts = [];
 
   if (body.pakasir_slug !== undefined)
-    updates.push({ key: 'pakasir_slug', value: body.pakasir_slug });
-  if (body.pakasir_key && !body.pakasir_key.includes('•'))
-    updates.push({ key: 'pakasir_key', value: body.pakasir_key });
+    upserts.push({ key: 'pakasir_slug', value: String(body.pakasir_slug), updated_at: now });
+  // Only update key if not masked
+  if (body.pakasir_key && !body.pakasir_key.includes('*'))
+    upserts.push({ key: 'pakasir_key', value: String(body.pakasir_key), updated_at: now });
   if (body.qris_url !== undefined)
-    updates.push({ key: 'qris_url', value: body.qris_url });
+    upserts.push({ key: 'qris_url', value: String(body.qris_url), updated_at: now });
   if (body.colors !== undefined)
-    updates.push({ key: 'colors', value: JSON.stringify(body.colors) });
+    upserts.push({ key: 'colors', value: JSON.stringify(body.colors), updated_at: now });
 
-  for (const { key, value } of updates) {
-    await supabaseAdmin.from('site_settings')
-      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-  }
+  if (upserts.length === 0)
+    return Response.json({ error: 'Tidak ada data untuk disimpan.' }, { status: 400 });
 
+  const { error } = await supabaseAdmin
+    .from('site_settings')
+    .upsert(upserts, { onConflict: 'key' });
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
