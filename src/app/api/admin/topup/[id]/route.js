@@ -58,13 +58,28 @@ export async function PATCH(req, { params }) {
       status: 'approved', admin_notes: admin_notes || null, updated_at: now,
     }).eq('id', params.id);
 
-    // Tambah saldo user
+    // Tambah saldo user - pakai upsert agar user dibuat jika belum ada
     const { data: user } = await supabaseAdmin
-      .from('users').select('balance').eq('discord_id', topup.discord_id).single();
+      .from('users').select('id, balance').eq('discord_id', topup.discord_id).single();
     const newBalance = (user?.balance || 0) + topup.amount;
-    await supabaseAdmin.from('users')
-      .update({ balance: newBalance, updated_at: now })
-      .eq('discord_id', topup.discord_id);
+
+    if (user?.id) {
+      // User sudah ada - update balance
+      const { error: balErr } = await supabaseAdmin.from('users')
+        .update({ balance: newBalance, updated_at: now })
+        .eq('discord_id', topup.discord_id);
+      if (balErr) console.error('[TOPUP BALANCE UPDATE]', balErr.message);
+    } else {
+      // User belum ada di tabel - buat dulu
+      const { error: insErr } = await supabaseAdmin.from('users').insert({
+        discord_id: topup.discord_id,
+        username:   topup.user_name || '',
+        balance:    newBalance,
+        tier:       'member',
+        created_at: now, updated_at: now,
+      });
+      if (insErr) console.error('[TOPUP USER INSERT]', insErr.message);
+    }
 
     const buyerMention = topup.discord_id ? `<@${topup.discord_id}>` : (topup.user_name || 'User');
     const methodLabel  = topup.payment_methods
