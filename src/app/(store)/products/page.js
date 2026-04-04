@@ -13,7 +13,7 @@ export default async function ProductsPage() {
     .from('products')
     .select('id, name, slug, thumbnail, delivery_type, product_variants(id, name, price, sort_order)')
     .eq('is_active', true)
-    .order('sort_order');
+    .order('name', { ascending: true });
 
   // Ambil tier settings dari DB
   const { data: tierSettings } = await supabaseAdmin
