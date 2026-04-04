@@ -53,24 +53,33 @@ export async function PATCH(req, { params }) {
   const now = new Date().toISOString();
 
   if (action === 'approve') {
-    // Update status
-    await supabaseAdmin.from('topup_requests').update({
+    // Update status topup dulu
+    const { error: statusErr } = await supabaseAdmin.from('topup_requests').update({
       status: 'approved', admin_notes: admin_notes || null, updated_at: now,
     }).eq('id', params.id);
+    if (statusErr) return Response.json({ error: 'Gagal update status: ' + statusErr.message }, { status: 500 });
 
-    // Tambah saldo user - pakai upsert agar user dibuat jika belum ada
-    const { data: user } = await supabaseAdmin
+    // Tambah saldo user
+    const { data: user, error: userErr } = await supabaseAdmin
       .from('users').select('id, balance').eq('discord_id', topup.discord_id).single();
-    const newBalance = (user?.balance || 0) + topup.amount;
+    
+    console.log('[TOPUP] discord_id:', topup.discord_id, 'user found:', !!user, 'userErr:', userErr?.message);
+    
+    const currentBalance = user?.balance || 0;
+    const newBalance = currentBalance + topup.amount;
 
     if (user?.id) {
-      // User sudah ada - update balance
+      // User ada - update balance langsung
       const { error: balErr } = await supabaseAdmin.from('users')
         .update({ balance: newBalance, updated_at: now })
-        .eq('discord_id', topup.discord_id);
-      if (balErr) console.error('[TOPUP BALANCE UPDATE]', balErr.message);
+        .eq('id', user.id);
+      if (balErr) {
+        console.error('[TOPUP BALANCE UPDATE]', balErr.message);
+        return Response.json({ error: 'Saldo gagal ditambahkan: ' + balErr.message }, { status: 500 });
+      }
+      console.log('[TOPUP] Balance updated:', currentBalance, '->', newBalance);
     } else {
-      // User belum ada di tabel - buat dulu
+      // User belum ada - insert
       const { error: insErr } = await supabaseAdmin.from('users').insert({
         discord_id: topup.discord_id,
         username:   topup.user_name || '',
@@ -78,7 +87,10 @@ export async function PATCH(req, { params }) {
         tier:       'member',
         created_at: now, updated_at: now,
       });
-      if (insErr) console.error('[TOPUP USER INSERT]', insErr.message);
+      if (insErr) {
+        console.error('[TOPUP USER INSERT]', insErr.message);
+        return Response.json({ error: 'User tidak ditemukan di database.' }, { status: 500 });
+      }
     }
 
     const buyerMention = topup.discord_id ? `<@${topup.discord_id}>` : (topup.user_name || 'User');
