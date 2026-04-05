@@ -60,37 +60,23 @@ export async function PATCH(req, { params }) {
     if (statusErr) return Response.json({ error: 'Gagal update status: ' + statusErr.message }, { status: 500 });
 
     // Tambah saldo user
-    const { data: user, error: userErr } = await supabaseAdmin
-      .from('users').select('id, balance').eq('discord_id', topup.discord_id).single();
+    // Ambil balance saat ini
+    const { data: user } = await supabaseAdmin
+      .from('users').select('balance').eq('discord_id', topup.discord_id).single();
     
-    console.log('[TOPUP] discord_id:', topup.discord_id, 'user found:', !!user, 'userErr:', userErr?.message);
-    
-    const currentBalance = user?.balance || 0;
-    const newBalance = currentBalance + topup.amount;
+    const newBalance = (user?.balance || 0) + topup.amount;
 
-    if (user?.id) {
-      // User ada - update balance langsung
-      const { error: balErr } = await supabaseAdmin.from('users')
-        .update({ balance: newBalance, updated_at: now })
-        .eq('id', user.id);
-      if (balErr) {
-        console.error('[TOPUP BALANCE UPDATE]', balErr.message);
-        return Response.json({ error: 'Saldo gagal ditambahkan: ' + balErr.message }, { status: 500 });
-      }
-      console.log('[TOPUP] Balance updated:', currentBalance, '->', newBalance);
-    } else {
-      // User belum ada - insert
-      const { error: insErr } = await supabaseAdmin.from('users').insert({
-        discord_id: topup.discord_id,
-        username:   topup.user_name || '',
-        balance:    newBalance,
-        tier:       'member',
-        created_at: now, updated_at: now,
-      });
-      if (insErr) {
-        console.error('[TOPUP USER INSERT]', insErr.message);
-        return Response.json({ error: 'User tidak ditemukan di database.' }, { status: 500 });
-      }
+    // Upsert: update jika ada, insert jika belum ada
+    const { error: balErr } = await supabaseAdmin.from('users').upsert({
+      discord_id: topup.discord_id,
+      username:   topup.user_name || '',
+      balance:    newBalance,
+      updated_at: now,
+    }, { onConflict: 'discord_id' });
+
+    if (balErr) {
+      console.error('[TOPUP BALANCE]', balErr.message);
+      return Response.json({ error: 'Gagal update saldo: ' + balErr.message }, { status: 500 });
     }
 
     const buyerMention = topup.discord_id ? `<@${topup.discord_id}>` : (topup.user_name || 'User');
@@ -126,7 +112,7 @@ export async function PATCH(req, { params }) {
       components: [{
         type: 17,
         components: [
-          { type: 10, content: '## TOPUP - DISETUJUI ✅' },
+          { type: 10, content: '## TOPUP - APPROVED ' },
           { type: 14, divider: true, spacing: 1 },
           { type: 10, content: [
             `**Jumlah**`,    fmt(topup.amount),
@@ -150,7 +136,7 @@ export async function PATCH(req, { params }) {
       components: [{
         type: 17,
         components: [
-          { type: 10, content: '## TOPUP - DITOLAK ❌' },
+          { type: 10, content: '## TOPUP - REJECT ' },
           { type: 14, divider: true, spacing: 1 },
           { type: 10, content: [
             `**Jumlah**`,  fmt(topup.amount),
