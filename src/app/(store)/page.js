@@ -9,13 +9,13 @@ import CategoryFilter from '@/components/store/CategoryFilter';
 
 async function getHomeData() {
   const [catsRes, prodsRes, bannersRes] = await Promise.all([
-    supabaseAdmin.from('categories').select('*').eq('is_active', true).order('name', { ascending: true }),
+    supabaseAdmin.from('categories').select('*').eq('is_active', true).order('sort_order'),
     supabaseAdmin.from('products').select(`
       *,
       categories(name, icon, slug),
       product_variants(id, price),
       product_keys(id, is_used)
-    `).eq('is_active', true).order('name', { ascending: true }).limit(50),
+    `).eq('is_active', true).order('sort_order').limit(50),
     supabaseAdmin.from('banners').select('*').eq('is_active', true).order('sort_order').limit(3),
   ]);
   return {
