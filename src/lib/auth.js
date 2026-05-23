@@ -1,9 +1,14 @@
 import DiscordProvider from 'next-auth/providers/discord';
+import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {
   providers: [
+    GoogleProvider({
+      clientId:     process.env.GOOGLE_CLIENT_ID     || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
     DiscordProvider({
       clientId:     process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
@@ -27,6 +32,14 @@ export const authOptions = {
   ],
   callbacks: {
     async jwt({ token, account, profile, user }) {
+      if (account?.provider === 'google') {
+        // Google login - use google sub as identifier
+        token.discordId   = null; // no discord for google users
+        token.googleId    = profile.sub;
+        token.googleEmail = profile.email;
+        token.avatar      = profile.picture;
+        token.role        = 'customer';
+      }
       if (account?.provider === 'discord') {
         token.discordId   = profile.id;
         token.discordName = profile.username;
@@ -91,6 +104,19 @@ export const authOptions = {
   },
   events: {
     async signIn({ user, account, profile }) {
+      if (account?.provider === 'google' && profile?.email) {
+        // Upsert user berdasarkan google email
+        try {
+          await supabaseAdmin.from('users').upsert({
+            google_email: profile.email,
+            username:     profile.name || profile.email,
+            avatar:       profile.picture || null,
+            tier:         'member',
+            updated_at:   new Date().toISOString(),
+          }, { onConflict: 'google_email' });
+        } catch(e) { console.error('[GOOGLE SIGNIN]', e.message); }
+        return true;
+      }
       if (account?.provider === 'discord' && profile?.id) {
         try {
           const { createClient } = await import('@supabase/supabase-js');
