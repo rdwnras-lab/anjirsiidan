@@ -26,7 +26,7 @@ export default function EditProductPage() {
       if (p) {
         setForm({
           name: p.name||'', slug: p.slug||'', category_id: p.category_id||'',
-          description: p.description||'', thumbnail: p.thumbnail||'', banner_image: p.banner_image||'', publisher: p.publisher||'',
+          description: p.description||'', thumbnail: p.thumbnail||'', banner_image: p.banner_image||'', publisher: p.publisher||'', product_info: p.product_info||'', preview_media: p.preview_media||'',
           delivery_type: p.delivery_type||'auto',
           is_active: p.is_active??true, is_best_seller: p.is_best_seller??false,
         });
