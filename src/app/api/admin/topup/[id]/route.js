@@ -60,22 +60,44 @@ export async function PATCH(req, { params }) {
     if (statusErr) return Response.json({ error: 'Gagal update status: ' + statusErr.message }, { status: 500 });
 
     // Tambah saldo user
-    // Ambil balance saat ini
-    const { data: user } = await supabaseAdmin
-      .from('users').select('balance').eq('discord_id', topup.discord_id).single();
-    
+    // Ambil user - cari by discord_id atau google_email
+    let user = null;
+    if (topup.discord_id) {
+      const { data } = await supabaseAdmin
+        .from('users').select('id, balance').eq('discord_id', topup.discord_id).single();
+      user = data;
+    }
+    if (!user && topup.user_email) {
+      const { data } = await supabaseAdmin
+        .from('users').select('id, balance').eq('google_email', topup.user_email).single();
+      user = data;
+    }
+
     const newBalance = (user?.balance || 0) + topup.amount;
 
-    // Upsert: update jika ada, insert jika belum ada
-    const { error: balErr } = await supabaseAdmin.from('users').upsert({
-      discord_id: topup.discord_id,
-      username:   topup.user_name || '',
-      balance:    newBalance,
-      updated_at: now,
-    }, { onConflict: 'discord_id' });
+    let balErr = null;
+    if (user?.id) {
+      // Update by id - paling akurat
+      const { error } = await supabaseAdmin.from('users')
+        .update({ balance: newBalance, updated_at: now })
+        .eq('id', user.id);
+      balErr = error;
+    } else if (topup.discord_id) {
+      // Upsert by discord_id
+      const { error } = await supabaseAdmin.from('users').upsert({
+        discord_id: topup.discord_id,
+        username:   topup.user_name || '',
+        balance:    newBalance,
+        tier:       'member',
+        updated_at: now,
+      }, { onConflict: 'discord_id' });
+      balErr = error;
+    } else {
+      return Response.json({ error: 'Tidak dapat menemukan akun user.' }, { status: 400 });
+    }
 
     if (balErr) {
-      console.error('[TOPUP BALANCE]', balErr.message);
+      console.error('[TOPUP BALANCE]', balErr.message, 'discord_id:', topup.discord_id);
       return Response.json({ error: 'Gagal update saldo: ' + balErr.message }, { status: 500 });
     }
 
@@ -112,7 +134,7 @@ export async function PATCH(req, { params }) {
       components: [{
         type: 17,
         components: [
-          { type: 10, content: '## TOPUP - APPROVED ' },
+          { type: 10, content: '## TOPUP - DISETUJUI ✅' },
           { type: 14, divider: true, spacing: 1 },
           { type: 10, content: [
             `**Jumlah**`,    fmt(topup.amount),
@@ -136,7 +158,7 @@ export async function PATCH(req, { params }) {
       components: [{
         type: 17,
         components: [
-          { type: 10, content: '## TOPUP - REJECT ' },
+          { type: 10, content: '## TOPUP - DITOLAK ❌' },
           { type: 14, divider: true, spacing: 1 },
           { type: 10, content: [
             `**Jumlah**`,  fmt(topup.amount),
