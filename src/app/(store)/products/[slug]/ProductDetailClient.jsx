@@ -98,7 +98,7 @@ function PayOpt({ label, subtitle, value, payMethod, setPayMethod, disabled, chi
 }
 
 /* ─── Main component ─── */
-export default function ProductDetailClient({ product, variants, stockByVariant }) {
+export default function ProductDetailClient({ product, variants, stockByVariant, isSpecial = false, catName = '' }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [selected,  setSelected]  = useState(null);
@@ -167,13 +167,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
   const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
-    if (isAuto && !session) return setError('Login Discord diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
+    if (isAuto && !session?.user) return setError('Login diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
     if (stock === 0) return setError('Stok habis.');
     if (stock > 0 && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
-    if (!waNumber || waNumber.trim().length < 9) return setError('Nomor WhatsApp wajib diisi.');
+    if (isSpecial) {
+      if (!waNumber || !waNumber.includes('@')) return setError('Email wajib diisi dengan format yang benar.');
+    } else {
+      if (!waNumber || waNumber.trim().length < 9) return setError('Nomor WhatsApp wajib diisi.');
+    }
     if (qty < 1) return setError('Jumlah minimal 1.');
     setError('');
     setShowConfirm(true);
@@ -421,7 +425,18 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
 
           {/* ── STEP 1: Data Akun (kondisional) ── */}
           {step1 && (
-            <StepRow n={step1} title='Masukkan Data Akun'>
+            <StepRow n={step1} title={isSpecial ? 'Informasi' : 'Masukkan Data Akun'}>
+              {isSpecial && product.product_info && (
+                <div style={{
+                  padding:'14px', borderRadius:'12px',
+                  background:'rgba(255,255,255,0.04)',
+                  border:'1px solid rgba(255,255,255,0.08)',
+                  fontSize:'0.85rem', color:'rgba(255,255,255,0.75)',
+                  lineHeight:1.7, whiteSpace:'pre-wrap', marginBottom: formFields.length > 0 ? '14px' : 0,
+                }}>
+                  {product.product_info}
+                </div>
+              )}
               <div className={formFields.length >= 2 ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {formFields.map(field => (
                   <div key={field.label}>
@@ -445,8 +460,19 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           )}
 
           {/* ── STEP 2: Pilih Nominal ── */}
-          <StepRow n={step2} title='Pilih Nominal'>
-            <div className='grid grid-cols-2 gap-3'>
+          <StepRow n={step2} title={isSpecial ? 'Preview Produk' : 'Pilih Nominal'}>
+            {isSpecial && product.preview_media && (
+              <div style={{borderRadius:'14px',overflow:'hidden',background:'#000',maxHeight:'280px',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0'}}>
+                {['mp4','webm','ogg'].some(ext => product.preview_media.toLowerCase().endsWith('.' + ext))
+                  ? <video src={product.preview_media} controls style={{width:'100%',maxHeight:'280px',display:'block'}}/>
+                  : <img src={product.preview_media} alt="Preview" style={{width:'100%',maxHeight:'280px',objectFit:'contain',display:'block'}}/>
+                }
+              </div>
+            )}
+            {isSpecial && !product.preview_media && (
+              <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.82rem',textAlign:'center',padding:'20px 0'}}>Belum ada preview</p>
+            )}
+            {!isSpecial && <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
                 const vStock  = stockByVariant[v.id] ?? 0;
                 const disabled = vStock === 0;
@@ -488,11 +514,13 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                   </button>
                 );
               })}
-            </div>
-          </StepRow>
+            </div>}
 
-          {/* ── STEP QTY: Jumlah ── */}
-          <StepRow n={stepQty} title='Jumlah'>
+              {!isSpecial && null}
+            </StepRow>
+
+          {/* ── STEP QTY ── */}
+          {!isSpecial && (<StepRow n={stepQty} title='Jumlah'>
             <div className='flex items-center gap-3'>
               <button
                 onClick={() => setQty(q => Math.max(1, q - 1))}
@@ -518,9 +546,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
               </button>
             </div>
 
-          </StepRow>
-
-          {/* ── STEP 3: Pilih Pembayaran ── */}
+                    </StepRow>)}  {/* ── STEP 3: Pilih Pembayaran ── */}
           <StepRow n={step3} title='Pilih Pembayaran'>
             <div className='space-y-2'>
               {/* VECHNOST PAYMENT */}
@@ -653,7 +679,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
           </StepRow>
 
           {/* ── STEP 4: Detail Kontak ── */}
-          <StepRow n={step4} title='Detail Kontak'>
+          <StepRow n={step4} title={isSpecial ? 'Detail Kontak' : 'Detail Kontak'}>
             <label className='text-xs font-semibold text-white block mb-2'>No. WhatsApp</label>
             <div className='flex items-center rounded-xl overflow-hidden'
               style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
@@ -661,9 +687,11 @@ export default function ProductDetailClient({ product, variants, stockByVariant 
                 style={{ background:'rgba(255,255,255,0.05)', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
                 <span className='text-lg'>🇮🇩</span>
               </div>
-              <input className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
+              <input
+                className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
                 style={{ color:'#e8f4ff' }}
-                placeholder='628XXXXXXXX'
+                type={isSpecial ? 'email' : 'tel'}
+                placeholder={isSpecial ? 'email@gmail.com' : '628XXXXXXXX'}
                 value={waNumber} onChange={e => setWaNumber(e.target.value)} />
             </div>
             <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>**Nomor ini akan dihubungi jika terjadi masalah**</p>
