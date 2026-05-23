@@ -92,11 +92,22 @@ export default async function ProfilePage() {
               style={{color:tInfo.color, background:tInfo.bg, borderColor:tInfo.border}}>
               {tInfo.label}
             </span>
-            <p className="text-sm mt-2" style={{color:'#7bafd4'}}>
-              SALDO: <span className="font-bold" style={{color:'#60a5fa'}}>
-                {formatIDR(user?.balance || session.user.balance || 0)}
-              </span>
-            </p>
+            <div className="flex items-center gap-3 mt-2">
+              <p className="text-sm" style={{color:'#7bafd4'}}>
+                SALDO: <span className="font-bold" style={{color:'#60a5fa'}}>
+                  {formatIDR(user?.balance || session.user.balance || 0)}
+                </span>
+              </p>
+              <a href="/topup" style={{
+                display:'inline-flex', alignItems:'center', gap:'5px',
+                padding:'4px 12px', borderRadius:'20px', fontSize:'0.72rem', fontWeight:700,
+                background:'rgba(29,111,255,0.15)', border:'1px solid rgba(29,111,255,0.35)',
+                color:'#60a5fa', textDecoration:'none', whiteSpace:'nowrap',
+              }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Topup Saldo
+              </a>
+            </div>
             {currentDiscount > 0 && (
               <p className="text-xs mt-1" style={{color:'#10b981'}}>
                 Diskon member: <strong>{currentDiscount}% OFF</strong>
