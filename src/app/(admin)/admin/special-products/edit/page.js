@@ -1,0 +1,493 @@
+"use client";
+import { useEffect, useState, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
+
+const SPECIAL_CATS = ["website", "bot", "template"];
+const inputCls =
+  "w-full rounded-xl px-3.5 py-2.5 text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all";
+const labelCls =
+  "block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5";
+
+export default function SpecialProductFormPage() {
+  const router = useRouter();
+  const { id } = useParams();
+  const isNew = id === "new";
+
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingVid, setUploadingVid] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    category_slug: "website",
+    product_info: "",
+    is_active: true,
+    delivery_type: "auto",
+    download_url: "",
+  });
+  const [variants, setVariants] = useState([
+    { name: "Paket Standar", price: "" },
+  ]);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [previewVideo, setPreviewVideo] = useState("");
+
+  const imgRef = useRef(null);
+  const vidRef = useRef(null);
+
+  const setF = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setFB = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.checked }));
+
+  useEffect(() => {
+    if (isNew) {
+      setLoading(false);
+      return;
+    }
+    fetch("/api/admin/special-products/" + id)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) {
+          setError(d.error);
+          setLoading(false);
+          return;
+        }
+        setForm({
+          name: d.name || "",
+          slug: d.slug || "",
+          category_slug: d.categories?.name?.toLowerCase() || "website",
+          product_info: d.product_info || "",
+          is_active: d.is_active ?? true,
+          delivery_type: d.delivery_type || "auto",
+          download_url: d.download_url || "",
+        });
+        setVariants(
+          d.product_variants?.length
+            ? d.product_variants.map((v) => ({
+                id: v.id,
+                name: v.name,
+                price: String(v.price),
+              }))
+            : [{ name: "Paket Standar", price: "" }]
+        );
+        setPreviewImages(d.preview_images || []);
+        setPreviewVideo(d.preview_video || "");
+        setLoading(false);
+      });
+  }, [id]);
+
+  const uploadFiles = async (files, type) => {
+    const results = [];
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("type", type);
+      const res = await fetch("/api/upload-media", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) results.push(data.url);
+      else setError("Upload gagal: " + (data.error || "Unknown"));
+    }
+    return results;
+  };
+
+  const handleImages = async (e) => {
+    const files = Array.from(e.target.files || []).slice(
+      0,
+      20 - previewImages.length
+    );
+    if (!files.length) return;
+    setUploadingImg(true);
+    setError("");
+    const urls = await uploadFiles(files, "image");
+    setPreviewImages((prev) => [...prev, ...urls].slice(0, 20));
+    setUploadingImg(false);
+    if (imgRef.current) imgRef.current.value = "";
+  };
+
+  const handleVideo = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVid(true);
+    setError("");
+    const urls = await uploadFiles([file], "video");
+    if (urls[0]) setPreviewVideo(urls[0]);
+    setUploadingVid(false);
+    if (vidRef.current) vidRef.current.value = "";
+  };
+
+  const removeImage = (idx) =>
+    setPreviewImages((prev) => prev.filter((_, i) => i !== idx));
+
+  const addVariant = () => setVariants((v) => [...v, { name: "", price: "" }]);
+  const removeVariant = (i) =>
+    setVariants((v) => v.filter((_, idx) => idx !== i));
+  const setVariant = (i, k, val) =>
+    setVariants((v) =>
+      v.map((item, idx) => (idx === i ? { ...item, [k]: val } : item))
+    );
+
+  const autoSlug = (name) =>
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+  const save = async () => {
+    if (!form.name.trim()) return setError("Nama produk wajib diisi.");
+    if (!form.slug.trim()) return setError("Slug wajib diisi.");
+    if (variants.some((v) => !v.name || !v.price))
+      return setError("Semua paket harus diisi lengkap.");
+    if (!form.download_url.trim())
+      return setError("Link download wajib diisi.");
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    const payload = {
+      ...form,
+      preview_images: previewImages,
+      preview_video: previewVideo,
+      variant_sync: variants.map((v) => ({
+        ...(v.id ? { id: v.id } : {}),
+        name: v.name,
+        price: parseInt(v.price),
+        stock: 999,
+      })),
+    };
+    const url = isNew
+      ? "/api/admin/special-products"
+      : "/api/admin/special-products/" + id;
+    const method = isNew ? "POST" : "PATCH";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.error) {
+      setError(data.error);
+      setSaving(false);
+      return;
+    }
+    setSuccess("Tersimpan!");
+    setSaving(false);
+    if (isNew && data.id) router.push("/admin/special-products/" + data.id);
+  };
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push("/admin/special-products")}
+          className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
+          {isNew ? "Tambah Produk" : "Edit Produk"}
+        </h1>
+      </div>
+
+      {/* Info Dasar */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-4">
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          Informasi Dasar
+        </h2>
+        <div>
+          <label className={labelCls}>Nama Produk</label>
+          <input
+            className={inputCls}
+            placeholder="Landing Page Premium"
+            value={form.name}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                name: e.target.value,
+                slug: autoSlug(e.target.value),
+              }))
+            }
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Slug URL</label>
+            <input
+              className={inputCls}
+              placeholder="landing-page-premium"
+              value={form.slug}
+              onChange={setF("slug")}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Kategori</label>
+            <select
+              className={inputCls}
+              value={form.category_slug}
+              onChange={setF("category_slug")}
+            >
+              {SPECIAL_CATS.map((c) => (
+                <option key={c} value={c}>
+                  {c.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Jenis Pengiriman</label>
+          <select
+            className={inputCls}
+            value={form.delivery_type}
+            onChange={setF("delivery_type")}
+          >
+            <option value="auto">
+              Otomatis (link dikirim langsung ke email)
+            </option>
+            <option value="manual">
+              Manual (admin kirim ke email pembeli)
+            </option>
+          </select>
+        </div>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.is_active}
+            onChange={setFB("is_active")}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            Produk aktif
+          </span>
+        </label>
+      </div>
+
+      {/* Informasi Produk */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-3">
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          Informasi Produk
+        </h2>
+        <p className="text-xs text-gray-400">
+          Ditampilkan di halaman detail produk sebagai deskripsi lengkap
+        </p>
+        <textarea
+          className={inputCls}
+          rows={7}
+          placeholder="Tuliskan fitur, spesifikasi, teknologi yang digunakan, dan detail lengkap produk..."
+          value={form.product_info}
+          onChange={setF("product_info")}
+        />
+      </div>
+
+      {/* Preview */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-5">
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          Preview Produk
+        </h2>
+
+        {/* Video */}
+        <div>
+          <label className={labelCls}>Video Preview (maks 1 video, 50MB)</label>
+          <input
+            ref={vidRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideo}
+            style={{ display: "none" }}
+          />
+          {previewVideo ? (
+            <div className="relative">
+              <video
+                src={previewVideo}
+                controls
+                className="w-full rounded-xl max-h-52 bg-black"
+              />
+              <button
+                onClick={() => setPreviewVideo("")}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center"
+              >
+                x
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => vidRef.current?.click()}
+              disabled={uploadingVid}
+              className="w-full py-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all disabled:opacity-50"
+            >
+              {uploadingVid
+                ? "Mengupload video..."
+                : "+ Pilih Video dari Galeri"}
+            </button>
+          )}
+        </div>
+
+        {/* Foto */}
+        <div>
+          <label className={labelCls}>
+            Foto Preview ({previewImages.length}/20)
+          </label>
+          <input
+            ref={imgRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImages}
+            style={{ display: "none" }}
+          />
+          {previewImages.length < 20 && (
+            <button
+              onClick={() => imgRef.current?.click()}
+              disabled={uploadingImg}
+              className="w-full py-6 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all disabled:opacity-50 mb-3"
+            >
+              {uploadingImg
+                ? "Mengupload foto..."
+                : "+ Pilih Foto dari Galeri (sisa " +
+                  (20 - previewImages.length) +
+                  ")"}
+            </button>
+          )}
+          {previewImages.length > 0 && (
+            <div className="grid grid-cols-4 gap-2">
+              {previewImages.map((url, i) => (
+                <div key={i} className="relative group aspect-square">
+                  <img
+                    src={url}
+                    alt={"img-" + i}
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                  <button
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Harga */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+            Paket Harga
+          </h2>
+          <button
+            onClick={addVariant}
+            className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-100 transition-colors"
+          >
+            + Tambah Paket
+          </button>
+        </div>
+        <div className="space-y-2">
+          <div
+            className="grid gap-2 mb-1"
+            style={{ gridTemplateColumns: "1fr 130px 32px" }}
+          >
+            <span className="text-xs text-gray-400 px-1">Nama Paket</span>
+            <span className="text-xs text-gray-400 px-1">Harga (Rp)</span>
+            <span />
+          </div>
+          {variants.map((v, i) => (
+            <div
+              key={i}
+              className="grid gap-2 items-center"
+              style={{ gridTemplateColumns: "1fr 130px 32px" }}
+            >
+              <input
+                className={inputCls}
+                placeholder="Paket Standar"
+                value={v.name}
+                onChange={(e) => setVariant(i, "name", e.target.value)}
+              />
+              <input
+                className={inputCls}
+                type="number"
+                min="0"
+                placeholder="500000"
+                value={v.price}
+                onChange={(e) => setVariant(i, "price", e.target.value)}
+              />
+              <button
+                onClick={() => removeVariant(i)}
+                className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold"
+              >
+                x
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Link Download */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-3">
+        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          Link Pengiriman ke Pembeli
+        </h2>
+        <p className="text-xs text-gray-400">
+          Link ini akan dikirim ke email pembeli setelah pembayaran berhasil
+          (Google Drive, GitHub, dsb)
+        </p>
+        <input
+          className={inputCls}
+          type="url"
+          placeholder="https://drive.google.com/file/d/xxx/view"
+          value={form.download_url}
+          onChange={setF("download_url")}
+        />
+      </div>
+
+      {error && (
+        <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400 font-semibold">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="px-4 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm text-green-600 dark:text-green-400 font-semibold">
+          {success}
+        </div>
+      )}
+
+      <div className="flex gap-3 pb-8">
+        <button
+          onClick={() => router.push("/admin/special-products")}
+          className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          Batal
+        </button>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {saving ? "Menyimpan..." : isNew ? "Buat Produk" : "Simpan Perubahan"}
+        </button>
+      </div>
+    </div>
+  );
+}
