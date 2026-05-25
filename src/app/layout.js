@@ -2,6 +2,7 @@ import '@/styles/globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import SessionWrapper from '@/components/SessionWrapper';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: 'Vechnost Store',
@@ -19,6 +20,7 @@ export default function RootLayout({ children }) {
             </SidebarProvider>
           </ThemeProvider>
         </SessionWrapper>
+        <Analytics />
       </body>
     </html>
   );
