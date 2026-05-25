@@ -679,22 +679,40 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           </StepRow>
 
           {/* ── STEP 4: Detail Kontak ── */}
-          <StepRow n={step4} title={isSpecial ? 'Detail Kontak' : 'Detail Kontak'}>
-            <label className='text-xs font-semibold text-white block mb-2'>No. WhatsApp</label>
-            <div className='flex items-center rounded-xl overflow-hidden'
-              style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
-              <div className='flex items-center px-3 py-3 flex-shrink-0'
-                style={{ background:'rgba(255,255,255,0.05)', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
-                <span className='text-lg'>🇮🇩</span>
-              </div>
-              <input
-                className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
-                style={{ color:'#e8f4ff' }}
-                type={isSpecial ? 'email' : 'tel'}
-                placeholder={isSpecial ? 'email@gmail.com' : '628XXXXXXXX'}
-                value={waNumber} onChange={e => setWaNumber(e.target.value)} />
-            </div>
-            <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>**Nomor ini akan dihubungi jika terjadi masalah**</p>
+          <StepRow n={step4} title='Detail Kontak'>
+            {isSpecial ? (
+              <>
+                <label className='text-xs font-semibold text-white block mb-2'>Email</label>
+                <div className='flex items-center rounded-xl overflow-hidden'
+                  style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                  <input
+                    className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
+                    style={{ color:'#e8f4ff' }}
+                    type='email'
+                    placeholder='email@gmail.com'
+                    value={waNumber} onChange={e => setWaNumber(e.target.value)} />
+                </div>
+                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>Email untuk pengiriman link download product</p>
+              </>
+            ) : (
+              <>
+                <label className='text-xs font-semibold text-white block mb-2'>No. WhatsApp</label>
+                <div className='flex items-center rounded-xl overflow-hidden'
+                  style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                  <div className='flex items-center px-3 py-3 flex-shrink-0'
+                    style={{ background:'rgba(255,255,255,0.05)', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
+                    <span className='text-xs font-bold text-white'>+62</span>
+                  </div>
+                  <input
+                    className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
+                    style={{ color:'#e8f4ff' }}
+                    type='tel'
+                    placeholder='812XXXXXXXX'
+                    value={waNumber} onChange={e => setWaNumber(e.target.value)} />
+                </div>
+                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>Nomor ini akan dihubungi jika terjadi masalah</p>
+              </>
+            )}
           </StepRow>
 
 
