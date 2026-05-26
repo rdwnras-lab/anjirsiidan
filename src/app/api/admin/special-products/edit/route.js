@@ -2,88 +2,34 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
-function isAdmin(s) { return s?.user?.role === 'admin'; }
-
-async function getCategoryId(name) {
-  const { data } = await supabaseAdmin
-    .from('categories').select('id').eq('slug', name).single();
-  if (data?.id) return data.id;
-  const { data: created } = await supabaseAdmin.from('categories').insert({
-    name: name.toUpperCase(), slug: name,
-    is_active: true, sort_order: 999,
-  }).select('id').single();
-  return created?.id;
-}
-
-export async function GET(req) {
+export async function POST(req) {
   const session = await getServerSession(authOptions);
-  if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (session?.user?.role !== 'admin')
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
-  if (!id) return Response.json({ error: 'ID diperlukan.' }, { status: 400 });
+  const formData = await req.formData();
+  const file = formData.get('file');
+  const type = formData.get('type') || 'image'; // 'image' | 'video'
 
-  const { data } = await supabaseAdmin
-    .from('products')
-    .select('*, categories(id, name, slug), product_variants(id, name, price, stock, sort_order)')
-    .eq('id', id).single();
+  if (!file) return Response.json({ error: 'File wajib dikirim.' }, { status: 400 });
 
-  if (!data) return Response.json({ error: 'Produk tidak ditemukan.' }, { status: 404 });
-  return Response.json(data);
-}
+  const maxSize = type === 'video' ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxSize)
+    return Response.json({ error: `Ukuran maksimal ${type === 'video' ? '50MB' : '5MB'}.` }, { status: 400 });
 
+  const ext = file.name?.split('.').pop() || (type === 'video' ? 'mp4' : 'jpg');
+  const fileName = `product-media/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const buffer = await file.arrayBuffer();
 
-export async function PATCH(req) {
-  const session = await getServerSession(authOptions);
-  if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  // Buat bucket jika belum ada
+  await supabaseAdmin.storage.createBucket('media', { public: true }).catch(() => {});
 
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
-  if (!id) return Response.json({ error: 'ID diperlukan.' }, { status: 400 });
+  const { error: upErr } = await supabaseAdmin.storage
+    .from('media')
+    .upload(fileName, buffer, { contentType: file.type || 'application/octet-stream', upsert: false });
 
-  const body = await req.json();
-  const { variant_sync, category_slug, ...rest } = body;
+  if (upErr) return Response.json({ error: 'Upload gagal: ' + upErr.message }, { status: 500 });
 
-  const updateData = {
-    ...rest,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (category_slug) {
-    updateData.category_id = await getCategoryId(category_slug);
-  }
-
-  const { error } = await supabaseAdmin
-    .from('products').update(updateData).eq('id', id);
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  // Sync variants
-  if (variant_sync?.length) {
-    // Delete existing variants
-    await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
-    // Re-insert
-    await supabaseAdmin.from('product_variants').insert(
-      variant_sync.map((v, i) => ({
-        product_id: id,
-        name: v.name,
-        price: parseInt(v.price),
-        stock: v.stock ?? 999,
-        sort_order: i,
-        is_active: true,
-      }))
-    );
-  }
-
-  return Response.json({ ok: true });
-}
-
-export async function DELETE(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-  await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
-  const { error } = await supabaseAdmin.from('products').delete().eq('id', id);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ ok: true });
+  const { data } = supabaseAdmin.storage.from('media').getPublicUrl(fileName);
+  return Response.json({ url: data.publicUrl });
 }
