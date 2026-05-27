@@ -154,7 +154,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
     }
     return payMethod;
   })();
-  const stock      = selected ? (stockByVariant[selected] ?? 0) : 0;
+  const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
   const discPrc    = selVariant ? Math.floor(selVariant.price * (1 - disc)) : 0;
   const discPrcQty  = discPrc * qty;
   const pricing    = selVariant ? (isAuto ? calculateFee(discPrcQty) : { base:discPrcQty, fee:0, total:discPrcQty }) : null;
@@ -474,7 +474,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
             )}
             {!isSpecial && <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
-                const vStock  = stockByVariant[v.id] ?? 0;
+                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
                 const disabled = vStock === 0;
                 const dPrice  = Math.floor(v.price * (1 - disc));
                 const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
