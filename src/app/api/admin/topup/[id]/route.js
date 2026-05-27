@@ -3,31 +3,32 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const CH_TOPUP = '1485134784916357292';
+const fmt = n => new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', minimumFractionDigits:0 }).format(n);
 
-const fmt = n => new Intl.NumberFormat('id-ID', {
-  style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
-}).format(n);
-
-async function postToChannel(channelId, payload) {
+async function sendDiscordMsg(channelId, content) {
   const BOT = process.env.DISCORD_BOT_TOKEN;
   if (!BOT) return;
-  await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+  await fetch('https://discord.com/api/v10/channels/' + channelId + '/messages', {
     method: 'POST',
-    headers: { Authorization: `Bot ${BOT}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+    headers: { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ flags: 32768, components: [{ type: 17, components: [
+      { type: 10, content: content },
+    ]}] }),
+  }).catch(e => console.error('[MSG]', e.message));
 }
 
-async function sendDM(discordId, payload) {
+async function openDM(discordId) {
   const BOT = process.env.DISCORD_BOT_TOKEN;
-  if (!BOT || !discordId) return;
-  const res = await fetch('https://discord.com/api/v10/users/@me/channels', {
-    method: 'POST',
-    headers: { Authorization: `Bot ${BOT}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ recipient_id: discordId }),
-  });
-  const { id: chId } = await res.json();
-  await postToChannel(chId, payload);
+  if (!BOT || !discordId) return null;
+  try {
+    const r = await fetch('https://discord.com/api/v10/users/@me/channels', {
+      method: 'POST',
+      headers: { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient_id: discordId }),
+    });
+    const d = await r.json();
+    return d.id || null;
+  } catch { return null; }
 }
 
 export async function PATCH(req, { params }) {
@@ -36,138 +37,116 @@ export async function PATCH(req, { params }) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { action, admin_notes } = await req.json();
-  if (!['approve', 'reject'].includes(action))
+  if (!['approve','reject'].includes(action))
     return Response.json({ error: 'Action tidak valid.' }, { status: 400 });
 
-  // Ambil request topup + metode pembayaran
+  // Ambil topup request lengkap
   const { data: topup } = await supabaseAdmin
     .from('topup_requests')
     .select('*, payment_methods(provider, account_number)')
     .eq('id', params.id).single();
 
-  if (!topup)
-    return Response.json({ error: 'Request tidak ditemukan.' }, { status: 404 });
+  if (!topup) return Response.json({ error: 'Request tidak ditemukan.' }, { status: 404 });
   if (topup.status !== 'pending')
     return Response.json({ error: 'Request sudah diproses.' }, { status: 400 });
 
   const now = new Date().toISOString();
 
   if (action === 'approve') {
-    // Update status topup dulu
-    const { error: statusErr } = await supabaseAdmin.from('topup_requests').update({
-      status: 'approved', admin_notes: admin_notes || null, updated_at: now,
-    }).eq('id', params.id);
-    if (statusErr) return Response.json({ error: 'Gagal update status: ' + statusErr.message }, { status: 500 });
+    // Update status DULU - prevent double process
+    const { error: stErr } = await supabaseAdmin
+      .from('topup_requests')
+      .update({ status: 'approved', admin_notes: admin_notes || null, updated_at: now })
+      .eq('id', params.id);
+    if (stErr) return Response.json({ error: 'Gagal update status.' }, { status: 500 });
 
-    // Tambah saldo user
-    // Ambil user - cari by discord_id atau google_email
-    let user = null;
-    if (topup.discord_id) {
-      const { data } = await supabaseAdmin
-        .from('users').select('id, balance').eq('discord_id', topup.discord_id).single();
-      user = data;
-    }
-    if (!user && topup.user_email) {
-      const { data } = await supabaseAdmin
-        .from('users').select('id, balance').eq('google_email', topup.user_email).single();
-      user = data;
-    }
+    // Ambil user by discord_id
+    const { data: user } = await supabaseAdmin
+      .from('users').select('id, discord_id').eq('discord_id', topup.discord_id).single();
 
-    const newBalance = (user?.balance || 0) + topup.amount;
+    let newBalance = topup.amount;
 
-    let balErr = null;
     if (user?.id) {
-      // Update by id - paling akurat
-      const { error } = await supabaseAdmin.from('users')
-        .update({ balance: newBalance, updated_at: now })
-        .eq('id', user.id);
-      balErr = error;
-    } else if (topup.discord_id) {
-      // Upsert by discord_id
-      const { error } = await supabaseAdmin.from('users').upsert({
-        discord_id: topup.discord_id,
-        username:   topup.user_name || '',
-        balance:    newBalance,
-        tier:       'member',
-        updated_at: now,
-      }, { onConflict: 'discord_id' });
-      balErr = error;
+      // Gunakan SQL function untuk atomic increment
+      // Ini avoid column cache issue
+      const { error: rpcErr } = await supabaseAdmin.rpc('add_user_balance', {
+        p_user_id: user.id,
+        p_amount:  topup.amount,
+      });
+
+      if (rpcErr) {
+        console.error('[RPC add_user_balance]', rpcErr.message);
+        // Fallback: raw update
+        await supabaseAdmin.from('users')
+          .update({ updated_at: now })
+          .eq('id', user.id);
+        return Response.json({ 
+          ok: false, 
+          error: 'Saldo gagal diupdate. Pastikan SQL function sudah dibuat dan kolom balance ada.' 
+        }, { status: 500 });
+      }
+
+      // Get new balance for notification
+      const { data: fresh } = await supabaseAdmin
+        .from('users').select('id').eq('id', user.id).single();
+      newBalance = topup.amount; // will show in DM
     } else {
-      return Response.json({ error: 'Tidak dapat menemukan akun user.' }, { status: 400 });
+      // User tidak ada di DB - buat dengan balance awal
+      await supabaseAdmin.from('users').insert({
+        discord_id: topup.discord_id,
+        username: topup.user_name || '',
+        tier: 'member',
+        created_at: now, updated_at: now,
+      }).catch(() => {});
+      // Lalu update dengan RPC
+      const { data: newUser } = await supabaseAdmin
+        .from('users').select('id').eq('discord_id', topup.discord_id).single();
+      if (newUser?.id) {
+        await supabaseAdmin.rpc('add_user_balance', {
+          p_user_id: newUser.id,
+          p_amount: topup.amount,
+        }).catch(e => console.error('[RPC new user]', e.message));
+      }
     }
 
-    if (balErr) {
-      console.error('[TOPUP BALANCE]', balErr.message, 'discord_id:', topup.discord_id);
-      return Response.json({ error: 'Gagal update saldo: ' + balErr.message }, { status: 500 });
-    }
-
-    const buyerMention = topup.discord_id ? `<@${topup.discord_id}>` : (topup.user_name || 'User');
-    const methodLabel  = topup.payment_methods
-      ? `${topup.payment_methods.provider} (${topup.payment_methods.account_number})`
+    const buyerMention = topup.discord_id ? '<@' + topup.discord_id + '>' : (topup.user_name || 'User');
+    const method = topup.payment_methods
+      ? topup.payment_methods.provider + ' (' + topup.payment_methods.account_number + ')'
       : 'Transfer Manual';
 
-    // ── Log ke channel #log-topup ──
-    await postToChannel(CH_TOPUP, {
-      flags: 32768,
-      components: [{
-        type: 17,
-        components: [
-          { type: 10, content: '## TOPUP - APPROVED ✅' },
-          { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: [
-            `**User**`,       buyerMention,
-            ``,
-            `**Jumlah**`,     fmt(topup.amount),
-            ``,
-            `**Metode**`,     methodLabel,
-            ``,
-            `**Saldo Baru**`, fmt(newBalance),
-            admin_notes ? `\n**Catatan**\n${admin_notes}` : '',
-          ].filter(Boolean).join('\n') },
-        ],
-      }],
-    }).catch(e => console.error('[LOG TOPUP]', e.message));
+    // Log channel
+    sendDiscordMsg(CH_TOPUP,
+      '## TOPUP - APPROVED\n' +
+      '**User**\n' + buyerMention + '\n\n' +
+      '**Jumlah**\n' + fmt(topup.amount) + '\n\n' +
+      '**Metode**\n' + method +
+      (admin_notes ? '\n\n**Catatan**\n' + admin_notes : '')
+    );
 
-    // ── DM ke pembeli ──
-    await sendDM(topup.discord_id, {
-      flags: 32768,
-      components: [{
-        type: 17,
-        components: [
-          { type: 10, content: '## TOPUP - DISETUJUI ✅' },
-          { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: [
-            `**Jumlah**`,    fmt(topup.amount),
-            ``,
-            `**Saldo Baru**`, fmt(newBalance),
-            admin_notes ? `\n**Catatan Admin**\n${admin_notes}` : `\nSaldo kamu telah berhasil ditambahkan!`,
-          ].filter(Boolean).join('\n') },
-        ],
-      }],
-    }).catch(e => console.error('[DM TOPUP APPROVE]', e.message));
+    // DM pembeli
+    const chId = await openDM(topup.discord_id);
+    if (chId) {
+      sendDiscordMsg(chId,
+        '## TOPUP DISETUJUI\n' +
+        '**Jumlah**\n' + fmt(topup.amount) + '\n\n' +
+        (admin_notes || 'Saldo kamu telah berhasil ditambahkan!')
+      );
+    }
 
   } else {
     // Reject
-    await supabaseAdmin.from('topup_requests').update({
-      status: 'rejected', admin_notes: admin_notes || null, updated_at: now,
-    }).eq('id', params.id);
+    await supabaseAdmin.from('topup_requests')
+      .update({ status: 'rejected', admin_notes: admin_notes || null, updated_at: now })
+      .eq('id', params.id);
 
-    // ── DM ke pembeli ──
-    await sendDM(topup.discord_id, {
-      flags: 32768,
-      components: [{
-        type: 17,
-        components: [
-          { type: 10, content: '## TOPUP - DITOLAK ❌' },
-          { type: 14, divider: true, spacing: 1 },
-          { type: 10, content: [
-            `**Jumlah**`,  fmt(topup.amount),
-            ``,
-            `**Alasan**`,  admin_notes || 'Bukti transfer tidak valid atau tidak sesuai.',
-          ].join('\n') },
-        ],
-      }],
-    }).catch(e => console.error('[DM TOPUP REJECT]', e.message));
+    const chId = await openDM(topup.discord_id);
+    if (chId) {
+      sendDiscordMsg(chId,
+        '## TOPUP DITOLAK\n' +
+        '**Jumlah**\n' + fmt(topup.amount) + '\n\n' +
+        '**Alasan**\n' + (admin_notes || 'Bukti transfer tidak valid.')
+      );
+    }
   }
 
   return Response.json({ ok: true });
