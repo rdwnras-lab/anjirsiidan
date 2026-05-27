@@ -18,14 +18,20 @@ const statusLabel = {
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.discordId) redirect('/login');
+  // Support Discord AND Google login
+  const discordId   = session?.user?.discordId || null;
+  const googleEmail = session?.user?.email || null;
+  if (!discordId && !googleEmail) redirect('/');
 
-  const discordId = session.user.discordId;
+  // Load user from DB - by discordId OR googleEmail
+  const identifier = discordId ? { col: 'discord_id', val: discordId } : { col: 'google_email', val: googleEmail };
 
   const [{ data: user }, { data: orders }, { data: tierSettings }] = await Promise.all([
-    supabaseAdmin.from('users').select('id, tier, balance, total_spent').eq('discord_id', discordId).single(),
+    supabaseAdmin.from('users').select('id, tier, balance, total_spent')
+      .eq(identifier.col, identifier.val).single(),
     supabaseAdmin.from('orders').select('id, status, total_amount, created_at, product_name, variant_name')
-      .eq('discord_id', discordId).order('created_at', { ascending: false }).limit(20),
+      .eq(discordId ? 'discord_id' : 'customer_email', discordId || googleEmail)
+      .order('created_at', { ascending: false }).limit(20),
     supabaseAdmin.from('tier_settings').select('*').eq('is_active', true).order('min_spent', { ascending: true }),
   ]);
 
