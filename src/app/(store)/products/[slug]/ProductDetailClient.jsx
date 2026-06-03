@@ -461,17 +461,26 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
 
           {/* ── STEP 2: Pilih Nominal ── */}
           <StepRow n={step2} title={isSpecial ? 'Preview Produk' : 'Pilih Nominal'}>
-            {isSpecial && product.preview_media && (
-              <div style={{borderRadius:'14px',overflow:'hidden',background:'#000',maxHeight:'280px',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0'}}>
-                {['mp4','webm','ogg'].some(ext => product.preview_media.toLowerCase().endsWith('.' + ext))
-                  ? <video src={product.preview_media} controls style={{width:'100%',maxHeight:'280px',display:'block'}}/>
-                  : <img src={product.preview_media} alt="Preview" style={{width:'100%',maxHeight:'280px',objectFit:'contain',display:'block'}}/>
-                }
+            {isSpecial && (product.preview_video || (product.preview_images && product.preview_images.length > 0)) ? (
+              <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                {product.preview_video && (
+                  <div style={{borderRadius:'14px',overflow:'hidden',background:'#000',maxHeight:'260px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <video src={product.preview_video} controls style={{width:'100%',maxHeight:'260px',display:'block'}}/>
+                  </div>
+                )}
+                {product.preview_images && product.preview_images.length > 0 && (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'6px'}}>
+                    {product.preview_images.map((url, i) => (
+                      <div key={i} style={{borderRadius:'10px',overflow:'hidden',aspectRatio:'16/9',background:'#000'}}>
+                        <img src={url} alt={'preview-'+i} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-            {isSpecial && !product.preview_media && (
+            ) : isSpecial ? (
               <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.82rem',textAlign:'center',padding:'20px 0'}}>Belum ada preview</p>
-            )}
+            ) : null}
             {!isSpecial && <div className='grid grid-cols-2 gap-3'>
               {variants.map(v => {
                 const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
