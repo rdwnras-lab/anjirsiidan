@@ -9,14 +9,22 @@ export const metadata = { title: 'Topup Saldo' };
 
 export default async function TopupPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.discordId) redirect('/login');
+  const discordId   = session?.user?.discordId || null;
+  const googleEmail = session?.user?.email || null;
+
+  // Must be logged in (Discord or Google)
+  if (!discordId && !googleEmail) redirect('/');
+
+  const userQuery = discordId
+    ? supabaseAdmin.from('users').select('balance').eq('discord_id', discordId).single()
+    : supabaseAdmin.from('users').select('balance').eq('google_email', googleEmail).single();
 
   const [{ data: methods }, { data: user }, { data: history }] = await Promise.all([
     supabaseAdmin.from('payment_methods').select('*').eq('is_active', true).order('sort_order'),
-    supabaseAdmin.from('users').select('balance').eq('discord_id', session.user.discordId).single(),
+    userQuery,
     supabaseAdmin.from('topup_requests')
       .select('*')
-      .eq('discord_id', session.user.discordId)
+      .or(discordId ? 'discord_id.eq.' + discordId : 'user_email.eq.' + googleEmail)
       .order('created_at', { ascending: false })
       .limit(10),
   ]);
