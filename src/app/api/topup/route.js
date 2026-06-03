@@ -30,15 +30,6 @@ export async function POST(req) {
   const fileName = `${session.user.discordId}_${Date.now()}.${ext}`;
   const buffer   = await proofFile.arrayBuffer();
 
-  // Pastikan bucket ada, buat jika belum ada
-  const { error: bucketErr } = await supabaseAdmin.storage.createBucket('topup-proofs', {
-    public: true, allowedMimeTypes: ['image/*'], fileSizeLimit: 5242880,
-  });
-  // Abaikan error jika bucket sudah ada (code 'already_exists' atau 409)
-  if (bucketErr && !bucketErr.message?.includes('already exist') && bucketErr.status !== 409) {
-    console.error('[BUCKET]', bucketErr.message);
-  }
-
   const { error: upErr } = await supabaseAdmin.storage
     .from('topup-proofs')
     .upload(fileName, buffer, { contentType: proofFile.type || 'image/jpeg', upsert: false });
@@ -61,5 +52,24 @@ export async function POST(req) {
   }).select().single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Kirim notifikasi ke channel Discord admin
+  const CH = '1472092169593557002';
+  const BOT = process.env.DISCORD_BOT_TOKEN;
+  const fmtN = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n);
+  if (BOT) {
+    const buyer = session.user.discordId ? '<@' + session.user.discordId + '>' : (session.user.name || session.user.email || 'User');
+    const pmLabel = pm ? pm.provider + ' (' + pm.account_number + ')' : 'Transfer Manual';
+    fetch('https://discord.com/api/v10/channels/' + CH + '/messages', {
+      method: 'POST',
+      headers: { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flags: 32768, components: [{ type: 17, components: [
+        { type: 10, content: '## REQUEST TOPUP MASUK' },
+        { type: 14, divider: true, spacing: 1 },
+        { type: 10, content: '**ID**\n`' + data.id + '`\n\n**User**\n' + buyer + '\n\n**Jumlah**\n' + fmtN(parseInt(amount)) + '\n\n**Metode**\n' + pmLabel + '\n\n**Bukti Transfer**\n' + proof_url + '\n\nSetujui/tolak di: https://vechnost.xyz/admin/topup' },
+      ]}] }),
+    }).catch(e => console.error('[TOPUP NOTIFY]', e.message));
+  }
+
   return Response.json({ ok: true, id: data.id });
 }
