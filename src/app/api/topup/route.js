@@ -54,7 +54,7 @@ export async function POST(req) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // Kirim notifikasi ke channel Discord admin
-  const CH = '1472092169593557002';
+  const CH = '1476338840267653221';
   const BOT = process.env.DISCORD_BOT_TOKEN;
   const fmtN = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n);
   if (BOT) {
