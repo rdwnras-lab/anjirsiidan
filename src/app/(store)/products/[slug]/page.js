@@ -9,7 +9,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const { data: product } = await supabaseAdmin.from('products').select(`
-    *, banner_image, product_info, preview_media, categories(id, name, slug),
+    *, banner_image, product_info, preview_media, preview_images, preview_video, download_url, categories(id, name, slug),
     product_variants(id, name, price, is_active, is_available, sort_order),
     product_keys(id, is_used, variant_id)
   `).eq('slug', params.slug).eq('is_active', true).single();
