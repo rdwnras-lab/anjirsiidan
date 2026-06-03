@@ -33,12 +33,14 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, account, profile, user }) {
       if (account?.provider === 'google') {
-        // Google login - use google sub as identifier
-        token.discordId   = null; // no discord for google users
+        token.discordId   = null;
         token.googleId    = profile.sub;
         token.googleEmail = profile.email;
-        token.avatar      = profile.picture;
+        token.name        = profile.name || profile.email;
+        token.avatar      = profile.picture || null;
         token.role        = 'customer';
+        token.tier        = 'member';
+        token.balance     = 0;
       }
       if (account?.provider === 'discord') {
         token.discordId   = profile.id;
@@ -87,9 +89,11 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.discordId    = token.discordId;
-      session.user.discordName  = token.discordName;
-      session.user.avatar       = token.avatar;
+      session.user.discordId    = token.discordId || null;
+      session.user.discordName  = token.discordName || null;
+      session.user.avatar       = token.avatar || null;
+      session.user.googleEmail  = token.googleEmail || null;
+      session.user.name         = token.name || token.discordName || session.user.email || 'User';
       session.user.role         = token.role || 'customer';
       session.user.tier         = token.tier || 'member';
       session.user.balance      = token.balance || 0;
