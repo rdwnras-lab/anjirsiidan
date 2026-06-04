@@ -1,7 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import AdminShell from './AdminShell';
+import { SidebarProvider } from '@/context/SidebarContext';
+import AdminLayoutClient from '@/components/admin/AdminLayoutClient';
 
 export default async function AdminLayout({ children }) {
   const session = await getServerSession(authOptions);
@@ -10,5 +11,9 @@ export default async function AdminLayout({ children }) {
     redirect('/');
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <SidebarProvider>
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </SidebarProvider>
+  );
 }
