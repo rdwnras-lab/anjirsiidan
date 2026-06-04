@@ -47,8 +47,8 @@ function EditForm() {
           banner_image: d.banner_image||'',
         });
         setVariants(d.product_variants?.length
-          ? d.product_variants.map(v=>({id:v.id,name:v.name,price:String(v.price)}))
-          : [{name:'Paket Standar',price:''}]);
+          ? d.product_variants.map(v=>({id:v.id,name:v.name,price:String(v.price),delivery_content:v.delivery_content||''}))
+          : [{name:'Paket Standar',price:'',delivery_content:''}]);
         setPreviewImages(Array.isArray(d.preview_images) ? d.preview_images : []);
         setPreviewVideo(d.preview_video||'');
         setLoading(false);
@@ -94,7 +94,7 @@ function EditForm() {
     if (vidRef.current) vidRef.current.value = '';
   };
 
-  const addV    = () => setVariants(v=>[...v,{name:'',price:''}]);
+  const addV    = () => setVariants(v=>[...v,{name:'',price:'',delivery_content:''}]);
   const removeV = i => setVariants(v=>v.filter((_,j)=>j!==i));
   const setV    = (i,k,val) => setVariants(v=>v.map((x,j)=>j===i?{...x,[k]:val}:x));
 
@@ -114,7 +114,7 @@ function EditForm() {
     setSaving(true); setError(''); setSuccess('');
     const body = {
       ...form, preview_images:previewImages, preview_video:previewVideo,
-      variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:999})),
+      variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:999,delivery_content:v.delivery_content||''})),
     };
     const url    = isNew ? '/api/admin/special-products' : '/api/admin/special-products/edit?id='+id;
     const method = isNew ? 'POST' : 'PATCH';
@@ -250,6 +250,11 @@ function EditForm() {
               <input className={inp} placeholder="Paket Standar" value={v.name} onChange={e=>setV(i,'name',e.target.value)} />
               <input className={inp} type="number" min="0" placeholder="500000" value={v.price} onChange={e=>setV(i,'price',e.target.value)} />
               <button onClick={()=>removeV(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold">x</button>
+            <div className="pl-0">
+              <input className={inp} type="url" placeholder="Link yang dikirim ke email pembeli (Google Drive, GitHub, dll)"
+                value={v.delivery_content||''} onChange={e=>setV(i,'delivery_content',e.target.value)} />
+              <p className="text-xs text-gray-400 mt-1 px-1">Link ini dikirim ke email pembeli setiap kali paket ini dibeli. Tidak habis.</p>
+            </div>
             </div>
           ))}
         </div>
