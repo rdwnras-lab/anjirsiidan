@@ -112,7 +112,7 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
         {/* Success */}
         {success && (
           <div style={{ background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'16px',padding:'16px',textAlign:'center' }}>
-            <p style={{ margin:'0 0 4px',fontSize:'1.5rem' }}>✅</p>
+            <p style={{ margin:'0 0 4px',fontSize:'1.5rem' }}></p>
             <p style={{ margin:0,fontWeight:800,color:'#4ade80',fontSize:'0.95rem' }}>Request Terkirim!</p>
             <p style={{ margin:'6px 0 0',fontSize:'0.8rem',color:'rgba(255,255,255,0.5)' }}>Admin akan memverifikasi dan menyetujui topup kamu segera.</p>
             <button onClick={() => setSuccess(false)} style={{ marginTop:'12px',padding:'8px 20px',borderRadius:'10px',background:'rgba(16,185,129,0.2)',border:'1px solid rgba(16,185,129,0.4)',color:'#4ade80',fontWeight:700,fontSize:'0.82rem',cursor:'pointer' }}>
@@ -254,7 +254,7 @@ export default function TopupClient({ paymentMethods, currentBalance, history })
 
           <button onClick={handleSubmit} disabled={loading}
             style={{ padding:'14px',borderRadius:'14px',background: loading ? '#0e2445' : 'linear-gradient(135deg,#1d6fff,#1450cc)',color:'#fff',fontWeight:900,fontSize:'0.95rem',border:'none',cursor: loading ? 'not-allowed' : 'pointer',boxShadow: loading ? 'none' : '0 4px 20px rgba(29,111,255,0.4)',transition:'all 0.2s' }}>
-            {loading ? 'Mengirim...' : '💳 Kirim Request Topup'}
+            {loading ? 'Mengirim...' : 'Kirim Request Topup'}
           </button>
 
         </>)}
