@@ -473,7 +473,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                 ))}
               </div>
             </StepRow>
-          )}
+          ))}
 
           {/* Container 2: Informasi (special) atau Pilih Nominal (normal) */}
           {isSpecial ? (
