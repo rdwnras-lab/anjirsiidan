@@ -428,9 +428,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           )}
 
           {/* ── STEP 1: Data Akun (kondisional) ── */}
-          {step1 && (
-            {/* Container 1: Preview (special) atau Form Fields (normal) */}
-          {isSpecial ? (
+          {step1 && (isSpecial ? (
             <StepRow n={step1} title='Preview Produk'>
               {(product.preview_video || (product.preview_images && product.preview_images.length > 0)) ? (
                 <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
@@ -475,6 +473,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                 ))}
               </div>
             </StepRow>
+          )}
           )}
 
           {/* Container 2: Informasi (special) atau Pilih Nominal (normal) */}
