@@ -159,11 +159,15 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
   const discPrcQty  = discPrc * qty;
   const pricing    = selVariant ? (isAuto ? calculateFee(discPrcQty) : { base:discPrcQty, fee:0, total:discPrcQty }) : null;
 
-  const step1 = formFields.length > 0 ? 1 : null;
-  const step2 = step1 ? 2 : 1;
-  const stepQty = step2 + 1;
-  const step3 = stepQty + 1;
-  const step4 = step3 + 1;
+  // Step numbering - berbeda untuk produk khusus vs normal
+  // Special: 1=Preview, 2=Informasi, 3=Pilih Paket, 4=Pilih Pembayaran, 5=Kontak
+  // Normal:  (1=form fields), 2=Pilih Nominal, 3=Qty, 4=Pembayaran, 5=Kontak
+  const step1 = isSpecial ? 1 : (formFields.length > 0 ? 1 : null);
+  const step2 = isSpecial ? 2 : (step1 ? 2 : 1);
+  const stepQty = isSpecial ? null : (step2 + 1);
+  const step3 = isSpecial ? 3 : (stepQty + 1);
+  const step4 = isSpecial ? 4 : (step3 + 1);
+  const step5 = isSpecial ? 5 : null; // detail kontak untuk special
 
   const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
@@ -425,18 +429,32 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
 
           {/* ── STEP 1: Data Akun (kondisional) ── */}
           {step1 && (
-            <StepRow n={step1} title={isSpecial ? 'Informasi' : 'Masukkan Data Akun'}>
-              {isSpecial && product.product_info && (
-                <div style={{
-                  padding:'14px', borderRadius:'12px',
-                  background:'rgba(255,255,255,0.04)',
-                  border:'1px solid rgba(255,255,255,0.08)',
-                  fontSize:'0.85rem', color:'rgba(255,255,255,0.75)',
-                  lineHeight:1.7, whiteSpace:'pre-wrap', marginBottom: formFields.length > 0 ? '14px' : 0,
-                }}>
-                  {product.product_info}
+            {/* Container 1: Preview (special) atau Form Fields (normal) */}
+          {isSpecial ? (
+            <StepRow n={step1} title='Preview Produk'>
+              {(product.preview_video || (product.preview_images && product.preview_images.length > 0)) ? (
+                <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                  {product.preview_video && (
+                    <div style={{borderRadius:'14px',overflow:'hidden',background:'#000',maxHeight:'260px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <video src={product.preview_video} controls style={{width:'100%',maxHeight:'260px',display:'block'}}/>
+                    </div>
+                  )}
+                  {product.preview_images && product.preview_images.length > 0 && (
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'6px'}}>
+                      {product.preview_images.map((url,i) => (
+                        <div key={i} style={{borderRadius:'10px',overflow:'hidden',aspectRatio:'16/9',background:'#000'}}>
+                          <img src={url} alt={'p'+i} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.82rem',textAlign:'center',padding:'20px 0'}}>Belum ada preview</p>
               )}
+            </StepRow>
+          ) : (
+            <StepRow n={step1} title='Masukkan Data Akun'>
               <div className={formFields.length >= 2 ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                 {formFields.map(field => (
                   <div key={field.label}>
@@ -459,74 +477,95 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
             </StepRow>
           )}
 
-          {/* ── STEP 2: Pilih Nominal ── */}
-          <StepRow n={step2} title={isSpecial ? 'Preview Produk' : 'Pilih Nominal'}>
-            {isSpecial && (product.preview_video || (product.preview_images && product.preview_images.length > 0)) ? (
-              <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-                {product.preview_video && (
-                  <div style={{borderRadius:'14px',overflow:'hidden',background:'#000',maxHeight:'260px',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <video src={product.preview_video} controls style={{width:'100%',maxHeight:'260px',display:'block'}}/>
-                  </div>
-                )}
-                {product.preview_images && product.preview_images.length > 0 && (
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'6px'}}>
-                    {product.preview_images.map((url, i) => (
-                      <div key={i} style={{borderRadius:'10px',overflow:'hidden',aspectRatio:'16/9',background:'#000'}}>
-                        <img src={url} alt={'preview-'+i} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          {/* Container 2: Informasi (special) atau Pilih Nominal (normal) */}
+          {isSpecial ? (
+            <StepRow n={step2} title='Informasi Produk'>
+              {product.product_info ? (
+                <div style={{
+                  padding:'14px', borderRadius:'12px',
+                  background:'rgba(255,255,255,0.04)',
+                  border:'1px solid rgba(255,255,255,0.08)',
+                  fontSize:'0.85rem', color:'rgba(255,255,255,0.8)',
+                  lineHeight:1.75, whiteSpace:'pre-wrap',
+                }}>
+                  {product.product_info}
+                </div>
+              ) : (
+                <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.82rem',textAlign:'center',padding:'20px 0'}}>Belum ada informasi produk</p>
+              )}
+            </StepRow>
+          ) : (
+            <StepRow n={step2} title='Pilih Nominal'>
+              <div className='grid grid-cols-2 gap-3'>
+                {variants.map(v => {
+                  const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
+                  const disabled = vStock === 0;
+                  const dPrice  = Math.floor(v.price * (1 - disc));
+                  const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
+                  const isAct   = selected === v.id;
+                  return (
+                    <button key={v.id} onClick={() => !disabled && setSelected(v.id)}
+                      className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
+                      style={{
+                        borderWidth:'2px', borderStyle:'solid',
+                        borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
+                        background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
+                        opacity: disabled ? 0.45 : 1,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                      }}>
+                      <div className='px-3 pt-3 pb-1'>
+                        <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : isSpecial ? (
-              <p style={{color:'rgba(255,255,255,0.3)',fontSize:'0.82rem',textAlign:'center',padding:'20px 0'}}>Belum ada preview</p>
-            ) : null}
-            {!isSpecial && <div className='grid grid-cols-2 gap-3'>
-              {variants.map(v => {
-                const vStock  = stockByVariant[v.id] ?? (isAuto ? 0 : 999);
-                const disabled = vStock === 0;
-                const dPrice  = Math.floor(v.price * (1 - disc));
-                const showPrc = isAuto ? calculateFee(dPrice).total : dPrice;
-                const isAct   = selected === v.id;
-                return (
-                  <button key={v.id} onClick={() => !disabled && setSelected(v.id)}
-                    className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
-                    style={{
-                      borderWidth:'2px', borderStyle:'solid',
-                      borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
-                      background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
-                      opacity: disabled ? 0.45 : 1,
-                      cursor: disabled ? 'not-allowed' : 'pointer',
-                    }}>
-                    {/* Top: name */}
-                    <div className='px-3 pt-3 pb-1'>
-                      <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
-                    </div>
-                    {/* Price */}
-                    <div className='px-3 pb-2'>
-                      <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(showPrc)}</p>
-                    </div>
-                    {/* Divider */}
-                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    {/* Divider + badge INSTAN untuk semua produk */}
-                    <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
-                    <div className='px-3 py-2 flex justify-end'>
-                      <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1'
-                        style={{ background:'#fff' }}>
-                        <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
-                        <div>
-                          <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
-                          <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                      <div className='px-3 pb-2'>
+                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(showPrc)}</p>
+                      </div>
+                      <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
+                      <div className='px-3 py-2 flex justify-end'>
+                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'#fff' }}>
+                          <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
+                          <div>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Pengiriman</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>}
-
-              {!isSpecial && null}
+                    </button>
+                  );
+                })}
+              </div>
             </StepRow>
+          )}
+
+          {/* Container 3: Pilih Paket (special only) */}
+          {isSpecial && (
+            <StepRow n={step3} title='Pilih Paket'>
+              <div className='grid grid-cols-2 gap-3'>
+                {variants.map(v => {
+                  const isAct = selected === v.id;
+                  return (
+                    <button key={v.id} onClick={() => setSelected(v.id)}
+                      className='rounded-2xl text-left transition-all overflow-hidden flex flex-col'
+                      style={{
+                        borderWidth:'2px', borderStyle:'solid',
+                        borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
+                        background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
+                      }}>
+                      <div className='px-3 pt-3 pb-1'>
+                        <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
+                      </div>
+                      <div className='px-3 pb-3'>
+                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(v.price)}</p>
+                        {v.delivery_content && (
+                          <p className='text-xs mt-1' style={{color:'rgba(255,255,255,0.4)'}}>Link dikirim ke email</p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </StepRow>
+          )}
 
           {/* ── STEP QTY ── */}
           {!isSpecial && (<StepRow n={stepQty} title='Jumlah'>
@@ -556,7 +595,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
             </div>
 
                     </StepRow>)}  {/* ── STEP 3: Pilih Pembayaran ── */}
-          <StepRow n={step3} title='Pilih Pembayaran'>
+          <StepRow n={isSpecial ? step4 : step3} title='Pilih Pembayaran'>
             <div className='space-y-2'>
               {/* VECHNOST PAYMENT */}
               {(() => {
@@ -688,7 +727,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           </StepRow>
 
           {/* ── STEP 4: Detail Kontak ── */}
-          <StepRow n={step4} title='Detail Kontak'>
+          <StepRow n={isSpecial ? step5 : step4} title='Detail Kontak'>
             {isSpecial ? (
               <>
                 <label className='text-xs font-semibold text-white block mb-2'>Email</label>
