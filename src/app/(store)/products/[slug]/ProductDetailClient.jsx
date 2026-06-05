@@ -154,7 +154,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
     }
     return payMethod;
   })();
-  const stock      = selected ? (stockByVariant[selected] ?? (isAuto ? 0 : 999)) : 0;
+  const stock      = selected ? (isSpecial ? 999 : (stockByVariant[selected] ?? (isAuto ? 0 : 999))) : 0;
   const discPrc    = selVariant ? Math.floor(selVariant.price * (1 - disc)) : 0;
   const discPrcQty  = discPrc * qty;
   const pricing    = selVariant ? (isAuto ? calculateFee(discPrcQty) : { base:discPrcQty, fee:0, total:discPrcQty }) : null;
@@ -172,8 +172,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
   const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
     if (isAuto && !session?.user) return setError('Login diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
-    if (stock === 0) return setError('Stok habis.');
-    if (stock > 0 && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
+    if (!isSpecial && stock === 0) return setError('Stok habis.');
+    if (!isSpecial && stock > 0 && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
     for (const f of formFields) {
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
@@ -785,7 +785,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           <div className='relative'>
             <button
               onClick={handleOrder}
-              disabled={loading || stock === 0}
+              disabled={loading || (!isSpecial && stock === 0)}
               className='w-full py-4 rounded-2xl font-black text-base text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2'
               style={{ background: loading ? '#0e2445' : '#1d6fff' }}>
               <IBag />
