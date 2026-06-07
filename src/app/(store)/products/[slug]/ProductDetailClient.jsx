@@ -540,9 +540,10 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
               <div className='grid grid-cols-2 gap-3'>
                 {variants.map(v => {
                   const isAct = selected === v.id;
+                  const dPrice = Math.floor(v.price * (1 - disc));
                   return (
                     <button key={v.id} onClick={() => setSelected(v.id)}
-                      className='rounded-2xl text-left transition-all overflow-hidden flex flex-col'
+                      className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
                       style={{
                         borderWidth:'2px', borderStyle:'solid',
                         borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
@@ -552,11 +553,18 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                       <div className='px-3 pt-3 pb-1'>
                         <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
                       </div>
-                      <div className='px-3 pb-3'>
-                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(v.price)}</p>
-                        {v.delivery_content && (
-                          <p className='text-xs mt-1' style={{color:'rgba(255,255,255,0.4)'}}>Link dikirim ke email</p>
-                        )}
+                      <div className='px-3 pb-2'>
+                        <p className='font-semibold text-sm' style={{ color:'rgba(255,255,255,0.8)' }}>{formatIDR(dPrice)}</p>
+                      </div>
+                      <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
+                      <div className='px-3 py-2 flex justify-end'>
+                        <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'rgba(255,255,255,0.9)' }}>
+                          <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><path d='M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z'/><polyline points='22,6 12,13 2,6' stroke='white' strokeWidth='2' fill='none'/></svg>
+                          <div>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Kirim via</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>EMAIL</p>
+                          </div>
+                        </div>
                       </div>
                     </button>
                   );
