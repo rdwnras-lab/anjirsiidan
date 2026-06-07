@@ -13,6 +13,7 @@ export default async function ProductsPage() {
     .from('products')
     .select('id, name, slug, thumbnail, delivery_type, product_variants(id, name, price, sort_order)')
     .eq('is_active', true)
+    .not('categories.slug','in','("website","bot","template")')
     .order('sort_order');
 
   // Ambil tier settings dari DB
