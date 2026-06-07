@@ -4,38 +4,36 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 function isAdmin(s) { return s?.user?.role === 'admin'; }
 
-const SPECIAL_CATS = ['website', 'bot', 'template'];
+const SPECIAL_SLUGS = ['website','bot','template'];
 
-// Helper: get or create category by name
-async function getCategoryId(name) {
+async function getOrCreateCategoryId(slug) {
   const { data } = await supabaseAdmin
-    .from('categories').select('id').eq('slug', name).single();
+    .from('categories').select('id').eq('slug', slug).single();
   if (data?.id) return data.id;
-  // Create it
   const { data: created } = await supabaseAdmin.from('categories').insert({
-    name: name.toUpperCase(), slug: name, icon: name === 'website' ? 'globe' : name === 'bot' ? 'robot' : 'file-code',
-    is_active: true, sort_order: 999,
+    name: slug.toUpperCase(), slug, is_active: true, sort_order: 99,
   }).select('id').single();
-  return created?.id;
+  return created?.id || null;
 }
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Get all category IDs for special cats
+  const { data: cats } = await supabaseAdmin
+    .from('categories').select('id').in('slug', SPECIAL_SLUGS);
+  const catIds = (cats || []).map(c => c.id);
+
+  if (!catIds.length) return Response.json([]);
+
   const { data } = await supabaseAdmin
     .from('products')
-    .select('*, categories(id, name, slug), product_variants(id, name, price, stock)')
-    .in('category_id', await getCategoryIds())
+    .select('id, name, slug, thumbnail, is_active, product_info, preview_images, preview_video, delivery_type, categories(id, name, slug), product_variants(id, name, price, stock, delivery_content)')
+    .in('category_id', catIds)
     .order('name');
 
   return Response.json(data || []);
-}
-
-async function getCategoryIds() {
-  const { data } = await supabaseAdmin
-    .from('categories').select('id').in('slug', SPECIAL_CATS);
-  return (data || []).map(c => c.id);
 }
 
 export async function POST(req) {
@@ -43,35 +41,49 @@ export async function POST(req) {
   if (!isAdmin(session)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { name, slug, category_slug, product_info, preview_images, preview_video,
-          is_active, delivery_type, download_url, variant_sync } = body;
+  const {
+    name, slug, category_slug, product_info,
+    preview_images, preview_video, thumbnail, banner_image,
+    is_active, delivery_type, variant_sync,
+  } = body;
 
   if (!name || !slug) return Response.json({ error: 'Nama dan slug wajib diisi.' }, { status: 400 });
 
-  const categoryId = await getCategoryId(category_slug || 'website');
+  const categoryId = await getOrCreateCategoryId(category_slug || 'website');
+  if (!categoryId) return Response.json({ error: 'Kategori tidak ditemukan.' }, { status: 400 });
 
   const { data: product, error } = await supabaseAdmin.from('products').insert({
-    name, slug, category_id: categoryId,
-    product_info, preview_images, preview_video,
-    is_active: is_active ?? true,
-    delivery_type: delivery_type || 'auto',
-    download_url,
+    name,
+    slug,
+    category_id:    categoryId,
+    product_info:   product_info || null,
+    preview_images: preview_images || [],
+    preview_video:  preview_video || null,
+    thumbnail:      thumbnail || null,
+    banner_image:   banner_image || null,
+    is_active:      is_active ?? true,
+    delivery_type:  delivery_type || 'auto',
     is_best_seller: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at:     new Date().toISOString(),
+    updated_at:     new Date().toISOString(),
   }).select('id').single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // Create variants
+  // Insert variants with delivery_content
   if (variant_sync?.length) {
-    await supabaseAdmin.from('product_variants').insert(
+    const { error: varErr } = await supabaseAdmin.from('product_variants').insert(
       variant_sync.map((v, i) => ({
-        product_id: product.id, name: v.name,
-        price: parseInt(v.price), stock: v.stock ?? 999,
-        sort_order: i, is_active: true,
+        product_id:       product.id,
+        name:             v.name,
+        price:            parseInt(v.price) || 0,
+        stock:            999,
+        delivery_content: v.delivery_content || null,
+        sort_order:       i,
+        is_active:        true,
       }))
     );
+    if (varErr) console.error('[VARIANT INSERT]', varErr.message);
   }
 
   return Response.json({ id: product.id });
