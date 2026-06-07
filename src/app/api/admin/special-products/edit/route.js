@@ -58,7 +58,8 @@ export async function PATCH(req) {
     preview_images: productData.preview_images,
     preview_video:  productData.preview_video,
     download_url:   productData.download_url,
-    banner_image:   productData.banner_image,
+    thumbnail:      productData.thumbnail || null,
+    banner_image:   productData.banner_image || null,
     updated_at:     new Date().toISOString(),
   };
 
