@@ -8,18 +8,21 @@ import { sendPendingDM, logOrderToChannel } from '@/lib/discord-delivery';
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   const body    = await req.json();
-  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice, paymentMethodId, quantity } = body;
+  const { productId, variantId, formData, customerName, customerWhatsapp, tierPrice } = body;
 
   const { data: product } = await supabaseAdmin.from('products')
-    .select('*, product_variants(*)').eq('id', productId).single();
+    .select('*, categories(slug), product_variants(*)').eq('id', productId).single();
   if (!product) return Response.json({ error: 'Product not found' }, { status: 404 });
 
   const variant = product.product_variants?.find(v => v.id === variantId);
   if (!variant) return Response.json({ error: 'Variant not found' }, { status: 404 });
 
   const isAuto = product.delivery_type === 'auto';
+  const catSlug  = (product.categories?.slug || '').toLowerCase();
+  const isSpecial = ['website','bot','template'].includes(catSlug);
 
-  if (isAuto && !session?.user?.discordId)
+  // Produk khusus tidak perlu login Discord - dikirim via email
+  if (isAuto && !isSpecial && !session?.user?.discordId)
     return Response.json({ error: 'Login Discord diperlukan untuk produk otomatis.' }, { status: 401 });
 
   if (isAuto) {
@@ -63,7 +66,6 @@ export async function POST(req) {
 
   const { error: dbErr } = await supabaseAdmin.from('orders').insert({
     id:                 orderId,
-    quantity:           quantity || 1,
     user_id:            userUUID,
     discord_id:         session?.user?.discordId || null,
     product_id:         productId,
@@ -80,7 +82,6 @@ export async function POST(req) {
     status:             'pending',
     payment_qr:         qrString,
     payment_expired_at: expiredAt,
-    payment_method_id:  paymentMethodId || null,
   });
 
   if (dbErr) {
@@ -99,7 +100,6 @@ export async function POST(req) {
     deliveryType:     product.delivery_type,
     discordUserId:    session?.user?.discordId || null,
     customerWhatsapp: customerWhatsapp || null,
-    formData:         formData || {},
   };
 
   // DM ke user (kalau login)
