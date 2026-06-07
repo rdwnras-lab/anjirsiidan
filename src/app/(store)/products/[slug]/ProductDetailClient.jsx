@@ -561,8 +561,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                         <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'rgba(255,255,255,0.9)' }}>
                           <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><path d='M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z'/><polyline points='22,6 12,13 2,6' stroke='white' strokeWidth='2' fill='none'/></svg>
                           <div>
-                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>pengiriman</p>
-                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Kirim via</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>EMAIL</p>
                           </div>
                         </div>
                       </div>
@@ -605,7 +605,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
             <div className='space-y-2'>
               {/* VECHNOST PAYMENT */}
               {(() => {
-                const canUse = !!session && userBalance >= (pricing?.total || 0) && (pricing?.total || 0) > 0;
+                const canUse = (isSpecial || !!session) && userBalance >= (pricing?.total || 0) && (pricing?.total || 0) > 0;
                 const sel = payMethod === 'coins';
                 return (
                   <button
