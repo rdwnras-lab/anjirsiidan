@@ -21,7 +21,7 @@ function EditForm() {
 
   const [form, setForm] = useState({
     name:'', slug:'', category_slug:'website', product_info:'',
-    is_active:true, delivery_type:'auto', download_url:'', banner_image:'',
+    is_active:true, delivery_type:'auto', thumbnail:'', banner_image:'',
   });
   const [variants,      setVariants]      = useState([{ name:'Paket Standar', price:'' }]);
   const [previewImages, setPreviewImages] = useState([]);
@@ -43,7 +43,7 @@ function EditForm() {
           name: d.name||'', slug: d.slug||'',
           category_slug: d.categories?.name?.toLowerCase()||'website',
           product_info: d.product_info||'', is_active: d.is_active??true,
-          delivery_type: d.delivery_type||'auto', download_url: d.download_url||'',
+          delivery_type: d.delivery_type||'auto', thumbnail: d.thumbnail||'',
           banner_image: d.banner_image||'',
         });
         setVariants(d.product_variants?.length
@@ -110,10 +110,9 @@ function EditForm() {
     if (!form.name.trim())     return setError('Nama wajib diisi.');
     if (!form.slug.trim())     return setError('Slug wajib diisi.');
     if (variants.some(v=>!v.name||!v.price)) return setError('Semua paket harus diisi.');
-    if (!form.download_url.trim()) return setError('Link download wajib diisi.');
     setSaving(true); setError(''); setSuccess('');
     const body = {
-      ...form, preview_images:previewImages, preview_video:previewVideo,
+      ...form, preview_images:previewImages, preview_video:previewVideo, download_url: null,
       variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:999,delivery_content:v.delivery_content||''})),
     };
     const url    = isNew ? '/api/admin/special-products' : '/api/admin/special-products/edit?id='+id;
@@ -165,6 +164,15 @@ function EditForm() {
               {SPECIAL_CATS.map(c=><option key={c} value={c}>{c.toUpperCase()}</option>)}
             </select>
           </div>
+        </div>
+        <div>
+          <label className={lbl}>Thumbnail / Icon URL</label>
+          <input className={inp} type="url" placeholder="https://... (gambar ikon produk di listing)"
+            value={form.thumbnail||''} onChange={setF('thumbnail')} />
+          {form.thumbnail && (
+            <img src={form.thumbnail} alt="thumb" className="mt-2 w-16 h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />
+          )}
+        </div>
         </div>
         <div>
           <label className={lbl}>Jenis Pengiriman</label>
@@ -246,26 +254,24 @@ function EditForm() {
             <span/>
           </div>
           {variants.map((v,i)=>(
-            <div key={i} className="grid gap-2 items-center" style={{gridTemplateColumns:'1fr 130px 32px'}}>
-              <input className={inp} placeholder="Paket Standar" value={v.name} onChange={e=>setV(i,'name',e.target.value)} />
-              <input className={inp} type="number" min="0" placeholder="500000" value={v.price} onChange={e=>setV(i,'price',e.target.value)} />
-              <button onClick={()=>removeV(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold">x</button>
-            <div className="pl-0">
-              <input className={inp} type="url" placeholder="Link yang dikirim ke email pembeli (Google Drive, GitHub, dll)"
-                value={v.delivery_content||''} onChange={e=>setV(i,'delivery_content',e.target.value)} />
-              <p className="text-xs text-gray-400 mt-1 px-1">Link ini dikirim ke email pembeli setiap kali paket ini dibeli. Tidak habis.</p>
-            </div>
+            <div key={i} className="rounded-xl border border-gray-100 dark:border-gray-800 p-3 space-y-2">
+              <div className="grid gap-2 items-center" style={{gridTemplateColumns:'1fr 130px 32px'}}>
+                <input className={inp} placeholder="Nama Paket" value={v.name} onChange={e=>setV(i,'name',e.target.value)} />
+                <input className={inp} type="number" min="0" placeholder="500000" value={v.price} onChange={e=>setV(i,'price',e.target.value)} />
+                <button onClick={()=>removeV(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold">x</button>
+              </div>
+              <div>
+                <input className={inp} type="url"
+                  placeholder="Link dikirim ke email pembeli jika beli paket ini..."
+                  value={v.delivery_content||''} onChange={e=>setV(i,'delivery_content',e.target.value)} />
+                <p className="text-xs text-gray-400 mt-1">Dikirim otomatis ke email pembeli setiap kali paket ini dibeli</p>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Link Download */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6 space-y-3">
-        <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300">Link Pengiriman ke Pembeli</h2>
-        <p className="text-xs text-gray-400">Dikirim ke email pembeli setelah pembayaran berhasil</p>
-        <input className={inp} type="url" placeholder="https://drive.google.com/..." value={form.download_url} onChange={setF('download_url')} />
-      </div>
+
 
       {error   && <div className="px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-sm text-red-600 dark:text-red-400 font-semibold">{error}</div>}
       {success && <div className="px-4 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-sm text-green-600 dark:text-green-400 font-semibold">{success}</div>}
