@@ -34,7 +34,8 @@ function EditForm() {
   const slugify = v => v.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
   useEffect(() => {
-    if (isNew) { setLoading(false); return; }
+    setLoading(false);
+    if (isNew) { return; }
     fetch('/api/admin/special-products/edit?id=' + id)
       .then(r => r.json())
       .then(d => {
@@ -110,7 +111,7 @@ function EditForm() {
     if (!form.name.trim())     return setError('Nama wajib diisi.');
     if (!form.slug.trim())     return setError('Slug wajib diisi.');
     if (variants.some(v=>!v.name||!v.price)) return setError('Semua paket harus diisi.');
-    setSaving(true); setError(''); setSuccess('');
+    console.log('saving...', {form, variants}); setSaving(true); setError(''); setSuccess('');
     const body = {
       ...form, preview_images:previewImages, preview_video:previewVideo, download_url: null,
       variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:999,delivery_content:v.delivery_content||''})),
@@ -278,7 +279,7 @@ function EditForm() {
       <div className="flex gap-3 pb-8">
         <button onClick={()=>router.push('/admin/special-products')}
           className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-300">Batal</button>
-        <button onClick={save} disabled={saving||!!vidProgress||!!imgProgress}
+        <button onClick={save} disabled={saving}
           className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
           {saving?'Menyimpan...':(isNew?'Buat Produk':'Simpan')}
         </button>
