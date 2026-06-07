@@ -173,7 +173,6 @@ function EditForm() {
             <img src={form.thumbnail} alt="thumb" className="mt-2 w-16 h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-700" />
           )}
         </div>
-        </div>
         <div>
           <label className={lbl}>Jenis Pengiriman</label>
           <select className={inp} value={form.delivery_type} onChange={setF('delivery_type')}>
