@@ -171,7 +171,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
 
   const handleOrder = () => {
     if (!selected) return setError('Pilih nominal terlebih dahulu.');
-    if (isAuto && !session?.user) return setError('Login diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
+    if (!isSpecial && isAuto && !session?.user) return setError('Login diperlukan untuk produk otomatis. Silakan login terlebih dahulu.');
     if (!isSpecial && stock === 0) return setError('Stok habis.');
     if (!isSpecial && stock > 0 && qty > stock) return setError(`Stok produk tersedia ${stock}. Kurangi jumlah pembelian.`);
     for (const f of formFields) {
