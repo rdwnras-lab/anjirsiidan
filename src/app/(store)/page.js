@@ -89,7 +89,7 @@ export default async function HomePage() {
         })}
         {prods.length === 0 && (
           <div style={{ textAlign:'center', paddingTop:'80px' }}>
-            <p style={{ fontSize:'2.5rem', marginBottom:'8px' }}>🏪</p>
+            <p style={{ fontSize:'2.5rem', marginBottom:'8px' }}>X</p>
             <p style={{ fontWeight:600, color:'#93c5fd' }}>Belum ada produk</p>
           </div>
         )}
@@ -154,7 +154,7 @@ function BestSellerCard({ product }) {
             alignItems:'center', justifyContent:'center',
             fontSize:'1.3rem', background:'rgba(29,111,255,0.18)',
           }}>
-            {product.categories?.icon || '📦'}
+            {product.categories?.icon || 'X'}
           </div>
         )}
       </div>
