@@ -26,7 +26,7 @@ export async function GET(req) {
   const { data, error } = await supabaseAdmin
     .from('products')
     .select(`
-      id, name, slug, is_active, delivery_type, product_info,
+      id, name, slug, thumbnail, is_active, delivery_type, product_info,
       preview_images, preview_video, download_url, banner_image,
       categories(id, name, slug),
       product_variants(id, name, price, stock, delivery_content, sort_order)
