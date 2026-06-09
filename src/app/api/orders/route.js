@@ -25,12 +25,14 @@ export async function POST(req) {
   if (isAuto && !isSpecial && !session?.user?.discordId)
     return Response.json({ error: 'Login Discord diperlukan untuk produk otomatis.' }, { status: 401 });
 
-  if (isAuto) {
+    // Produk khusus tidak pakai product_keys - pakai delivery_content per variant
+  if (isAuto && !isSpecial) {
     const { count } = await supabaseAdmin.from('product_keys')
       .select('*', { count: 'exact', head: true })
       .eq('product_id', productId).eq('variant_id', variantId).eq('is_used', false);
     if (!count || count < 1)
       return Response.json({ error: 'Stok habis untuk varian ini.' }, { status: 400 });
+  }
   }
 
   const orderId   = generateOrderId(variant.name);
