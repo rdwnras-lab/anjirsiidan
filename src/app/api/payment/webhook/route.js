@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { deliverViaDiscordDM, logTransactionToChannel } from '@/lib/discord-delivery';
-import { checkAndUpgradeTier } from '@/lib/tier-upgrade';
 
 export async function POST(req) {
   const body = await req.json();
@@ -19,7 +18,15 @@ export async function POST(req) {
     status: 'paid', updated_at: new Date().toISOString(),
   }).eq('id', order_id);
 
-  if (order.delivery_type === 'auto') {
+  // Cek apakah produk khusus (website/bot/template)
+  const { data: product } = await supabaseAdmin
+    .from('products').select('categories(slug)').eq('id', order.product_id).single();
+  const catSlug = (product?.categories?.slug || '').toLowerCase();
+  const isSpecial = ['website','bot','template'].includes(catSlug);
+
+  if (isSpecial) {
+    await processSpecialDelivery(order);
+  } else if (order.delivery_type === 'auto') {
     await processAutoDelivery(order);
   } else {
     await supabaseAdmin.from('orders').update({
@@ -28,6 +35,54 @@ export async function POST(req) {
   }
 
   return Response.json({ ok: true });
+}
+
+export async function processSpecialDelivery(order) {
+  // Ambil delivery_content dari variant
+  const { data: variant } = await supabaseAdmin
+    .from('product_variants')
+    .select('delivery_content, name')
+    .eq('id', order.variant_id).single();
+
+  const deliveryLink = variant?.delivery_content || null;
+
+  await supabaseAdmin.from('orders').update({
+    status: 'completed',
+    delivery_status: 'delivered',
+    delivered_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq('id', order.id);
+
+  // Kirim ke email pembeli (customer_email)
+  const buyerEmail = order.customer_email || order.customer_whatsapp || '';
+  
+  // Kirim ke Discord DM jika user login Discord
+  if (order.discord_id && deliveryLink) {
+    const { deliverViaDiscordDM } = await import('@/lib/discord-delivery');
+    await deliverViaDiscordDM({
+      discordId:    order.discord_id,
+      productName:  order.product_name,
+      variantName:  variant?.name || '',
+      deliveryKey:  deliveryLink,
+    }).catch(e => console.error('[SPECIAL DM]', e.message));
+  }
+
+  // Log transaksi
+  try {
+    const { logTransactionToChannel } = await import('@/lib/discord-delivery');
+    await logTransactionToChannel({
+      transactionNumber: order.id,
+      productName:       order.product_name,
+      variantName:       variant?.name || '',
+      baseAmount:        order.base_amount,
+      feeAmount:         order.fee_amount || 0,
+      totalAmount:       order.total_amount,
+      deliveryType:      'special',
+      discordUserId:     order.discord_id,
+      customerWhatsapp:  order.customer_whatsapp,
+      qty:               order.quantity || 1,
+    });
+  } catch(e) { console.error('[SPECIAL LOG]', e.message); }
 }
 
 export async function processAutoDelivery(order) {
@@ -59,12 +114,10 @@ export async function processAutoDelivery(order) {
     const result = await deliverViaDiscordDM({
       discordUserId: order.discord_id,
       orderData: {
-        orderId:      order.id,
-        productName:  order.product_name,
-        variantName:  order.variant_name,
-        baseAmount:   order.base_amount,
-        deliveryType: order.delivery_type,
-        qty:          order.quantity || 1,
+        orderId:     order.id,
+        productName: order.product_name,
+        variantName: order.variant_name,
+        baseAmount:  order.base_amount,
         feeAmount:   order.fee_amount,
         totalAmount: order.total_amount,
         keys:        [{ key_content: key.key_content }],
@@ -78,12 +131,6 @@ export async function processAutoDelivery(order) {
     delivered_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }).eq('id', order.id);
 
-  // Upgrade tier user berdasarkan total belanja
-  if (order.discord_id) {
-    checkAndUpgradeTier(order.discord_id, order.total_amount)
-      .catch(e => console.error('[TIER]', e.message));
-  }
-
   // Hitung total transaksi sukses untuk nomor urut
   const { count } = await supabaseAdmin.from('orders')
     .select('*', { count: 'exact', head: true }).eq('status', 'completed');
@@ -96,8 +143,7 @@ export async function processAutoDelivery(order) {
       feeAmount:    order.fee_amount,
       totalAmount:  order.total_amount,
       deliveryType: order.delivery_type,
-      discordUserId:    order.discord_id,
-      customerWhatsapp: order.customer_whatsapp || null,
+      discordUserId: order.discord_id,
     },
     transactionNumber: count || 1,
   }).catch(e => console.error('[LOG TRANS]', e.message));
