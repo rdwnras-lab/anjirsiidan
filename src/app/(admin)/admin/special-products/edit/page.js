@@ -58,22 +58,32 @@ function EditForm() {
 
   // Direct upload to Supabase via presigned URL - much faster
   const uploadDirect = async (file, type, onProgress) => {
-    onProgress('Mempersiapkan upload...');
-    const r = await fetch('/api/upload-url', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ fileName: file.name, fileType: type }),
-    });
-    const { signedUrl, publicUrl, error: urlErr } = await r.json();
-    if (urlErr) { onProgress(''); setError('Gagal: ' + urlErr); return null; }
-
-    onProgress('Mengupload ' + (type === 'video' ? 'video' : 'foto') + '...');
-    const uploadRes = await fetch(signedUrl, {
-      method:'PUT', headers:{'Content-Type': file.type || 'application/octet-stream'},
-      body: file,
-    });
-    if (!uploadRes.ok) { onProgress(''); setError('Upload gagal.'); return null; }
-    onProgress('');
-    return publicUrl;
+    try {
+      onProgress('Mempersiapkan upload...');
+      
+      // Coba upload via FormData ke server
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('type', type);
+      
+      onProgress('Mengupload ' + (type === 'video' ? 'video' : 'foto') + '...');
+      
+      const r = await fetch('/api/upload-media', { method:'POST', body: fd });
+      const data = await r.json();
+      
+      if (data.error) {
+        onProgress('');
+        setError('Upload gagal: ' + data.error);
+        return null;
+      }
+      
+      onProgress('');
+      return data.url || null;
+    } catch(e) {
+      onProgress('');
+      setError('Upload error: ' + e.message);
+      return null;
+    }
   };
 
   const handleImages = async (e) => {
