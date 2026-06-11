@@ -178,7 +178,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
     if (isSpecial) {
-      if (!waNumber || !waNumber.includes('@')) return setError('username wajib diisi dengan format yang benar.');
+      if (!waNumber || waNumber.trim().length < 2) return setError('Username Discord wajib diisi.');
     } else {
       if (!waNumber || waNumber.trim().length < 9) return setError('Nomor WhatsApp wajib diisi.');
     }
@@ -539,16 +539,19 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
             <StepRow n={step3} title='Pilih Paket'>
               <div className='grid grid-cols-2 gap-3'>
                 {variants.map(v => {
-                  const isAct = selected === v.id;
-                  const dPrice = Math.floor(v.price * (1 - disc));
+                  const isAct   = selected === v.id;
+                  const vStock  = stockByVariant[v.id] ?? 0;
+                  const disabled = vStock === 0;
+                  const dPrice  = Math.floor(v.price * (1 - disc));
                   return (
-                    <button key={v.id} onClick={() => setSelected(v.id)}
+                    <button key={v.id} onClick={() => !disabled && setSelected(v.id)}
                       className='rounded-2xl text-left relative transition-all overflow-hidden flex flex-col'
                       style={{
                         borderWidth:'2px', borderStyle:'solid',
                         borderColor: isAct ? '#1d6fff' : 'rgba(255,255,255,0.1)',
                         background: isAct ? 'rgba(29,111,255,0.1)' : 'rgba(255,255,255,0.04)',
-                        cursor: 'pointer',
+                        opacity: disabled ? 0.45 : 1,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
                       }}>
                       <div className='px-3 pt-3 pb-1'>
                         <p className='font-bold text-white text-sm leading-tight'>{v.name}</p>
@@ -559,10 +562,10 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                       <div style={{ height:'1px', background:'rgba(255,255,255,0.1)', margin:'0 12px' }} />
                       <div className='px-3 py-2 flex justify-end'>
                         <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'rgba(255,255,255,0.9)' }}>
-                          <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><path d='M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z'/><polyline points='22,6 12,13 2,6' stroke='white' strokeWidth='2' fill='none'/></svg>
+                          <svg width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='#111827' strokeWidth='2'><circle cx='12' cy='12' r='10'/><polyline points='12 8 8 12 12 16'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
                           <div>
-                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>pengiriman</p>
-                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Admin</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>MANUAL</p>
                           </div>
                         </div>
                       </div>
@@ -648,8 +651,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                     style={{
                       background: payMethod==='qris_auto' ? 'rgba(29,111,255,0.15)' : 'rgba(255,255,255,0.05)',
                       border: payMethod==='qris_auto' ? '1.5px solid #1d6fff' : '1.5px solid rgba(255,255,255,0.08)',
-                      opacity: !isAuto ? 0.38 : 1,
-                      cursor: !isAuto ? 'not-allowed' : 'pointer',
+                      opacity: (!isAuto || isSpecial) ? 0.38 : 1,
+                      cursor: (!isAuto || isSpecial) ? 'not-allowed' : 'pointer',
                     }}>
                     <div className='rounded-md px-2 py-1 mb-2 font-black text-xs tracking-widest'
                       style={{ background:'#fff', color:'#111', fontFamily:'monospace' }}>QRIS</div>
@@ -736,17 +739,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           <StepRow n={isSpecial ? step5 : step4} title='Detail Kontak'>
             {isSpecial ? (
               <>
-                <label className='text-xs font-semibold text-white block mb-2'>Username discord</label>
+                <label className='text-xs font-semibold text-white block mb-2'>Email</label>
                 <div className='flex items-center rounded-xl overflow-hidden'
                   style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
                   <input
                     className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
                     style={{ color:'#e8f4ff' }}
-                    type='username discord'
-                    placeholder='@vechnost.id'
+                    type='text'
+                    placeholder='username Discord kamu'
                     value={waNumber} onChange={e => setWaNumber(e.target.value)} />
                 </div>
-                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>@username discord untuk pengiriman produk</p>
+                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>Username Discord untuk dihubungi admin</p>
               </>
             ) : (
               <>
