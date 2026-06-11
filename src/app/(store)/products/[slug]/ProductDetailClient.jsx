@@ -739,17 +739,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           <StepRow n={isSpecial ? step5 : step4} title='Detail Kontak'>
             {isSpecial ? (
               <>
-                <label className='text-xs font-semibold text-white block mb-2'>Email</label>
+                <label className='text-xs font-semibold text-white block mb-2'>discord</label>
                 <div className='flex items-center rounded-xl overflow-hidden'
                   style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
                   <input
                     className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
                     style={{ color:'#e8f4ff' }}
                     type='text'
-                    placeholder='username Discord kamu'
+                    placeholder='username discord kamu'
                     value={waNumber} onChange={e => setWaNumber(e.target.value)} />
                 </div>
-                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>Username Discord untuk dihubungi admin</p>
+                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>username discord untuk pengiriman barang</p>
               </>
             ) : (
               <>
