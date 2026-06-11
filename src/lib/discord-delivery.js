@@ -168,7 +168,7 @@ export async function logOrderToChannel({ orderData }) {
   // Susun semua baris konten
   const lines = [
     ...formLines,
-    customerWhatsapp ? `**No WhatsApp**\n${customerWhatsapp}` : null,
+    customerWhatsapp ? `**whatsapp / discord**\n${customerWhatsapp}` : null,
     `**Product**\n${productName}`,
     `**Item**\n${variantName}`,
     `**Price**\n${formatIDR(baseAmount)}`,
