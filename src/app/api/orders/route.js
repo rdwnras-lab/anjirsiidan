@@ -33,7 +33,6 @@ export async function POST(req) {
     if (!count || count < 1)
       return Response.json({ error: 'Stok habis untuk varian ini.' }, { status: 400 });
   }
-  }
 
   const orderId   = generateOrderId(variant.name);
   const basePrice = tierPrice || variant.price;
