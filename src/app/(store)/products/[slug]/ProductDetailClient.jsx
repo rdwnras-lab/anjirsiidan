@@ -178,7 +178,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
       if (f.required && !formData[f.label]) return setError(f.label + ' wajib diisi.');
     }
     if (isSpecial) {
-      if (!waNumber || !waNumber.includes('@')) return setError('Email wajib diisi dengan format yang benar.');
+      if (!waNumber || !waNumber.includes('@')) return setError('username wajib diisi dengan format yang benar.');
     } else {
       if (!waNumber || waNumber.trim().length < 9) return setError('Nomor WhatsApp wajib diisi.');
     }
@@ -561,8 +561,8 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                         <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'rgba(255,255,255,0.9)' }}>
                           <svg width='9' height='9' viewBox='0 0 24 24' fill='#111827'><path d='M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z'/><polyline points='22,6 12,13 2,6' stroke='white' strokeWidth='2' fill='none'/></svg>
                           <div>
-                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Kirim via</p>
-                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>EMAIL</p>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>pengiriman</p>
+                            <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>INSTAN</p>
                           </div>
                         </div>
                       </div>
@@ -736,17 +736,17 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
           <StepRow n={isSpecial ? step5 : step4} title='Detail Kontak'>
             {isSpecial ? (
               <>
-                <label className='text-xs font-semibold text-white block mb-2'>Email</label>
+                <label className='text-xs font-semibold text-white block mb-2'>Username discord</label>
                 <div className='flex items-center rounded-xl overflow-hidden'
                   style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)' }}>
                   <input
                     className='flex-1 px-3 py-3 text-sm outline-none bg-transparent'
                     style={{ color:'#e8f4ff' }}
-                    type='email'
-                    placeholder='email@gmail.com'
+                    type='username discord'
+                    placeholder='@vechnost.id'
                     value={waNumber} onChange={e => setWaNumber(e.target.value)} />
                 </div>
-                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>Email untuk pengiriman link download product</p>
+                <p className='text-xs mt-1.5' style={{ color:'#64748b' }}>@username discord untuk pengiriman produk</p>
               </>
             ) : (
               <>
