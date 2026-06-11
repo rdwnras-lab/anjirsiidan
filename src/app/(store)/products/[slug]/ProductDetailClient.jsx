@@ -564,7 +564,7 @@ export default function ProductDetailClient({ product, variants, stockByVariant,
                         <div className='inline-flex flex-row items-center gap-1 rounded-lg px-2 py-1' style={{ background:'rgba(255,255,255,0.9)' }}>
                           <svg width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='#111827' strokeWidth='2'><circle cx='12' cy='12' r='10'/><polyline points='12 8 8 12 12 16'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
                           <div>
-                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>Admin</p>
+                            <p style={{ fontSize:'0.5rem', color:'#6b7280', fontWeight:400, lineHeight:1.1 }}>pengiriman</p>
                             <p style={{ fontSize:'0.58rem', color:'#111827', fontWeight:800, lineHeight:1.1 }}>MANUAL</p>
                           </div>
                         </div>
