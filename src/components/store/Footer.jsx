@@ -42,7 +42,7 @@ export default function Footer() {
             </svg>
           </a>
           {/* Discord */}
-          <a href="https://discord.gg/pFhdW9ZwwY" target="_blank" rel="noreferrer"
+          <a href="https://discord.gg/jHzyFPzy9m" target="_blank" rel="noreferrer"
             className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all hover:border-[#5865F2]/50 hover:bg-[#5865F2]/10"
             style={{borderColor:'var(--border)', background:'var(--card-bg)'}}>
             <svg width="18" height="18" viewBox="0 0 71 55" fill="#7289da">
@@ -50,7 +50,7 @@ export default function Footer() {
             </svg>
           </a>
           {/* WhatsApp */}
-          <a href="https://wa.me/6289521925299" target="_blank" rel="noreferrer"
+          <a href="https://wa.me/6288289171435" target="_blank" rel="noreferrer"
             className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all hover:border-green-400/50 hover:bg-green-400/10"
             style={{borderColor:'var(--border)', background:'var(--card-bg)'}}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#25d366">
