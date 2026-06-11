@@ -21,7 +21,7 @@ function EditForm() {
 
   const [form, setForm] = useState({
     name:'', slug:'', category_slug:'website', product_info:'',
-    is_active:true, delivery_type:'auto', thumbnail:'', banner_image:'',
+    is_active:true, delivery_type:'manual', thumbnail:'', banner_image:'',
   });
   const [variants,      setVariants]      = useState([{ name:'Paket Standar', price:'' }]);
   const [previewImages, setPreviewImages] = useState([]);
@@ -48,8 +48,8 @@ function EditForm() {
           banner_image: d.banner_image||'',
         });
         setVariants(d.product_variants?.length
-          ? d.product_variants.map(v=>({id:v.id,name:v.name,price:String(v.price),delivery_content:v.delivery_content||''}))
-          : [{name:'Paket Standar',price:'',delivery_content:''}]);
+          ? d.product_variants.map(v=>({id:v.id,name:v.name,price:String(v.price),stock:String(v.stock??0)}))
+          : [{name:'Paket Standar',price:'',stock:'0'}]);
         setPreviewImages(Array.isArray(d.preview_images) ? d.preview_images : []);
         setPreviewVideo(d.preview_video||'');
         setLoading(false);
@@ -114,7 +114,7 @@ function EditForm() {
     console.log('saving...', {form, variants}); setSaving(true); setError(''); setSuccess('');
     const body = {
       ...form, preview_images:previewImages, preview_video:previewVideo, download_url: null,
-      variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:999,delivery_content:v.delivery_content||''})),
+      variant_sync: variants.map(v=>({...(v.id?{id:v.id}:{}),name:v.name,price:parseInt(v.price),stock:parseInt(v.stock)||0})),
     };
     const url    = isNew ? '/api/admin/special-products' : '/api/admin/special-products/edit?id='+id;
     const method = isNew ? 'POST' : 'PATCH';
@@ -176,13 +176,8 @@ function EditForm() {
         </div>
         <div>
           <label className={lbl}>Jenis Pengiriman</label>
-          <select className={inp} value={form.delivery_type} onChange={setF('delivery_type')}>
-            <option value="auto">Otomatis (QRIS Pakasir, link dikirim ke email)</option>
-            <option value="manual">Manual (admin kirim link ke email pembeli)</option>
-          </select>
-          <p className="text-xs text-gray-400 mt-1">
-            Otomatis: pembayaran QRIS + kirim link download otomatis. Manual: admin proses manual.
-          </p>
+          <div className={inp + " bg-gray-50 dark:bg-gray-900 cursor-not-allowed"} style={{opacity:0.7}}>Manual (admin proses pesanan)</div>
+          <p className="text-xs text-gray-400 mt-1">Produk khusus selalu manual — admin proses dan hubungi pembeli via Discord.</p>
         </div>
         <div>
           <label className={lbl}>Banner URL (opsional)</label>
@@ -253,21 +248,24 @@ function EditForm() {
             <span className="text-xs text-gray-400 px-1">Harga (Rp)</span>
             <span/>
           </div>
+          {/* Header kolom */}
+          <div className="grid gap-2 mb-1" style={{gridTemplateColumns:'1fr 120px 90px 32px'}}>
+            <span className="text-xs text-gray-400 px-1">Nama Paket</span>
+            <span className="text-xs text-gray-400 px-1">Harga (Rp)</span>
+            <span className="text-xs text-gray-400 px-1">Stok</span>
+            <span/>
+          </div>
           {variants.map((v,i)=>(
-            <div key={i} className="rounded-xl border border-gray-100 dark:border-gray-800 p-3 space-y-2">
-              <div className="grid gap-2 items-center" style={{gridTemplateColumns:'1fr 130px 32px'}}>
-                <input className={inp} placeholder="Nama Paket" value={v.name} onChange={e=>setV(i,'name',e.target.value)} />
-                <input className={inp} type="number" min="0" placeholder="500000" value={v.price} onChange={e=>setV(i,'price',e.target.value)} />
-                <button onClick={()=>removeV(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold">x</button>
-              </div>
-              <div>
-                <input className={inp} type="url"
-                  placeholder="Link dikirim ke email pembeli jika beli paket ini..."
-                  value={v.delivery_content||''} onChange={e=>setV(i,'delivery_content',e.target.value)} />
-                <p className="text-xs text-gray-400 mt-1">Dikirim otomatis ke email pembeli setiap kali paket ini dibeli</p>
-              </div>
+            <div key={i} className="grid gap-2 items-center" style={{gridTemplateColumns:'1fr 120px 90px 32px'}}>
+              <input className={inp} placeholder="Source Code" value={v.name} onChange={e=>setV(i,'name',e.target.value)} />
+              <input className={inp} type="number" min="0" placeholder="500000" value={v.price} onChange={e=>setV(i,'price',e.target.value)} />
+              <input className={inp} type="number" min="0" placeholder="0"
+                value={v.stock??'0'} onChange={e=>setV(i,'stock',e.target.value)}
+                title="0 = tidak tersedia" />
+              <button onClick={()=>removeV(i)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 text-xl font-bold">x</button>
             </div>
           ))}
+          <p className="text-xs text-gray-400 mt-1">Stok 0 = paket tidak bisa dipilih pembeli</p>
         </div>
       </div>
 
