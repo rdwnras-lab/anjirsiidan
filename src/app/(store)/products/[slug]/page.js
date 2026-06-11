@@ -17,10 +17,19 @@ export default async function ProductPage({ params }) {
   if (!product) notFound();
 
   // Count available stock per variant
+  const catSlug   = (product.categories?.slug || '').toLowerCase();
+  const isSpecial = ['website','bot','template'].includes(catSlug);
+
   const stockByVariant = {};
-  if (product.delivery_type === 'auto' && product.product_keys) {
+  if (product.delivery_type === 'auto' && !isSpecial && product.product_keys) {
+    // Auto non-special: hitung dari product_keys
     for (const k of product.product_keys) {
       if (!k.is_used) stockByVariant[k.variant_id] = (stockByVariant[k.variant_id] || 0) + 1;
+    }
+  } else if (product.product_variants) {
+    // Manual & special: gunakan kolom stock dari variant
+    for (const v of product.product_variants) {
+      stockByVariant[v.id] = v.stock ?? 0;
     }
   }
 
@@ -28,7 +37,6 @@ export default async function ProductPage({ params }) {
     .filter(v => v.is_active)
     .sort((a, b) => a.sort_order - b.sort_order);
 
-  const catName = (product.categories?.name || '').toLowerCase();
-  const isSpecial = ['website','bot','template'].includes(catName);
-  return <ProductDetailClient product={product} variants={variants} stockByVariant={stockByVariant} isSpecial={isSpecial} catName={catName} />;
+  const catName2 = (product.categories?.name || '').toLowerCase();
+  return <ProductDetailClient product={product} variants={variants} stockByVariant={stockByVariant} isSpecial={isSpecial} catName={catName2} />;
 }
