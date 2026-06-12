@@ -4,8 +4,8 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import SessionWrapper from '@/components/SessionWrapper';
 
 export const metadata = {
-  title: 'VECHNOST #1 SUPPLIER',
-  description: 'level up your bussiness with out automation tools',
+  title: 'VECHNOST AGENCY',
+  description: 'level up your bussiness with our automation tools',
 };
 
 export default function RootLayout({ children }) {
